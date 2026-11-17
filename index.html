@@ -1,0 +1,2234 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>व्याज हिशोब अल्ट्रा प्रो V5 (Gmail & Cloud Edition)</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+:root {
+--bg: #f1f5f9;
+--card: #ffffff;
+--text: #0f172a;
+--muted: #64748b;
+--primary: #0d47a1;
+--accent: #1976d2;
+--border: #cbd5e1;
+--row-bg: #f8fafc;
+--pending-bg: #fff1f2;
+}
+body.dark-mode {
+--bg: #0f172a;
+--card: #1e293b;
+--text: #f8fafc;
+--muted: #94a3b8;
+--primary: #38bdf8;
+--accent: #0284c7;
+--border: #334155;
+--row-bg: #0f172a;
+--pending-bg: #3b181e;
+}
+body {
+font-family: 'Segoe UI', Roboto, sans-serif;
+background-color: var(--bg);
+color: var(--text);
+margin: 0;
+padding: 0;
+padding-bottom: 85px;
+}
+
+/* जोपर्यंत लॉक उघडत नाही तोपर्यंत मुख्य ॲप पूर्णपणे बंद ठेवा */
+#appContent { display: none; padding: 10px; }
+
+/* Top Gmail-Style App Bar */
+.top-bar {
+display: flex;
+align-items: center;
+justify-content: space-between;
+background: linear-gradient(135deg, #0d47a1, #1565c0);
+color: white;
+padding: 10px 14px;
+border-radius: 10px;
+box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+margin-bottom: 10px;
+}
+.menu-icon-btn {
+background: rgba(255,255,255,0.18);
+border: none;
+color: white;
+font-size: 20px;
+padding: 6px 12px;
+border-radius: 8px;
+cursor: pointer;
+}
+.sync-badge {
+font-size: 11px;
+background: rgba(255,255,255,0.2);
+padding: 4px 8px;
+border-radius: 20px;
+}
+
+/* Big Month & Year Banner */
+.big-month-banner {
+background: var(--card);
+border: 2px solid var(--accent);
+border-radius: 12px;
+padding: 12px;
+text-align: center;
+margin-bottom: 12px;
+box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+.big-month-banner small {
+font-size: 12px;
+color: var(--muted);
+font-weight: bold;
+display: block;
+}
+.big-month-banner h1 {
+margin: 4px 0 6px 0;
+font-size: 26px;
+color: var(--primary);
+letter-spacing: 0.5px;
+}
+
+/* Large Gmail-Style Search Bar */
+.big-search-wrap {
+margin-bottom: 12px;
+position: relative;
+}
+.big-search-input {
+width: 100%;
+padding: 14px 16px;
+font-size: 16px !important;
+font-weight: bold;
+border-radius: 30px !important;
+border: 2px solid var(--accent) !important;
+background: var(--card) !important;
+color: var(--text) !important;
+box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+box-sizing: border-box;
+}
+
+/* Left Slide-Out Drawer (Gmail Style 3-Line Menu) */
+.drawer-backdrop {
+position: fixed;
+top: 0; left: 0; right: 0; bottom: 0;
+background: rgba(0,0,0,0.6);
+z-index: 9000;
+display: none;
+}
+.side-drawer {
+position: fixed;
+top: 0; left: -310px;
+width: 290px;
+height: 100vh;
+background: var(--card);
+z-index: 9001;
+box-shadow: 4px 0 15px rgba(0,0,0,0.3);
+transition: left 0.25s ease;
+overflow-y: auto;
+display: flex;
+flex-direction: column;
+}
+.side-drawer.open { left: 0; }
+.drawer-header {
+background: linear-gradient(135deg, #0d47a1, #1976d2);
+color: white;
+padding: 18px 15px;
+}
+.drawer-header h3 { margin: 0; font-size: 17px; }
+.drawer-header p { margin: 4px 0 0; font-size: 12px; opacity: 0.9; }
+.drawer-item {
+padding: 12px 16px;
+border: none;
+background: transparent;
+color: var(--text);
+text-align: left;
+font-size: 14px;
+font-weight: bold;
+cursor: pointer;
+border-bottom: 1px solid var(--border);
+display: flex;
+align-items: center;
+gap: 10px;
+width: 100%;
+}
+.drawer-item:hover { background: var(--row-bg); }
+.drawer-section-title {
+padding: 10px 16px 4px;
+font-size: 11px;
+font-weight: bold;
+color: var(--muted);
+text-transform: uppercase;
+}
+
+/* Gmail-Style Floating Compose (+ नवीन नाव) Button */
+.fab-compose {
+position: fixed;
+bottom: 20px;
+right: 20px;
+background: linear-gradient(135deg, #0d47a1, #1976d2);
+color: white;
+border: none;
+border-radius: 30px;
+padding: 14px 22px;
+font-size: 15px;
+font-weight: bold;
+box-shadow: 0 5px 15px rgba(13, 71, 161, 0.45);
+cursor: pointer;
+z-index: 8000;
+display: flex;
+align-items: center;
+gap: 8px;
+}
+
+/* Dashboard */
+.dashboard {
+display: grid;
+grid-template-columns: repeat(4, 1fr);
+gap: 7px;
+margin-bottom: 12px;
+}
+.dash-card {
+background: var(--card);
+padding: 9px 4px;
+border-radius: 8px;
+text-align: center;
+border-bottom: 3px solid var(--accent);
+box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+}
+.dash-card span { font-size: 10.5px; color: var(--muted); display: block; }
+.dash-card strong { font-size: 13.5px; display: block; margin-top: 3px; }
+
+/* Panels */
+.panel-box {
+background: var(--card);
+padding: 14px;
+border-radius: 10px;
+border: 2px solid var(--accent);
+margin-bottom: 12px;
+display: none;
+}
+.panel-header {
+display: flex;
+justify-content: space-between;
+align-items: center;
+border-bottom: 1px solid var(--border);
+padding-bottom: 8px;
+margin-bottom: 10px;
+}
+.panel-header h3 { margin: 0; font-size: 15px; color: var(--primary); }
+
+.row-2col { display: flex; gap: 8px; flex-wrap: wrap; }
+.row-2col > div { flex: 1 1 45%; }
+.row-3col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 5px; }
+.promise-col {
+background: var(--row-bg);
+border: 1px solid var(--border);
+padding: 6px;
+border-radius: 6px;
+text-align: center;
+}
+.promise-col small { display: block; font-size: 10.5px; font-weight: bold; color: var(--muted); margin-bottom: 3px; }
+.promise-col input { padding: 4px !important; font-size: 11.5px !important; text-align: center; }
+
+.form-group { margin-bottom: 8px; }
+label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 3px; }
+input, select, textarea {
+width: 100%; padding: 8px; border: 1px solid var(--border);
+background: var(--bg); color: var(--text);
+border-radius: 6px; box-sizing: border-box; font-size: 13px;
+}
+.btn-main {
+width: 100%; padding: 10px; background: #1976d2; color: white;
+border: none; border-radius: 6px; font-weight: bold; font-size: 13.5px; cursor: pointer;
+}
+
+/* 8-Line Borrower Card */
+.borrower-card {
+background: var(--card);
+padding: 12px;
+border-radius: 10px;
+margin-bottom: 12px;
+border-left: 6px solid #1976d2;
+box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+.line {
+padding: 6px 0;
+border-bottom: 1px dashed var(--border);
+font-size: 13.5px;
+line-height: 1.5;
+}
+.line:last-child { border-bottom: none; }
+.line-num { font-weight: bold; color: var(--primary); margin-right: 4px; }
+.person-name { font-weight: bold; font-size: 16px; }
+
+.tag {
+display: inline-block; padding: 2px 6px; border-radius: 4px;
+font-size: 11px; font-weight: bold; margin-left: 4px;
+}
+.tag-date { background: #fff3e0; color: #e65100; }
+.tag-rate { background: #e3f2fd; color: #0d47a1; }
+.tag-type { background: #e8f5e9; color: #2e7d32; }
+.tag-penalty { background: #ffebee; color: #c62828; }
+.trust-good { background: #dcfce7; color: #15803d; }
+.trust-warn { background: #fef9c3; color: #a16207; }
+.trust-bad { background: #fee2e2; color: #b91c1c; }
+
+.pay-row {
+display: flex; align-items: center; justify-content: space-between;
+flex-wrap: wrap; gap: 6px; background: var(--row-bg);
+padding: 6px 8px; border-radius: 6px; margin-top: 4px;
+border: 1px solid var(--border);
+}
+.pay-row-pending { background: var(--pending-bg); border-color: #ef9a9a; }
+.pay-controls { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.amt-input { width: 80px !important; padding: 5px !important; font-size: 12.5px !important; }
+
+.btn-sm {
+padding: 5px 8px; border: none; border-radius: 5px;
+font-size: 11px; font-weight: bold; cursor: pointer; color: white; text-decoration: none; display: inline-block;
+}
+.btn-green, .bg-green { background: #2e7d32; }
+.btn-gray { background: #64748b; }
+.btn-red, .bg-red { background: #c62828; }
+.btn-wa { background: #25D366; }
+.btn-blue-sm, .bg-blue { background: #0288d1; }
+.btn-purple-sm, .bg-purple { background: #7b1fa2; }
+.btn-orange-sm, .bg-orange { background: #e65100; }
+.bg-teal { background: #00796b; }
+.bg-pink { background: #ad1457; }
+
+.status-paid { color: #16a34a; font-weight: bold; }
+.status-unpaid { color: #dc2626; font-weight: bold; }
+
+/* Modals */
+.modal-overlay {
+position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+background: rgba(15, 23, 42, 0.92);
+display: none; align-items: center; justify-content: center;
+z-index: 9999; padding: 12px;
+}
+.modal-card {
+background: var(--card); color: var(--text);
+padding: 16px; border-radius: 12px; width: 100%; max-width: 460px;
+max-height: 90vh; overflow-y: auto;
+}
+.doc-thumb {
+width: 58px; height: 58px; object-fit: cover;
+border-radius: 6px; border: 2px solid var(--accent);
+}
+.promise-banner {
+background: linear-gradient(135deg, #b91c1c, #dc2626);
+color: white; padding: 10px 12px; border-radius: 10px; margin-bottom: 10px; display: none;
+}
+
+body.staff-mode .admin-only { display: none !important; }
+
+@media print {
+.top-bar, .big-search-wrap, .fab-compose, .panel-box, .btn-sm, .pay-controls, .promise-banner { display: none !important; }
+#appContent { display: block !important; }
+.borrower-card { break-inside: avoid; border: 1px solid #000; }
+}
+</style>
+</head>
+<body>
+
+<!-- 🔐 १. STRICT GMAIL LOGIN + PASSWORD + FINGERPRINT + FORGOT OTP SCREEN -->
+<div id="authGateModal" class="modal-overlay" style="display:flex;">
+<div class="modal-card" style="text-align:center;">
+<h2 style="margin:0 0 6px; color:var(--primary);">🔐 व्याज हिशोब सुरक्षा लॉगिन</h2>
+<p style="font-size:12px; color:var(--muted); margin-bottom:12px;">तुमचा Gmail, पासवर्ड किंवा फिंगरप्रिंट बरोबर असल्याशिवाय ॲप उघडणार नाही.</p>
+
+<!-- Login Form -->
+<div id="loginBox" style="text-align:left;">
+<div class="form-group">
+<label>📧 तुमचा Gmail ID:</label>
+<input type="email" id="loginGmail" placeholder="उदा. sandeep@gmail.com">
+</div>
+<div class="form-group">
+<label>🔑 सुरक्षा पासवर्ड / PIN:</label>
+<input type="password" id="loginPass" placeholder="तुमचा पासवर्ड किंवा पिन टाका">
+</div>
+<div id="twoStepOtpBox" class="form-group" style="display:none; background:#fff3e0; padding:8px; border-radius:6px;">
+<label style="color:#e65100;">🛡️ Two-Step Verification OTP कोडे:</label>
+<input type="number" id="loginTwoStepInput" placeholder="स्क्रीनवर आलेला ४ अंकी OTP टाका">
+</div>
+<button class="btn-main bg-blue" style="margin-top:6px;" onclick="handleStrictLogin()">🔓 लॉगिन करा</button>
+<div style="display:flex; gap:8px; margin-top:8px;">
+<button class="btn-main bg-purple" onclick="triggerBiometricUnlock()">👆 Fingerprint / Face Unlock</button>
+</div>
+<div style="text-align:center; margin-top:10px;">
+<a href="javascript:void(0)" style="font-size:12.5px; color:var(--primary); font-weight:bold;" onclick="showForgotPasswordBox()">❓ पासवर्ड विसरलात? (Forgot Password via Mobile OTP)</a>
+</div>
+</div>
+
+<!-- Forgot Password via Mobile OTP Box -->
+<div id="forgotBox" style="display:none; text-align:left; border-top:1px solid var(--border); padding-top:10px;">
+<h4 style="margin:0 0 8px; color:#c62828;">📲 मोबाईल नंबरद्वारे पासवर्ड रिसेट करा</h4>
+<div class="form-group">
+<label>नोंदणीकृत मोबाईल नंबर टाका:</label>
+<div style="display:flex; gap:5px;">
+<input type="tel" id="forgotPhoneInput" placeholder="१० अंकी मोबाईल नंबर">
+<button class="btn-sm bg-orange" onclick="sendForgotOtp()">OTP पाठवा</button>
+</div>
+<div id="recaptcha-container" style="margin-top:8px;"></div>
+</div>
+<div id="forgotOtpStep" style="display:none;">
+<div class="form-group">
+<label>मिळालेला ४ अंकी OTP टाका:</label>
+<input type="number" id="forgotOtpCode" placeholder="उदा. 4589">
+</div>
+<div class="form-group">
+<label>नवीन पासवर्ड / PIN सेट करा:</label>
+<input type="password" id="forgotNewPass" placeholder="नवीन पासवर्ड टाका">
+</div>
+<button class="btn-main bg-green" onclick="verifyOtpAndResetPass()">✅ नवीन पासवर्ड सेव्ह करा</button>
+</div>
+<button class="btn-main btn-gray" style="margin-top:8px;" onclick="hideForgotPasswordBox()">⬅️ परत लॉगिनकडे जा</button>
+</div>
+</div>
+</div>
+
+<!-- ☰ २. GMAIL-STYLE LEFT 3-LINE SIDE DRAWER -->
+<div id="drawerBackdrop" class="drawer-backdrop" onclick="goBackStep()"></div>
+<div id="sideDrawer" class="side-drawer">
+<div class="drawer-header">
+<h3>📒 व्याज हिशोब प्रो V5</h3>
+<p id="drawerGmailText">📧 Not Connected</p>
+<p id="drawerSyncText" style="font-size:11px; color:#bbf7d0;">☁️ Auto-Save: Active</p>
+</div>
+
+<div class="drawer-section-title">मुख्य मेनू</div>
+<button class="drawer-item admin-only" onclick="openPanelFromDrawer('addPanel')">➕ नवीन नाव जोडा (Compose)</button>
+<button class="drawer-item" onclick="openPanelFromDrawer('monthHistoryPanel')">📅 मागील महिन्यांचा हिशोब (Months)</button>
+<button class="drawer-item" onclick="openPanelFromDrawer('aiPanel')">🤖 AI व आजचे वायदे</button>
+<button class="drawer-item admin-only" onclick="openPanelFromDrawer('importPanel')">📂 Sheet / PDF अपलोड</button>
+<button class="drawer-item" onclick="openPanelFromDrawer('downloadPanel')">📥 हिशोब डाऊनलोड (PDF/Excel)</button>
+<button class="drawer-item" onclick="openPanelFromDrawer('emiPanel')">🧮 EMI व चार्ट</button>
+
+<div class="drawer-section-title">सेटिंग्स व सुरक्षा (वेगवेगळे)</div>
+<button class="drawer-item admin-only" onclick="openPanelFromDrawer('cloudSettingsPanel')">☁️ Cloud & Google Drive सेटिंग</button>
+<button class="drawer-item admin-only" onclick="openPanelFromDrawer('appSettingsPanel')">⚙️ App व सुरक्षा सेटिंग (PIN/Bio)</button>
+<button class="drawer-item admin-only" onclick="openPanelFromDrawer('recycleBinPanel')">🗑️ Recycle Bin (डिलीट झालेली नावे)</button>
+<button class="drawer-item admin-only" onclick="openPanelFromDrawer('securityVaultPanel')">🛡️ Login & Version History</button>
+
+<div class="drawer-section-title">इतर</div>
+<button class="drawer-item admin-only" style="color:#c62828;" onclick="closeDrawerOnly(); resetToNov2026PdfData();">🔄 ४७ नावे मूळ स्थितीत रिसेट करा</button>
+<button class="drawer-item" onclick="lockAppImmediately()">🔒 ॲप लॉक करा (Logout)</button>
+</div>
+
+<!-- 📖 ३. माहिती / पासबुक / १० फोटो गॅलरी / वचनचिट्ठी Modal -->
+<div id="infoModal" class="modal-overlay">
+<div class="modal-card">
+<h3 id="modalTitle" style="margin-top:0;">माहिती</h3>
+<div id="modalBody" style="font-size:13.5px; line-height:1.6;"></div>
+<div style="display:flex; gap:8px; margin-top:12px;">
+<button class="btn-main bg-blue" onclick="window.print()">🖨️ प्रिंट / PDF</button>
+<button class="btn-main btn-gray" onclick="goBackStep()">⬅️ मागे जा (Back)</button>
+</div>
+</div>
+</div>
+
+<!-- ✏️ ४. संपूर्ण माहिती एडिट + १० फोटो (२ आधार, २ पॅन, २ चेक, ४ इतर) Modal -->
+<div id="editModal" class="modal-overlay">
+<div class="modal-card">
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+<h3 style="margin:0; color:var(--primary);">✏️ सर्व माहिती व १० फोटो एडिट करा</h3>
+<button class="btn-sm btn-gray" onclick="goBackStep()">⬅️ मागे</button>
+</div>
+<input type="hidden" id="editId">
+<div class="row-2col">
+<div class="form-group"><label>१. व्यक्तीचे नाव:</label><input type="text" id="editName"></div>
+<div class="form-group"><label>६. मोबाईल नंबर:</label><input type="tel" id="editPhone"></div>
+</div>
+<div class="row-2col">
+<div class="form-group"><label>२. मुद्दल (₹):</label><input type="number" id="editPrincipal" oninput="calcEditFromRate()"></div>
+<div class="form-group"><label>व्याज दर (%):</label><input type="number" id="editRate" step="0.01" oninput="calcEditFromRate()"></div>
+</div>
+<div class="row-2col">
+<div class="form-group"><label>३. महिन्याचे व्याज (₹):</label><input type="number" id="editInterest" oninput="calcEditFromAmt()"></div>
+<div class="form-group"><label>सुरू महिना:</label><input type="month" id="editStartMonth"></div>
+</div>
+<div class="row-2col">
+<div class="form-group"><label>७. दरमहा वायदा तारीख व दंड:</label>
+<div style="display:flex; gap:5px;">
+<input type="number" id="editDueDay" min="1" max="31" placeholder="10">
+<input type="number" id="editPenalty" placeholder="दंड ₹/दिवस">
+</div>
+</div>
+<div class="form-group"><label>जामीनदार / संदर्भ:</label><input type="text" id="editGuarantor"></div>
+</div>
+
+<!-- मागील बाकी महिने मॅन्युअल एडिटर -->
+<div style="background:var(--pending-bg); padding:10px; border-radius:8px; border:1px solid #ef9a9a; margin:10px 0;">
+<label style="color:#c62828;">⚠️ ५. मागील बाकी महिने व रक्कम स्वतः लिहा / बदला:</label>
+<div id="manualPastRows" style="max-height:130px; overflow-y:auto; margin-bottom:8px;"></div>
+<div style="display:flex; gap:5px;">
+<input type="month" id="newManualMonth" style="flex:1;">
+<input type="number" id="newManualAmt" placeholder="बाकी ₹" style="width:95px;">
+<button type="button" class="btn-sm btn-red" onclick="addManualDueRowInModal()">+ जोडा</button>
+</div>
+</div>
+
+<!-- ३ वायद्याच्या तारखा -->
+<div style="background:var(--row-bg); padding:10px; border-radius:8px; border:1px solid var(--border); margin:10px 0;">
+<label style="color:#e65100;">📅 ८. पैसे देण्याच्या ३ वायद्याच्या तारखा:</label>
+<div class="row-3col">
+<div><small>वायदा १</small><input type="date" id="editProm1"></div>
+<div><small>वायदा २</small><input type="date" id="editProm2"></div>
+<div><small>वायदा ३</small><input type="date" id="editProm3"></div>
+</div>
+</div>
+
+<!-- १० फोटो अपलोड (आधार २, पॅन २, चेक २, इतर ४) -->
+<div style="background:var(--row-bg); padding:10px; border-radius:8px; border:1px solid var(--border); margin:10px 0;">
+<label style="color:var(--primary);">📎 मल्टिपल फोटो व डॉक्युमेंट्स (एकूण १० फोटो क्षमता):</label>
+<div class="row-2col" style="margin-top:6px;">
+<div><small>१) आधार कार्ड (२ फोटो - पुढील/मागील):</small><input type="file" accept="image/" multiple onchange="handleMultiDocUpload(event, 'aadhar', 2)"></div>
+<div><small>२) पॅन कार्ड (२ फोटो):</small><input type="file" accept="image/" multiple onchange="handleMultiDocUpload(event, 'pan', 2)"></div>
+<div><small>३) बँक चेक / स्टँप (२ फोटो):</small><input type="file" accept="image/" multiple onchange="handleMultiDocUpload(event, 'cheque', 2)"></div>
+<div><small>४) इतर फोटो (४ फोटो):</small><input type="file" accept="image/" multiple onchange="handleMultiDocUpload(event, 'other', 4)"></div>
+</div>
+<div id="editDocPreview" style="margin-top:8px;"></div>
+</div>
+
+<div style="display:flex; gap:8px; margin-top:12px;">
+<button class="btn-main bg-green" onclick="saveEditedBorrower()">💾 सर्व बदल सेव्ह करा</button>
+<button class="btn-main btn-gray" onclick="goBackStep()">रद्द करा</button>
+</div>
+</div>
+</div>
+
+<!-- ================= MAIN UNLOCKED APP CONTENT ================= -->
+<div id="appContent">
+
+<!-- Top Bar with Left 3-Line Menu Button -->
+<div class="top-bar">
+<div style="display:flex; align-items:center; gap:10px;">
+<button class="menu-icon-btn" onclick="openDrawerWithHistory()" title="मेनू उघडा">☰</button>
+<div>
+<div style="font-weight:bold; font-size:15.5px;">व्याज हिशोब प्रो V5</div>
+<div id="topAutoSaveStatus" style="font-size:10.5px; opacity:0.9;">✅ Auto-Saved & Encrypted</div>
+</div>
+</div>
+<div style="display:flex; gap:6px; align-items:center;">
+<button id="roleBtn" class="btn-sm" style="background:rgba(255,255,255,0.2);" onclick="toggleStaffMode()">👤 मालक</button>
+<button class="btn-sm" style="background:rgba(255,255,255,0.2);" onclick="startVoiceCommand()">🎙️</button>
+<button class="btn-sm" style="background:rgba(255,255,255,0.2);" onclick="toggleDarkMode()">🌙</button>
+</div>
+</div>
+
+<!-- 📅 खूप मोठा चालू महिना व वर्ष बॅनर -->
+<div class="big-month-banner">
+<small>चालू हिशोब महिना व वर्ष (Active Ledger Month)</small>
+<h1 id="bigActiveMonthTitle">नोव्हेंबर २०२६</h1>
+<div style="display:flex; justify-content:center; gap:6px; flex-wrap:wrap;">
+<button class="btn-sm bg-blue" onclick="openPanelWithHistory('monthHistoryPanel')">📅 मागील महिने पहा</button>
+<button class="btn-sm bg-teal" onclick="generateMonthEndPdfAndExcel(false)">📄 या महिन्याची PDF + Excel बनवा</button>
+<button id="backToCurrentMonthBtn" class="btn-sm bg-orange" style="display:none;" onclick="switchActiveMonth(getCurrentYearMonth())">🔙 चालू महिन्यावर परत जा</button>
+</div>
+</div>
+
+<!-- 🚨 आजचे वायदे ऑटो अलर्ट बॅनर -->
+<div id="todayPromiseBanner" class="promise-banner"></div>
+
+<!-- Dashboard -->
+<div class="dashboard">
+<div class="dash-card">
+<span>एकूण खाती / मुद्दल</span>
+<strong id="dashPrincipal">₹0</strong>
+</div>
+<div class="dash-card">
+<span>निवडलेला महिना व्याज</span>
+<strong id="dashMonthlyInt" style="color:#0288d1;">₹0</strong>
+</div>
+<div class="dash-card">
+<span>एकूण बाकी व्याज</span>
+<strong id="dashPending" style="color:#dc2626;">₹0</strong>
+</div>
+<div class="dash-card">
+<span>निवडलेल्या महिन्यात जमा</span>
+<strong id="dashCollected" style="color:#16a34a;">₹0</strong>
+</div>
+</div>
+
+<!-- ================= PANELS (सर्व पॅनेल्स ३-लाईन मेनूमधून उघडतात व Back ने बंद होतात) ================= -->
+
+<!-- १. नवीन नाव जोडा पॅनेल -->
+<div id="addPanel" class="panel-box">
+<div class="panel-header">
+<h3>➕ नवीन व्यक्ती हिशोबात जोडा</h3>
+<button class="btn-sm btn-gray" onclick="goBackStep()">⬅️ मागे जा</button>
+</div>
+<div class="row-2col">
+<div class="form-group"><label>१. व्यक्तीचे नाव:</label><input type="text" id="name" placeholder="उदा. हर्षद पटेल"></div>
+<div class="form-group"><label>६. मोबाईल नंबर:</label><input type="tel" id="phone" placeholder="उदा. 9876543210"></div>
+</div>
+<div class="row-2col">
+<div class="form-group"><label>२. दिलेली मुद्दल (₹):</label><input type="number" id="principal" placeholder="उदा. 65000" oninput="calcFromRate()"></div>
+<div class="form-group"><label>हिशोब सुरू महिना व वर्ष:</label><input type="month" id="startMonth"></div>
+</div>
+<div class="row-2col">
+<div class="form-group"><label>३(अ). महिन्याचा व्याज दर (%):</label><input type="number" id="rate" step="0.01" placeholder="उदा. 10" oninput="calcFromRate()"></div>
+<div class="form-group"><label>३(ब). महिन्याचे व्याज (₹):*</label><input type="number" id="interest" placeholder="उदा. 6500" oninput="calcFromAmt()"></div>
+</div>
+<div class="row-2col">
+<div class="form-group">
+<label>व्याज पद्धत:</label>
+<select id="calcType">
+<option value="REDUCING">रिड्यूसिंग बॅलन्स</option>
+<option value="FLAT">फ्लॅट रेट</option>
+</select>
+</div>
+<div class="form-group">
+<label>७. दरमहा व्याजाची तारीख (१०) व दंड:</label>
+<div style="display:flex; gap:5px;">
+<input type="number" id="dueDay" min="1" max="31" value="10">
+<input type="number" id="dailyPenalty" value="0" placeholder="दंड ₹/दि">
+</div>
+</div>
+</div>
+<div class="form-group">
+<label>८. पैसे देण्याच्या ३ वायद्याच्या तारखा:</label>
+<div class="row-3col">
+<input type="date" id="addProm1">
+<input type="date" id="addProm2">
+<input type="date" id="addProm3">
+</div>
+</div>
+<div class="form-group"><label>जामीनदार / संदर्भ:</label><input type="text" id="guarantor" placeholder="उदा. चिन्मय / परमार"></div>
+<button class="btn-main bg-green" onclick="addBorrower()">+ हिशोब सेव्ह करा</button>
+</div>
+
+<!-- २. 📅 मागील महिन्यांचा स्वतंत्र हिशोब (Month History) पॅनेल -->
+<div id="monthHistoryPanel" class="panel-box">
+<div class="panel-header">
+<h3>📅 महिन्यानुसार स्वतंत्र हिशोब पहा (Months Archive)</h3>
+<button class="btn-sm btn-gray" onclick="goBackStep()">⬅️ मागे जा</button>
+</div>
+<p style="font-size:12px; color:var(--muted); margin-top:0;">खालील कोणत्याही महिन्यावर क्लिक केल्यास ॲपवर त्या महिन्याचा संपूर्ण हिशोब (कोणी किती दिले व किती बाकी होते) दिसेल:</p>
+<div id="monthArchiveButtons" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;"></div>
+<div style="display:flex; gap:6px; align-items:center;">
+<input type="month" id="customArchiveMonth" style="max-width:180px;">
+<button class="btn-sm bg-blue" style="padding:8px 12px;" onclick="switchActiveMonth(document.getElementById('customArchiveMonth').value)">या महिन्याचा हिशोब उघडा</button>
+</div>
+</div>
+
+<!-- ३. ☁️ CLOUD & GOOGLE DRIVE SETTINGS PANEL (स्वतंत्र) -->
+<div id="cloudSettingsPanel" class="panel-box">
+<div class="panel-header">
+<h3>☁️ Google Drive & Cloud Auto-Backup सेटिंग्स</h3>
+<button class="btn-sm btn-gray" onclick="goBackStep()">⬅️ मागे जा</button>
+</div>
+<div class="form-group">
+<label>🔗 कनेक्टेड Gmail खाते (ॲप अनइंस्टॉल झाले तरी डेटा या खात्याशी जोडलेला राहील):</label>
+<div style="display:flex; gap:6px;">
+<input type="email" id="cloudGmailInput" placeholder="sandeep@gmail.com">
+<button class="btn-sm bg-green" onclick="saveCloudGmail()">Gmail जोडा</button>
+</div>
+</div>
+<div style="background:var(--row-bg); padding:10px; border-radius:8px; border:1px solid var(--border); margin-top:8px;">
+<strong>📅 महिन्याच्या शेवटच्या तारखेला ऑटोमॅटिक PDF व Excel:</strong>
+<p style="font-size:12px; color:var(--muted); margin:4px 0 8px;">दर महिन्याच्या शेवटच्या तारखेला ॲप आपोआप त्या महिन्याच्या नावासह PDF आणि Excel तयार करून फोन व Google Drive साठी सेव्ह करते.</p>
+<div style="display:flex; gap:6px; flex-wrap:wrap;">
+<button class="btn-sm bg-orange" style="padding:8px 12px; flex:1;" onclick="syncEverythingToGoogleDrive()">☁️ आत्ताच Google Drive वर PDF + Excel + Data अपलोड करा</button>
+<button class="btn-sm bg-blue" style="padding:8px 12px; flex:1;" onclick="exportBackup()">💾 संपूर्ण Encrypted बॅकअप घ्या</button>
+<button class="btn-sm bg-green" style="padding:8px 12px; flex:1;" onclick="document.getElementById('restoreInput').click()">📂 बॅकअप रिस्टोअर करा</button>
+<input type="file" id="restoreInput" style="display:none;" accept=".json" onchange="importBackup(event)">
+</div>
+</div>
+</div>
+
+<!-- ४. ⚙️ APP & SECURITY SETTINGS PANEL (स्वतंत्र) -->
+<div id="appSettingsPanel" class="panel-box">
+<div class="panel-header">
+<h3>⚙️ App Settings, पासवर्ड, फिंगरप्रिंट व मोबाईल OTP</h3>
+<button class="btn-sm btn-gray" onclick="goBackStep()">⬅️ मागे जा</button>
+</div>
+<div class="row-2col">
+<div class="form-group">
+<label>📱 तुमचा स्वतःचा मोबाईल नंबर (Forgot Password OTP व WhatsApp अलर्टसाठी):</label>
+<div style="display:flex; gap:5px;">
+<input type="tel" id="myWaInput" placeholder="उदा. 919876543210">
+<button class="btn-sm bg-green" onclick="saveMyWaNumber()">सेव्ह</button>
+</div>
+</div>
+<div class="form-group">
+<label>💳 तुमचा UPI ID (QR कोडसाठी):</label>
+<div style="display:flex; gap:5px;">
+<input type="text" id="upiIdInput" placeholder="उदा. sandeep@okaxis">
+<button class="btn-sm bg-teal" onclick="saveUpiId()">सेव्ह</button>
+</div>
+</div>
+</div>
+<div class="row-2col">
+<div class="form-group">
+<label>🔑 लॉगिन पासवर्ड / PIN बदला:</label>
+<div style="display:flex; gap:5px;">
+<input type="password" id="newPinInput" placeholder="नवीन पासवर्ड/पिन">
+<button class="btn-sm bg-blue" onclick="savePin()">सेट करा</button>
+</div>
+</div>
+<div class="form-group">
+<label>👆 Biometric (Fingerprint / Face Unlock):</label>
+<button class="btn-main bg-purple" style="padding:7px;" onclick="registerBiometricLock()">👆 फिंगरप्रिंट / फेस लॉक रजिस्टर करा</button>
+</div>
+</div>
+<div class="form-group" style="margin-top:6px;">
+<label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+<input type="checkbox" id="twoStepToggle" style="width:auto;" onchange="toggleTwoStepAuth(this.checked)">
+🛡️ <b>Two-Step Verification (दुहेरी सुरक्षा):</b> लॉगिन करताना पासवर्डसोबत मोबाईल OTP अनिवार्य करा
+</label>
+</div>
+</div>
+
+<!-- ५. 🗑️ RECYCLE BIN PANEL (३० दिवसांत डिलीट झालेली नावे परत आणणे) -->
+<div id="recycleBinPanel" class="panel-box">
+<div class="panel-header">
+<h3>🗑️ Recycle Bin (डिलीट झालेली खाती परत मिळवा)</h3>
+<button class="btn-sm btn-gray" onclick="goBackStep()">⬅️ मागे जा</button>
+</div>
+<div id="recycleBinList" style="font-size:13px;"></div>
+</div>
+
+<!-- ६. 🛡️ LOGIN HISTORY, VERSION HISTORY & ENCRYPTION VAULT -->
+<div id="securityVaultPanel" class="panel-box">
+<div class="panel-header">
+<h3>🛡️ सुरक्षा केंद्र: Login History व Version History</h3>
+<button class="btn-sm btn-gray" onclick="goBackStep()">⬅️ मागे जा</button>
+</div>
+<div class="row-2col">
+<div>
+<h4 style="margin:0 0 6px; color:var(--primary);">🕒 मागील लॉगिन इतिहास (Login History):</h4>
+<div id="loginHistoryBox" style="background:var(--row-bg); padding:8px; border-radius:6px; font-size:12px; max-height:150px; overflow-y:auto;"></div>
+</div>
+<div>
+<h4 style="margin:0 0 6px; color:#2e7d32;">🔄 Version History (मागील ५ ऑटो-बॅकअप):</h4>
+<div id="versionHistoryBox" style="background:var(--row-bg); padding:8px; border-radius:6px; font-size:12px; max-height:150px; overflow-y:auto;"></div>
+</div>
+</div>
+</div>
+
+<!-- ७. 🤖 AI पॅनेल -->
+<div id="aiPanel" class="panel-box">
+<div class="panel-header">
+<h3>🤖 स्मार्ट AI हिशोब व वायदा ट्रॅकर</h3>
+<button class="btn-sm btn-gray" onclick="goBackStep()">⬅️ मागे जा</button>
+</div>
+<div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:8px;">
+<button class="btn-sm bg-purple" onclick="askAI('summary')">📊 संपूर्ण गोषवारा</button>
+<button class="btn-sm bg-red" onclick="askAI('top_pending')">⚠️ सर्वाधिक बाकी यादी</button>
+<button class="btn-sm bg-orange" onclick="askAI('promises_list')">📅 सर्व वायद्याच्या तारखा</button>
+<button class="btn-sm bg-teal" onclick="askAI('guarantor_group')">🤝 ग्रुपनुसार हिशोब</button>
+<button class="btn-sm btn-wa" onclick="sendAllDueTodayToMyWhatsApp()">📲 आजचे वायदे माझ्या WhatsApp वर</button>
+</div>
+<div id="aiOutput" style="background:var(--row-bg); padding:10px; border-radius:6px; border:1px solid var(--border); font-size:13px; max-height:220px; overflow-y:auto;"></div>
+</div>
+
+<!-- ८. 📂 Sheet / PDF अपलोड पॅनेल -->
+<div id="importPanel" class="panel-box">
+<div class="panel-header">
+<h3>📂 Google Sheet, Excel (CSV) किंवा PDF अपलोड करा</h3>
+<button class="btn-sm btn-gray" onclick="goBackStep()">⬅️ मागे जा</button>
+</div>
+<div class="form-group">
+<label>१) थेट Google Sheet लिंक (CSV URL):</label>
+<div style="display:flex; gap:6px;">
+<input type="url" id="gsheetUrl" placeholder="https://docs.google.com/spreadsheets/d/.../pub?output=csv">
+<button class="btn-sm bg-orange" onclick="importFromGoogleSheet()">फेच करा</button>
+</div>
+</div>
+<div class="row-2col">
+<div class="form-group"><label>२) Excel / CSV अपलोड:</label><input type="file" accept=".csv" onchange="importCSVFile(event)"></div>
+<div class="form-group"><label>३) PDF अपलोड:</label><input type="file" accept=".pdf" onchange="importPDFFile(event)"></div>
+</div>
+<div id="importStatus" style="font-size:12.5px; color:#16a34a; font-weight:bold;"></div>
+</div>
+
+<!-- ९. 📥 रिपोर्ट डाऊनलोड पॅनेल -->
+<div id="downloadPanel" class="panel-box">
+<div class="panel-header">
+<h3>📥 महिन्याची PDF व Excel (CSV) डाऊनलोड करा</h3>
+<button class="btn-sm btn-gray" onclick="goBackStep()">⬅️ मागे जा</button>
+</div>
+<div class="row-2col">
+<div class="form-group"><label>महिना निवडा:</label><input type="month" id="reportMonth"></div>
+<div class="form-group" style="display:flex; align-items:flex-end;">
+<button class="btn-main bg-teal" onclick="downloadMonthlyCSV()">📊 निवडलेल्या महिन्याची Excel (CSV)</button>
+</div>
+</div>
+<div style="display:flex; gap:8px; margin-top:6px;">
+<button class="btn-main bg-blue" onclick="downloadFullCSV()">📑 संपूर्ण ४७ खाती Excel</button>
+<button class="btn-main bg-purple" onclick="window.print()">🖨️ संपूर्ण PDF सेव्ह / प्रिंट करा</button>
+</div>
+</div>
+
+<!-- १०. 🧮 EMI व चार्ट पॅनेल -->
+<div id="emiPanel" class="panel-box">
+<div class="panel-header">
+<h3>🧮 स्मार्ट EMI कॅल्क्युलेटर व आलेख</h3>
+<button class="btn-sm btn-gray" onclick="goBackStep()">⬅️ मागे जा</button>
+</div>
+<div class="row-2col">
+<div>
+<div class="form-group"><label>मुद्दल (₹):</label><input type="number" id="simP" value="50000"></div>
+<div class="form-group"><label>महिना व्याज दर (%):</label><input type="number" id="simR" value="5"></div>
+<div class="form-group"><label>महिने:</label><input type="number" id="simM" value="10"></div>
+<button class="btn-sm bg-pink" onclick="calcEmiSimulator()">हप्ता काढा</button>
+<div id="simResult" style="margin-top:6px; font-size:12.5px; font-weight:bold;"></div>
+</div>
+<div style="text-align:center;">
+<canvas id="financeChart" width="150" height="150"></canvas>
+<div id="chartLegend" style="font-size:11.5px; margin-top:4px;"></div>
+</div>
+</div>
+</div>
+
+<!-- 🔍 मोठा सर्च बार -->
+<div class="big-search-wrap">
+<input type="text" id="searchInput" class="big-search-input" placeholder="🔍 मराठी किंवा इंग्रजीत नाव शोधा (उदा. harshad, chinmay, परमार, arif, BMC)..." oninput="renderList()">
+</div>
+
+<!-- 📋 ८ ओळींची सर्व कार्ड्स येथे दिसतील -->
+<div id="listContainer"></div>
+
+<!-- ➕ Gmail Compose सारखे Floating Button -->
+<button class="fab-compose admin-only" onclick="openPanelWithHistory('addPanel')">
+<span style="font-size:20px;">✍️</span> + नवीन नाव जोडा
+</button>
+
+</div>
+
+<!-- Firebase Libraries -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+
+<script>
+// तुमचा Firebase Config
+const firebaseConfig = {
+    apiKey: "AIzaSyAU6mw8OZOAtJtYfRCmjOPOOukcnLYPvVM",
+    authDomain: "vyaj-hishob-app.firebaseapp.com",
+    projectId: "vyaj-hishob-app",
+    storageBucket: "vyaj-hishob-app.firebasestorage.app",
+    messagingSenderId: "1086261038426",
+    appId: "1:1086261038426:web:c549fa1329855acc2e7763"
+};
+
+// Firebase सुरु करणे
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+const storage = firebase.storage();
+</script>
+
+<script>
+const marathiMonths = ["जानेवारी", "फेब्रुवारी", "मार्च", "एप्रिल", "मे", "जून", "जुलै", "ऑगस्ट", "सप्टेंबर", "ऑक्टोबर", "नोव्हेंबर", "डिसेंबर"];
+
+// तुमच्या "नोव्हेंबर 2026 (नवीन).pdf" मधील सर्व ४७ खात्यांचा अचूक डेटा
+const NOV_2026_PDF_RAW = [
+{ name: "हर्षद पटेल", principal: 65000, interest: 6500 },
+{ name: "संजय राजेश गावडे", principal: 8500, interest: 850 },
+{ name: "आरिफ सुंदर बाग", principal: 7000, interest: 700 },
+{ name: "आरिफ", principal: 20000, interest: 1400 },
+{ name: "जितेंद्र वहटकर", principal: 30000, interest: 1700 },
+{ name: "मदन कलियन बीएमसी", principal: 160000, interest: 8000 },
+{ name: "नित्या विले पार्ले BMC चौकी", principal: 15000, interest: 750 },
+{ name: "राहुल जितेंद्र BMC", principal: 80000, interest: 4800 },
+{ name: "रूश्राली जाधव बांद्रा", principal: 20000, interest: 2000 },
+{ name: "खरात", principal: 45000, interest: 4500 },
+{ name: "उमेश शिंदे SRA", principal: 30000, interest: 3000 },
+{ name: "सचिन महाडिक SRA", principal: 40000, interest: 4000 },
+{ name: "शरद जाधव SRA", principal: 30000, interest: 3000 },
+{ name: "सागर कदम", principal: 55000, interest: 5500 },
+{ name: "मोहन सोलंकी", principal: 25000, interest: 2500 },
+{ name: "मेहुल परमार (पटेल)", principal: 70000, interest: 7000 },
+{ name: "नरेश शालकी", principal: 30000, interest: 3000 },
+{ name: "निलेश सावंत वैभव", principal: 50000, interest: 5000 },
+{ name: "दिलीप लाड", principal: 40000, interest: 4000 },
+{ name: "अनिल कचरे", principal: 60000, interest: 6000 },
+{ name: "सागर टाक", principal: 27000, interest: 2700 },
+{ name: "मोनिष शिंदे बांद्रा", principal: 60000, interest: 6000 },
+{ name: "रितेश (चिन्मय )", principal: 35000, interest: 3500 },
+{ name: "चिन्मय भोईर", principal: 85000, interest: 8500 },
+{ name: "तेजस सावंत (चिन्मय)", principal: 40000, interest: 4000 },
+{ name: "आदित्य शिंदे (चिन्मय )", principal: 30000, interest: 3000 },
+{ name: "सतीश प्राइवेट (चिन्मय )", principal: 15000, interest: 1500 },
+{ name: "अक्षय जाधव फंड", principal: 18000, interest: 1500 },
+{ name: "दीपक खुटाळे", principal: 10000, interest: 1000 },
+{ name: "शेखर (अक्षय)", principal: 15000, interest: 1500 },
+{ name: "अक्षय जाधव (35000+20000)", principal: 55000, interest: 4000 },
+{ name: "सिद्धेश सावंत (अक्षय)", principal: 15000, interest: 1500 },
+{ name: "संजय वाघेला", principal: 25000, interest: 2500 },
+{ name: "गणेश बैल बाजार फ्रेंड", principal: 50000, interest: 5000 },
+{ name: "मनोज सोलंकी", principal: 10000, interest: 1000 },
+{ name: "पुरळकर हर्षद पटेल", principal: 30000, interest: 3000 },
+{ name: "वॉचमैन हर्षद पटेल", principal: 5000, interest: 500 },
+{ name: "आरिफ सुंदर बाग (गणेश)", principal: 10000, interest: 700 },
+{ name: "प्रशांत पवार बांद्रा (खरात)", principal: 40000, interest: 4000 },
+{ name: "राजेश परमार (परमारचा भाऊ) [7000+5000]", principal: 120000, interest: 12000 },
+{ name: "अमित पोद्दार हॉस्पिटल (परमारचा भाऊ)", principal: 40000, interest: 4000 },
+{ name: "पन्हळकर (चिन्मय )", principal: 20000, interest: 2000 },
+{ name: "मोहसिन खान (बादल वहटकर जमीनदार)", principal: 30000, interest: 3000 },
+{ name: "नितिन तांबे", principal: 30000, interest: 3000 },
+{ name: "मेहुल (परमार जमीनदार।)", principal: 10000, interest: 1000 },
+{ name: "मंगेश भाऊजी काजुपाड़ा", principal: 20000, interest: 1000 },
+{ name: "सकपाळ (हर्षद पटेल)", principal: 20000, interest: 2000 }
+];
+
+function normalizeDocsObject(docs) {
+    if (!docs) return { aadhar: [], pan: [], cheque: [], other: [] };
+    return {
+        aadhar: Array.isArray(docs.aadhar) ? docs.aadhar : (docs.aadhar ? [docs.aadhar] : []),
+        pan: Array.isArray(docs.pan) ? docs.pan : (docs.pan ? [docs.pan] : []),
+        cheque: Array.isArray(docs.cheque) ? docs.cheque : (docs.cheque ? [docs.cheque] : []),
+        other: Array.isArray(docs.other) ? docs.other : (docs.other ? [docs.other] : [])
+    };
+}
+
+function buildDefaultPdfBorrowers() {
+    return NOV_2026_PDF_RAW.map((item, idx) => {
+        const rt = Number(((item.interest * 100) / item.principal).toFixed(2));
+        return {
+            id: 1700000000000 + idx,
+            name: item.name,
+            phone: '',
+            principal: item.principal,
+            rate: rt,
+            interest: item.interest,
+            calcType: 'REDUCING',
+            startMonth: '2026-11',
+            dueDay: 10,
+            dailyPenalty: 0,
+            guarantor: '',
+            promises: ['', '', ''],
+            customPastDues: {},
+            docs: { aadhar: [], pan: [], cheque: [], other: [] },
+            notes: [],
+            paidMonths: {},
+            ledger: [{ date: '01/11/2026', text: `नोव्हेंबर 2026 खातेवहीनुसार नोंद: मुद्दल ₹${item.principal}, व्याज ₹${item.interest}` }]
+        };
+    });
+}
+
+// ================= 🛡️ DATA ENCRYPTION & AUTO-SAVE ENGINE =================
+const STORAGE_KEY = 'vyajAppData_Nov2026_v5';
+const ENC_KEY = 'vyajAppData_Encrypted_v5';
+
+function encryptPayload(dataObj) {
+    try { return btoa(unescape(encodeURIComponent(JSON.stringify(dataObj)))); } catch (e) { return ''; }
+}
+function decryptPayload(cipher) {
+    try { return JSON.parse(decodeURIComponent(escape(atob(cipher)))); } catch (e) { return null; }
+}
+
+let borrowers = [];
+const encStored = localStorage.getItem(ENC_KEY);
+if (encStored) {
+    borrowers = decryptPayload(encStored) || [];
+}
+if (!borrowers || !Array.isArray(borrowers) || borrowers.length === 0) {
+    const prev = JSON.parse(localStorage.getItem('vyajAppData_Nov2026_v4')) || JSON.parse(localStorage.getItem('vyajAppData_Nov2026_v1'));
+    if (prev && Array.isArray(prev) && prev.length > 0) {
+        borrowers = prev.map(b => ({ ...b, dueDay: b.dueDay || 10, docs: normalizeDocsObject(b.docs) }));
+    } else {
+        borrowers = buildDefaultPdfBorrowers();
+    }
+    localStorage.setItem(ENC_KEY, encryptPayload(borrowers));
+}
+
+let recycleBin = JSON.parse(localStorage.getItem('vyajRecycleBin_v5')) || [];
+let versionHistory = JSON.parse(localStorage.getItem('vyajVersionHistory_v5')) || [];
+let loginHistory = JSON.parse(localStorage.getItem('vyajLoginHistory_v5')) || [];
+
+function getCurrentYearMonth() {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
+let activeSelectedYm = getCurrentYearMonth();
+
+// ================= 🔙 STEP-BY-STEP BACK NAVIGATION (History API) =================
+let navStack = [];
+
+function pushNavState(type, targetId) {
+    navStack.push({ type, targetId });
+    try { history.pushState({ step: navStack.length }, ''); } catch (e) {}
+}
+
+function closeAllPanelsAndDrawersUI() {
+    document.getElementById('sideDrawer').classList.remove('open');
+    document.getElementById('drawerBackdrop').style.display = 'none';
+    document.querySelectorAll('.panel-box').forEach(p => p.style.display = 'none');
+    document.getElementById('infoModal').style.display = 'none';
+    document.getElementById('editModal').style.display = 'none';
+}
+
+function goBackStep() {
+    if (navStack.length > 0) {
+        const last = navStack.pop();
+        if (last.type === 'modal') {
+            document.getElementById(last.targetId).style.display = 'none';
+        } else if (last.type === 'panel') {
+            document.getElementById(last.targetId).style.display = 'none';
+        } else if (last.type === 'drawer') {
+            closeDrawerOnly();
+        }
+    } else {
+        closeAllPanelsAndDrawersUI();
+    }
+}
+
+window.addEventListener('popstate', function(e) {
+    if (navStack.length > 0) {
+        const last = navStack.pop();
+        if (last.type === 'modal') document.getElementById(last.targetId).style.display = 'none';
+        else if (last.type === 'panel') document.getElementById(last.targetId).style.display = 'none';
+        else if (last.type === 'drawer') closeDrawerOnly();
+        try { history.pushState({ guard: true }, ''); } catch (err) {}
+    } else {
+        closeAllPanelsAndDrawersUI();
+        try { history.pushState({ guard: true }, ''); } catch (err) {}
+    }
+});
+
+function openDrawerWithHistory() {
+    document.getElementById('sideDrawer').classList.add('open');
+    document.getElementById('drawerBackdrop').style.display = 'block';
+    pushNavState('drawer', 'sideDrawer');
+}
+
+function closeDrawerOnly() {
+    document.getElementById('sideDrawer').classList.remove('open');
+    document.getElementById('drawerBackdrop').style.display = 'none';
+}
+
+function openPanelFromDrawer(panelId) {
+    closeDrawerOnly();
+    openPanelWithHistory(panelId);
+}
+
+function openPanelWithHistory(panelId) {
+    document.querySelectorAll('.panel-box').forEach(p => p.style.display = 'none');
+    const el = document.getElementById(panelId);
+    if (el) {
+        el.style.display = 'block';
+        pushNavState('panel', panelId);
+        if (panelId === 'aiPanel') askAI('summary');
+        if (panelId === 'emiPanel') { calcEmiSimulator(); drawChart(); }
+        if (panelId === 'monthHistoryPanel') renderMonthArchiveButtons();
+        if (panelId === 'recycleBinPanel') renderRecycleBin();
+        if (panelId === 'securityVaultPanel') renderSecurityVault();
+    }
+}
+
+// ================= 🔐 STRICT LOGIN, 2-STEP OTP, BIOMETRIC & FORGOT PASSWORD =================
+let generatedTwoStepOtp = null;
+
+function handleStrictLogin() {
+    const gmail = document.getElementById('loginGmail').value.trim();
+    const pass = document.getElementById('loginPass').value.trim();
+    const savedGmail = localStorage.getItem('vyajCloudGmail') || '';
+    const savedPin = localStorage.getItem('vyajAppPin') || '1234'; 
+
+    if (!gmail || !gmail.includes('@')) {
+        alert("कृपया तुमचा वैध Gmail ID टाका!");
+        return;
+    }
+    if (savedGmail && gmail.toLowerCase() !== savedGmail.toLowerCase()) {
+        alert("हा Gmail ID नोंदणीकृत खात्याशी जुळत नाही!");
+        return;
+    }
+    if (pass !== savedPin) {
+        alert("❌ चुकीचा पासवर्ड किंवा पिन! बरोबर पासवर्ड टाकल्याशिवाय ॲप उघडणार नाही.");
+        return;
+    }
+
+    // Two-Step Verification Check
+    if (localStorage.getItem('vyajTwoStep') === '1') {
+        const otpBox = document.getElementById('twoStepOtpBox');
+        if (otpBox.style.display === 'none') {
+            generatedTwoStepOtp = Math.floor(1000 + Math.random() * 9000);
+            otpBox.style.display = 'block';
+            alert(`🛡️ Two-Step Verification OTP: ${generatedTwoStepOtp}`);
+            return;
+        } else {
+            const enteredOtp = document.getElementById('loginTwoStepInput').value.trim();
+            if (String(enteredOtp) !== String(generatedTwoStepOtp)) {
+                alert("❌ चुकीचा 2-Step OTP!");
+                return;
+            }
+        }
+    }
+
+    localStorage.setItem('vyajCloudGmail', gmail);
+    unlockAppSuccess('Password + Gmail Login');
+}
+
+function unlockAppSuccess(methodName) {
+    document.getElementById('authGateModal').style.display = 'none';
+    document.getElementById('appContent').style.display = 'block';
+    const g = localStorage.getItem('vyajCloudGmail') || 'Connected';
+    document.getElementById('drawerGmailText').innerText = `📧 ${g}`;
+    document.getElementById('cloudGmailInput').value = g;
+
+    // Login History
+    loginHistory.unshift({
+        time: new Date().toLocaleString('mr-IN'),
+        method: methodName,
+        device: navigator.platform || 'Android Mobile'
+    });
+    loginHistory = loginHistory.slice(0, 15);
+    localStorage.setItem('vyajLoginHistory_v5', JSON.stringify(loginHistory));
+
+    try { history.pushState({ guard: true }, ''); } catch (e) {}
+    checkAutoMonthEndReport();
+    renderList();
+}
+
+function lockAppImmediately() {
+    closeDrawerOnly();
+    document.getElementById('appContent').style.display = 'none';
+    document.getElementById('loginPass').value = '';
+    document.getElementById('authGateModal').style.display = 'flex';
+}
+
+function showForgotPasswordBox() {
+    document.getElementById('loginBox').style.display = 'none';
+    document.getElementById('forgotBox').style.display = 'block';
+}
+function hideForgotPasswordBox() {
+    document.getElementById('forgotBox').style.display = 'none';
+    document.getElementById('loginBox').style.display = 'block';
+}
+
+// खरा SMS OTP पाठवणे
+function sendForgotOtp() {
+    let ph = document.getElementById('forgotPhoneInput').value.replace(/\D/g, '');
+    const savedPh = (localStorage.getItem('vyajMyWa') || '').replace(/\D/g, '');
+
+    if (ph.length < 10) {
+        alert("कृपया वैध १० अंकी मोबाईल नंबर टाका!");
+        return;
+    }
+    if (savedPh && !savedPh.endsWith(ph.slice(-10))) {
+        alert("❌ हा मोबाईल नंबर तुमच्या नोंदणीकृत नंबरशी जुळत नाही!");
+        return;
+    }
+
+    const phoneNumber = "+91" + ph.slice(-10);
+
+    if(!window.recaptchaVerifier) {
+        window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+            'size': 'invisible'
+        });
+    }
+
+    auth.signInWithPhoneNumber(phoneNumber, window.recaptchaVerifier)
+    .then((confirmationResult) => {
+        window.confirmationResult = confirmationResult;
+        document.getElementById('forgotOtpStep').style.display = 'block';
+        alert(`📲 ${phoneNumber} वर खरा OTP पाठवला आहे!`);
+    }).catch((error) => {
+        console.error(error);
+        alert("एरर: OTP पाठवता आला नाही. पुन्हा प्रयत्न करा.");
+    });
+}
+
+// आलेला खरा OTP तपासणे आणि पासवर्ड बदलणे
+function verifyOtpAndResetPass() {
+    const code = document.getElementById('forgotOtpCode').value.trim();
+    const newPass = document.getElementById('forgotNewPass').value.trim();
+
+    if (!window.confirmationResult) {
+        alert("आधी OTP पाठवा!");
+        return;
+    }
+    if (newPass.length < 4) {
+        alert("कृपया किमान ४ अंकी नवीन पासवर्ड टाका!");
+        return;
+    }
+
+    window.confirmationResult.confirm(code).then((result) => {
+        localStorage.setItem('vyajAppPin', newPass);
+        alert("✅ OTP बरोबर आहे! तुमचा नवीन पासवर्ड यशस्वीरित्या सेट झाला आहे. आता लॉगिन करा.");
+        hideForgotPasswordBox();
+    }).catch((error) => {
+        alert("❌ चुकीचा OTP! कृपया पुन्हा तपासा.");
+    });
+}
+
+// ================= 📅 मागील महिन्यांचा हिशोब (Month History) व Month-End Auto PDF/Excel =================
+function switchActiveMonth(ym) {
+    if (!ym) return;
+    activeSelectedYm = ym;
+    document.getElementById('bigActiveMonthTitle').innerText = formatMonthMarathi(activeSelectedYm);
+    const isPast = activeSelectedYm !== getCurrentYearMonth();
+    document.getElementById('backToCurrentMonthBtn').style.display = isPast ? 'inline-block' : 'none';
+    closeAllPanelsAndDrawersUI();
+    renderList();
+}
+
+function renderMonthArchiveButtons() {
+    const currentYm = getCurrentYearMonth();
+    let monthsSet = new Set([currentYm, '2026-11', '2026-10', '2026-09', '2026-08']);
+    borrowers.forEach(b => {
+        if (b.startMonth) monthsSet.add(b.startMonth);
+        Object.keys(b.paidMonths || {}).forEach(m => monthsSet.add(m));
+        Object.keys(b.customPastDues || {}).forEach(m => monthsSet.add(m));
+    });
+    const sorted = Array.from(monthsSet).sort().reverse();
+    document.getElementById('monthArchiveButtons').innerHTML = sorted.map(ym => `<button class="btn-sm ${ym === activeSelectedYm ? 'bg-orange' : 'bg-blue'}" style="padding:8px 12px; font-size:12.5px;" onclick="switchActiveMonth('${ym}')">${formatMonthMarathi(ym)} ${ym === currentYm ? '(चालू)' : ''}</button>`).join('');
+}
+
+function isLastDayOfMonth(dateObj) {
+    const test = new Date(dateObj.getTime());
+    test.setDate(test.getDate() + 1);
+    return test.getDate() === 1;
+}
+
+function checkAutoMonthEndReport() {
+    const now = new Date();
+    const currentYm = getCurrentYearMonth();
+    const lastAutoDone = localStorage.getItem('vyajAutoMonthEndDone_' + currentYm);
+    if (isLastDayOfMonth(now) && !lastAutoDone) {
+        localStorage.setItem('vyajAutoMonthEndDone_' + currentYm, '1');
+        setTimeout(() => {
+            if (confirm(`📅 आज ${formatMonthMarathi(currentYm)} चा शेवटचा दिवस आहे! या महिन्याचा संपूर्ण हिशोब PDF आणि Excel मध्ये ऑटो-डाऊनलोड करून Google Drive वर सेव्ह करायचा का?`)) {
+                generateMonthEndPdfAndExcel(true);
+            }
+        }, 800);
+    }
+}
+
+function generateMonthEndPdfAndExcel(alsoSyncDrive) {
+    document.getElementById('reportMonth').value = activeSelectedYm;
+    downloadMonthlyCSV();
+
+    const element = document.getElementById('appContent');
+    const opt = {
+        margin: 0.2,
+        filename: `व्याज_हिशोब_${activeSelectedYm}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, ignoreElements: (el) => el.classList.contains('btn-sm') || el.classList.contains('top-bar') || el.classList.contains('fab-compose') || el.classList.contains('big-search-wrap') },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(element).save().then(() => {
+        if (alsoSyncDrive) {
+            setTimeout(() => { syncEverythingToGoogleDrive(); }, 1500);
+        }
+    });
+}
+
+// ================= 🔤 स्मार्ट फोनेटिक सर्च व सहाय्यक फंक्शन्स =================
+function marathiToRomanSkeleton(str) {
+    if (!str) return '';
+    const map = {
+        'अ':'a','आ':'a','इ':'i','ई':'i','उ':'u','ऊ':'u','ए':'e','ऐ':'ai','ओ':'o','औ':'au',
+        'क':'k','ख':'kh','ग':'g','घ':'gh','च':'ch','छ':'chh','ज':'j','झ':'jh',
+        'ट':'t','ठ':'th','ड':'d','ढ':'dh','ण':'n','त':'t','थ':'th','द':'d','ध':'dh','न':'n',
+        'प':'p','फ':'ph','ब':'b','भ':'bh','म':'m','य':'y','र':'r','ल':'l','व':'v',
+        'श':'sh','ष':'sh','स':'s','ह':'h','ळ':'l','क्ष':'ksh','ज्ञ':'dny',
+        'ा':'a','ि':'i','ी':'i','ु':'u','ू':'u','े':'e','ै':'ai','ो':'o','ौ':'au','ं':'n','्':''
+    };
+    let out = '';
+    for (let ch of str.toLowerCase()) out += (map[ch] !== undefined) ? map[ch] : ch;
+    return out.replace(/[aeiou]/g, '');
+}
+
+function matchesSmartSearch(b, query) {
+    if (!query) return true;
+    const q = query.toLowerCase().trim();
+    const rawText = `${b.name} ${b.guarantor || ''} ${b.phone || ''}`.toLowerCase();
+    if (rawText.includes(q)) return true;
+    const qSkel = q.replace(/f/g, 'ph').replace(/w/g, 'v').replace(/[aeiou\s]/g, '');
+    const tSkel = marathiToRomanSkeleton(rawText).replace(/\s+/g, '');
+    return qSkel.length > 0 && tSkel.includes(qSkel);
+}
+
+function getPaidAmount(b, ym) {
+    return (b.paidMonths && b.paidMonths[ym]) ? (parseFloat(b.paidMonths[ym].amount) || 0) : 0;
+}
+function getTodayIsoDate() {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+function formatMonthMarathi(ym) {
+    if (!ym || !ym.includes('-')) return ym || '';
+    const [y, m] = ym.split('-');
+    return `${marathiMonths[parseInt(m, 10) - 1]} ${y}`;
+}
+function getPastMonthsList(startYm, targetYm) {
+    let months = [];
+    if (!startYm || !startYm.includes('-')) return months;
+    let [sY, sM] = startYm.split('-').map(Number);
+    let [cY, cM] = targetYm.split('-').map(Number);
+    while (sY < cY || (sY === cY && sM < cM)) {
+        months.push(`${sY}-${String(sM).padStart(2, '0')}`);
+        sM++;
+        if (sM > 12) { sM = 1; sY++; }
+    }
+    return months;
+}
+
+function getCombinedPastDues(b, targetYm) {
+    const autoMonths = getPastMonthsList(b.startMonth, targetYm);
+    const customObj = b.customPastDues || {};
+    const allYmSet = new Set([...autoMonths, ...Object.keys(customObj)]);
+    const sortedYms = Array.from(allYmSet).filter(ym => ym < targetYm).sort();
+
+    let unpaidList = [], pastSum = 0;
+    sortedYms.forEach(ym => {
+        const paid = getPaidAmount(b, ym);
+        const expectedBase = (customObj[ym] !== undefined) ? parseFloat(customObj[ym]) : b.interest;
+        const rem = Math.max(0, expectedBase - paid);
+        if (rem > 0) { unpaidList.push({ ym, paid, rem, expectedBase }); pastSum += rem; }
+    });
+    return { unpaidList, pastSum };
+}
+
+function getTrustBadge(unpaidPastCount, remCur) {
+    if (unpaidPastCount === 0 && remCur === 0) return `<span class="tag trust-good">⭐⭐⭐⭐⭐ उत्तम</span>`;
+    if (unpaidPastCount === 0 && remCur > 0) return `<span class="tag trust-warn">⭐⭐⭐⭐ चालू बाकी</span>`;
+    if (unpaidPastCount === 1) return `<span class="tag trust-warn">⭐⭐⭐ १ म. बाकी</span>`;
+    return `<span class="tag trust-bad">⭐ डिफॉल्टर (${unpaidPastCount} म.)</span>`;
+}
+
+// ================= 📎 १० फोटो (२ आधार, २ पॅन, २ चेक, ४ इतर) व एडिट लॉजिक =================
+let tempEditDocs = { aadhar: [], pan: [], cheque: [], other: [] };
+let tempManualDues = {};
+
+function openEditModal(bId) {
+    const b = borrowers.find(x => x.id === bId);
+    if (!b) return;
+
+    document.getElementById('editId').value = b.id;
+    document.getElementById('editName').value = b.name || '';
+    document.getElementById('editPhone').value = b.phone || '';
+    document.getElementById('editPrincipal').value = b.principal || 0;
+    document.getElementById('editRate').value = b.rate || '';
+    document.getElementById('editInterest').value = b.interest || 0;
+    document.getElementById('editStartMonth').value = b.startMonth || activeSelectedYm;
+    document.getElementById('editDueDay').value = b.dueDay || 10;
+    document.getElementById('editPenalty').value = b.dailyPenalty || 0;
+    document.getElementById('editGuarantor').value = b.guarantor || '';
+
+    const p = b.promises || ['', '', ''];
+    document.getElementById('editProm1').value = p[0] || '';
+    document.getElementById('editProm2').value = p[1] || '';
+    document.getElementById('editProm3').value = p[2] || '';
+
+    const norm = normalizeDocsObject(b.docs);
+    tempEditDocs = {
+        aadhar: [...norm.aadhar],
+        pan: [...norm.pan],
+        cheque: [...norm.cheque],
+        other: [...norm.other]
+    };
+    renderEditDocPreviews();
+
+    tempManualDues = { ...(b.customPastDues || {}) };
+    getPastMonthsList(b.startMonth, activeSelectedYm).forEach(ym => {
+        if (tempManualDues[ym] === undefined) {
+            tempManualDues[ym] = Math.max(0, b.interest - getPaidAmount(b, ym));
+        }
+    });
+    renderManualDueRowsInModal();
+
+    document.getElementById('editModal').style.display = 'flex';
+    pushNavState('modal', 'editModal');
+}
+
+function handleMultiDocUpload(event, category, maxCount) {
+    const files = Array.from(event.target.files || []);
+    if (!files.length) return;
+
+    files.forEach(file => {
+        if (tempEditDocs[category].length >= maxCount) {
+            alert(`${category.toUpperCase()} साठी कमाल ${maxCount} फोटोच अपलोड करता येतात!`);
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.src = e.target.result;
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const maxW = 500;
+                const scale = Math.min(1, maxW / img.width);
+                canvas.width = img.width * scale;
+                canvas.height = img.height * scale;
+                canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                if (tempEditDocs[category].length < maxCount) {
+                    tempEditDocs[category].push(canvas.toDataURL('image/jpeg', 0.6));
+                    renderEditDocPreviews();
+                }
+            };
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+function removeSingleDocPhoto(cat, idx) {
+    tempEditDocs[cat].splice(idx, 1);
+    renderEditDocPreviews();
+}
+
+function renderEditDocPreviews() {
+    const labels = { aadhar: 'आधार (Max 2)', pan: 'पॅन (Max 2)', cheque: 'चेक (Max 2)', other: 'इतर (Max 4)' };
+    let html = '';
+    Object.keys(labels).forEach(cat => {
+        const arr = tempEditDocs[cat] || [];
+        if (arr.length > 0) {
+            html += `<div style="margin-bottom:6px;"><small style="font-weight:bold;">${labels[cat]} (${arr.length}):</small><div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:3px;">`;
+            arr.forEach((src, i) => {
+                html += `<div style="position:relative; text-align:center;">
+                <img src="${src}" class="doc-thumb">
+                <span style="display:block; font-size:10px; color:red; cursor:pointer; font-weight:bold;" onclick="removeSingleDocPhoto('${cat}', ${i})">✕ काढा</span>
+                </div>`;
+            });
+            html += `</div></div>`;
+        }
+    });
+    document.getElementById('editDocPreview').innerHTML = html || `<small style="color:var(--muted);">अद्याप फोटो निवडलेले नाहीत.</small>`;
+}
+
+function renderManualDueRowsInModal() {
+    const container = document.getElementById('manualPastRows');
+    const keys = Object.keys(tempManualDues).sort();
+    if (keys.length === 0) {
+        container.innerHTML = `<div style="font-size:12px; color:var(--muted);">मागील बाकी नाही. खालील बॉक्समधून महिना व रक्कम जोडा.</div>`;
+        return;
+    }
+    container.innerHTML = keys.map(ym => `<div style="display:flex; justify-content:space-between; align-items:center; gap:6px; margin-bottom:5px; background:var(--card); padding:5px 8px; border-radius:6px;">
+    <strong style="font-size:12.5px;">📅 ${formatMonthMarathi(ym)}</strong>
+    <div style="display:flex; align-items:center; gap:5px;">
+    <input type="number" value="${tempManualDues[ym]}" style="width:90px; padding:4px;" onchange="tempManualDues['${ym}']=parseFloat(this.value)||0">
+    <button type="button" class="btn-sm btn-red" onclick="delete tempManualDues['${ym}']; renderManualDueRowsInModal();">✕</button>
+    </div></div>`).join('');
+}
+
+function addManualDueRowInModal() {
+    const ym = document.getElementById('newManualMonth').value;
+    const amt = parseFloat(document.getElementById('newManualAmt').value);
+    if (!ym || isNaN(amt)) { alert("कृपया महिना आणि बाकी रक्कम टाका!"); return; }
+    tempManualDues[ym] = amt;
+    document.getElementById('newManualAmt').value = '';
+    renderManualDueRowsInModal();
+}
+
+function calcEditFromRate() {
+    const p = parseFloat(document.getElementById('editPrincipal').value);
+    const r = parseFloat(document.getElementById('editRate').value);
+    if (!isNaN(p) && !isNaN(r)) document.getElementById('editInterest').value = Number(((p * r) / 100).toFixed(2));
+}
+function calcEditFromAmt() {
+    const p = parseFloat(document.getElementById('editPrincipal').value);
+    const i = parseFloat(document.getElementById('editInterest').value);
+    if (!isNaN(p) && p > 0 && !isNaN(i)) document.getElementById('editRate').value = Number(((i * 100) / p).toFixed(2));
+}
+
+function saveEditedBorrower() {
+    const id = parseFloat(document.getElementById('editId').value);
+    const b = borrowers.find(x => x.id === id);
+    if (!b) return;
+
+    b.name = document.getElementById('editName').value.trim() || b.name;
+    b.phone = document.getElementById('editPhone').value.trim();
+    b.principal = parseFloat(document.getElementById('editPrincipal').value) || 0;
+    b.rate = parseFloat(document.getElementById('editRate').value) || 0;
+    b.interest = parseFloat(document.getElementById('editInterest').value) || 0;
+    b.startMonth = document.getElementById('editStartMonth').value || b.startMonth;
+    b.dueDay = parseInt(document.getElementById('editDueDay').value, 10) || 10;
+    b.dailyPenalty = parseFloat(document.getElementById('editPenalty').value) || 0;
+    b.guarantor = document.getElementById('editGuarantor').value.trim();
+
+    b.promises = [
+        document.getElementById('editProm1').value,
+        document.getElementById('editProm2').value,
+        document.getElementById('editProm3').value
+    ];
+    b.docs = { ...tempEditDocs };
+
+    b.customPastDues = {};
+    Object.keys(tempManualDues).forEach(ym => {
+        b.customPastDues[ym] = parseFloat(tempManualDues[ym]) || 0;
+        if (b.paidMonths && b.paidMonths[ym]) delete b.paidMonths[ym];
+    });
+
+    saveAndRender('माहिती व फोटो एडिट केले');
+    goBackStep();
+}
+
+// ================= 🖼️ १० फोटो गॅलरी, QR, वचनचिट्ठी, पासबुक =================
+function countTotalDocs(b) {
+    const d = normalizeDocsObject(b.docs);
+    return d.aadhar.length + d.pan.length + d.cheque.length + d.other.length;
+}
+
+function openDocsGallery(bId) {
+    const b = borrowers.find(x => x.id === bId);
+    if (!b) return;
+    const d = normalizeDocsObject(b.docs);
+    const labels = { aadhar: 'आधार कार्ड (२)', pan: 'पॅन कार्ड (२)', cheque: 'बँक चेक / स्टँप (२)', other: 'इतर फोटो (४)' };
+    let html = '';
+    Object.keys(labels).forEach(k => {
+        if (d[k] && d[k].length > 0) {
+            html += `<div style="margin-bottom:14px;"><strong>📄 ${labels[k]}:</strong><div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:6px;">`;
+            d[k].forEach(src => { html += `<img src="${src}" style="width:100%; border-radius:8px; border:1px solid #ccc;">`; });
+            html += `</div></div>`;
+        }
+    });
+    if (!html) html = `<p style="color:var(--muted);">कोणतेही फोटो जोडलेले नाहीत. फोटो जोडण्यासाठी कार्डवरील <b>'✏️ सर्व एडिट'</b> बटनावर क्लिक करा.</p>`;
+    showInfoModalWithHistory(`🖼️ ${b.name} - डॉक्युमेंट्स गॅलरी`, html);
+}
+
+function showInfoModalWithHistory(title, bodyHtml) {
+    document.getElementById('modalTitle').innerText = title;
+    document.getElementById('modalBody').innerHTML = bodyHtml;
+    document.getElementById('infoModal').style.display = 'flex';
+    pushNavState('modal', 'infoModal');
+}
+
+// ================= 🗑️ RECYCLE BIN & VERSION HISTORY =================
+function deleteBorrower(bId) {
+    const b = borrowers.find(x => x.id === bId);
+    if (!b) return;
+    if (confirm(`"${b.name}" यांचे खाते डिलीट करून Recycle Bin मध्ये पाठवायचे का? (३० दिवसांत कधीही परत आणता येईल)`)) { 
+        recycleBin.unshift({ ...b, deletedAt: new Date().toLocaleDateString('mr-IN') }); 
+        localStorage.setItem('vyajRecycleBin_v5', JSON.stringify(recycleBin)); 
+        borrowers = borrowers.filter(x => x.id !== bId); 
+        saveAndRender(`खाते डिलीट केले: ${b.name}`);
+    }
+}
+
+function renderRecycleBin() {
+    const box = document.getElementById('recycleBinList');
+    if (recycleBin.length === 0) {
+        box.innerHTML = `<p style="color:var(--muted);">Recycle Bin रिकामी आहे.</p>`;
+        return;
+    }
+    box.innerHTML = recycleBin.map((item, idx) => `<div class="pay-row" style="margin-bottom:6px;"> 
+    <div><b>${item.name}</b> (मुद्दल ₹${item.principal})<br><small>डिलीट: ${item.deletedAt}</small></div>
+    <div style="display:flex; gap:5px;">
+    <button class="btn-sm bg-green" onclick="restoreFromRecycleBin(${idx})">परत आणा</button>
+    <button class="btn-sm bg-red" onclick="permanentDeleteFromBin(${idx})">✕</button>
+    </div></div>`).join('');
+}
+
+function restoreFromRecycleBin(idx) {
+    const item = recycleBin.splice(idx, 1)[0];
+    if (item) {
+        delete item.deletedAt;
+        borrowers.unshift(item);
+        localStorage.setItem('vyajRecycleBin_v5', JSON.stringify(recycleBin));
+        saveAndRender(`खाते रिस्टोअर केले: ${item.name}`);
+        renderRecycleBin();
+    }
+}
+
+function permanentDeleteFromBin(idx) {
+    if (confirm("हे खाते कायमचे नष्ट करायचे का?")) {
+        recycleBin.splice(idx, 1);
+        localStorage.setItem('vyajRecycleBin_v5', JSON.stringify(recycleBin));
+        renderRecycleBin();
+    }
+}
+
+function renderSecurityVault() {
+    document.getElementById('loginHistoryBox').innerHTML = loginHistory.length
+    ? loginHistory.map(l => `<div style="border-bottom:1px dashed var(--border); padding:4px 0;">✅ <b>${l.time}</b><br><small>${l.method} (${l.device})</small></div>`).join('')
+    : 'नोंद नाही.';
+
+    document.getElementById('versionHistoryBox').innerHTML = versionHistory.length
+    ? versionHistory.map((v, i) => `<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px dashed var(--border); padding:4px 0;"> <div><b>${v.time}</b><br><small>${v.reason} (${v.count} खाती)</small></div>
+    <button class="btn-sm bg-blue" onclick="restoreVersionSnapshot(${i})">रिस्टोअर</button> </div>`).join('')
+    : 'अद्याप स्नॅपशॉट नाही.';
+}
+
+function restoreVersionSnapshot(idx) {
+    const snap = versionHistory[idx];
+    if (snap && confirm(`${snap.time} चा बॅकअप डेटा परत आणायचा का?`)) {
+        borrowers = JSON.parse(JSON.stringify(snap.data));
+        saveAndRender('Version History मधून रिस्टोअर');
+        alert("✅ मागील बॅकअप यशस्वीरित्या परत आणला गेला!");
+    }
+}
+
+// ================= 💾 AUTO-SAVE, VERSION SNAPSHOT & CLOUD SYNC =================
+function saveAndRender(changeReason = 'Auto-Save') {
+    localStorage.setItem( STORAGE_KEY, JSON.stringify(borrowers) );
+    localStorage.setItem( ENC_KEY, encryptPayload(borrowers) );
+
+    // Version History
+    versionHistory.unshift({
+        time: new Date().toLocaleTimeString('mr-IN'),
+        reason: changeReason,
+        count: borrowers.length,
+        data: JSON.parse(JSON.stringify(borrowers))
+    });
+    versionHistory = versionHistory.slice(0, 5);
+    try { localStorage.setItem('vyajVersionHistory_v5', JSON.stringify(versionHistory)); } catch (e) {}
+
+    const timeNow = new Date().toLocaleTimeString('mr-IN');
+    document.getElementById('topAutoSaveStatus').innerText = `✅ Auto-Saved (${timeNow})`; 
+    document.getElementById('drawerSyncText').innerText = `☁️ शेवटचे सेव्ह: ${timeNow}`;
+    renderList();
+}
+
+// ================= मुख्य व्यवहार फंक्शन्स =================
+function calcFromRate() {
+    const p = parseFloat(document.getElementById('principal').value);
+    const r = parseFloat(document.getElementById('rate').value);
+    if (!isNaN(p) && !isNaN(r)) document.getElementById('interest').value = Number(((p * r) / 100).toFixed(2));
+}
+function calcFromAmt() {
+    const p = parseFloat(document.getElementById('principal').value);
+    const i = parseFloat(document.getElementById('interest').value);
+    if (!isNaN(p) && p > 0 && !isNaN(i)) document.getElementById('rate').value = Number(((i * 100) / p).toFixed(2));
+}
+
+function addBorrower() {
+    const name = document.getElementById('name').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const principal = parseFloat(document.getElementById('principal').value);
+    const rate = parseFloat(document.getElementById('rate').value);
+    const interest = parseFloat(document.getElementById('interest').value);
+    const calcType = document.getElementById('calcType').value;
+    const startMonth = document.getElementById('startMonth').value;
+    const dueDay = parseInt(document.getElementById('dueDay').value, 10) || 10;
+    const dailyPenalty = parseFloat(document.getElementById('dailyPenalty').value) || 0;
+    const guarantor = document.getElementById('guarantor').value.trim();
+    const promises = [
+        document.getElementById('addProm1').value,
+        document.getElementById('addProm2').value,
+        document.getElementById('addProm3').value
+    ];
+
+    if (!name || isNaN(principal) || isNaN(interest) || !startMonth) {
+        alert("कृपया नाव, मुद्दल, महिना आणि व्याज पूर्ण भरा!");
+        return;
+    }
+
+    borrowers.unshift({
+        id: Date.now(),
+        name, phone, principal,
+        rate: isNaN(rate) ? Number(((interest * 100) / principal).toFixed(2)) : rate,
+        interest, calcType, startMonth, dueDay, dailyPenalty, guarantor,
+        promises, customPastDues: {}, docs: { aadhar: [], pan: [], cheque: [], other: [] }, notes: [],
+        paidMonths: {},
+        ledger: [{ date: new Date().toLocaleDateString('mr-IN'), text: `नवीन खाते: मुद्दल ₹${principal}, व्याज ₹${interest}` }] 
+    }); 
+    saveAndRender(`नवीन नाव जोडले: ${name}`);
+    ['name','phone','principal','rate','interest','guarantor','addProm1','addProm2','addProm3'].forEach(id => document.getElementById(id).value = '');
+    goBackStep();
+}
+
+function payMonthAmount(bId, ym, inputId) {
+    const b = borrowers.find(x => x.id === bId);
+    if (!b) return;
+    const val = parseFloat(document.getElementById(inputId).value);
+    if (isNaN(val) || val <= 0) { alert("कृपया वैध रक्कम टाका!"); return; }
+
+    const expectedBase = (b.customPastDues && b.customPastDues[ym] !== undefined) ? parseFloat(b.customPastDues[ym]) : b.interest;
+    const prev = getPaidAmount(b, ym);
+    const newTotal = Math.min(expectedBase, prev + val);
+    const today = new Date().toLocaleDateString('mr-IN');
+
+    if (!b.paidMonths) b.paidMonths = {};
+    b.paidMonths[ym] = { amount: newTotal, date: today };
+    if (!b.ledger) b.ledger = [];
+    b.ledger.push({ date: today, text: `${formatMonthMarathi(ym)} चे व्याज ₹${val} जमा (एकूण: ₹${newTotal})`}); 
+    saveAndRender(`${b.name} व्याज जमा ₹${val}`);
+}
+
+function resetMonthPayment(bId, ym) {
+    const b = borrowers.find(x => x.id === bId);
+    if (b && b.paidMonths && b.paidMonths[ym]) {
+        if (confirm(`${formatMonthMarathi(ym)} ची जमा नोंद रद्द करायची का?`)) { 
+            delete b.paidMonths[ym]; 
+            saveAndRender(`${b.name} जमा रद्द`);
+        }
+    }
+}
+
+function reducePrincipal(bId) {
+    const b = borrowers.find(x => x.id === bId);
+    if (!b) return;
+
+    let amt = prompt(`सध्याची मुद्दल ₹${b.principal} आहे.\nकिती मुद्दल परत मिळाली? (उदा. 10000)`);
+
+    if (amt) {
+        amt = parseFloat(amt);
+        if (!isNaN(amt) && amt > 0 && amt <= b.principal) {
+            if (!b.customPastDues) b.customPastDues = {};
+            if (b.customPastDues[activeSelectedYm] === undefined) {
+                b.customPastDues[activeSelectedYm] = b.interest;
+            }
+            b.principal -= amt;
+            if (b.rate) {
+                b.interest = Number(((b.principal * b.rate) / 100).toFixed(2));
+            }
+            const today = new Date().toLocaleDateString('mr-IN');
+            b.ledger.push({
+                date: today,
+                text: `📉 मुद्दल ₹${amt} जमा. नवीन मुद्दल: ₹${b.principal} (पुढील महिन्यापासून लागू)`
+            });
+            saveAndRender(`${b.name} मुद्दल वजा केली`); 
+            alert(`✅ मुद्दल ₹${amt} यशस्वीरित्या वजा झाली!\n\nनवीन मुद्दल: ₹${b.principal}\nपुढील महिन्यापासून नवीन व्याज: ₹${b.interest}`);
+        } else {
+            alert("❌ कृपया योग्य रक्कम टाका.");
+        }
+    }
+}
+
+function compoundPending(bId, pendingAmt) {
+    const b = borrowers.find(x => x.id === bId);
+    if (!b || pendingAmt <= 0) return;
+    if (confirm(`मागील थकलेले ₹${pendingAmt} व्याज मुद्दलात जोडून चक्रवाढ करायचे का?`)) { 
+        const pastData = getCombinedPastDues(b, activeSelectedYm); 
+        pastData.unpaidList.forEach(item => { 
+            b.paidMonths[item.ym] = { amount: item.expectedBase, date: 'चक्रवाढ' }; 
+        }); 
+        b.principal += pendingAmt; 
+        if (b.rate) b.interest = Number(((b.principal * b.rate) / 100).toFixed(2)); 
+        saveAndRender(`${b.name} चक्रवाढ`);
+    }
+}
+
+function updatePromiseDateInline(bId, idx, dateVal) {
+    const b = borrowers.find(x => x.id === bId);
+    if (!b) return;
+    if (!b.promises) b.promises = ['', '', ''];
+    b.promises[idx] = dateVal;
+    saveAndRender(`${b.name} वायदा तारीख अपडेट`);
+}
+
+function quickEditPhone(bId) {
+    const b = borrowers.find(x => x.id === bId);
+    if (!b) return;
+    const ph = prompt(`${b.name} यांचा मोबाईल नंबर टाका:`, b.phone || '');
+    if (ph !== null) { b.phone = ph.trim(); saveAndRender('मोबाईल नंबर अपडेट'); }
+}
+
+function quickEditDueDay(bId) {
+    const b = borrowers.find(x => x.id === bId);
+    if (!b) return;
+    const d = prompt(`${b.name} यांची दरमहा व्याजाची तारीख (१ ते ३१) टाका:`, b.dueDay || 10);
+    if (d !== null && !isNaN(parseInt(d, 10))) { b.dueDay = parseInt(d, 10); saveAndRender('वायदा दिवस अपडेट'); }
+}
+
+function sendPromiseAlertToSelf(bId, totalPend) {
+    const b = borrowers.find(x => x.id === bId);
+    if (!b) return;
+    let myWa = (localStorage.getItem('vyajMyWa') || '').replace(/\D/g, '');
+    if (!myWa) {
+        const inp = prompt("तुमचा स्वतःचा १० अंकी WhatsApp नंबर टाका:");
+        if (!inp) return;
+        myWa = inp.replace(/\D/g, '');
+        if (myWa.length === 10) myWa = '91' + myWa;
+        localStorage.setItem('vyajMyWa', myWa);
+    }
+    const validP = (b.promises || []).filter(Boolean).join(', ');
+    const msg = `🔔 *स्वतःसाठी वसुली रिमाईंडर*\n• नाव: *${b.name}*\n• मोबाईल: ${b.phone || 'नाही'}\n• वायदा तारीख: *${validP || 'आज'}\n• एकूण बाकी: *₹${totalPend.toLocaleString('en-IN')}*`;
+    window.open(`https://wa.me/${myWa}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+function sendAllDueTodayToMyWhatsApp() {
+    const today = getTodayIsoDate();
+    const dueList = borrowers.filter(b => (b.promises || []).includes(today));
+    if (!dueList.length) { alert("आज कोणाचाही वायदा नाही!"); return; }
+    let myWa = (localStorage.getItem('vyajMyWa') || '').replace(/\D/g, '');
+    if (!myWa) {
+        const inp = prompt("तुमचा स्वतःचा १० अंकी WhatsApp नंबर टाका:");
+        if (!inp) return;
+        myWa = inp.replace(/\D/g, '');
+        if (myWa.length === 10) myWa = '91' + myWa;
+        localStorage.setItem('vyajMyWa', myWa);
+    }
+    const lines = dueList.map((b, i) => `${i+1}) *${b.name}* (₹${getStats(b).total.toLocaleString('en-IN')})`).join('\n'); 
+    window.open(`https://wa.me/${myWa}?text=${encodeURIComponent(`🚨 *आजचे वसुली वायदे (${today})*\n\n${lines}`)}`, '_blank');
+}
+
+function sendWhatsAppReceipt(bId, ym) {
+    const b = borrowers.find(x => x.id === bId);
+    if (!b) return;
+    const paid = getPaidAmount(b, ym);
+    const msg = `🧾 *व्याज जमा पावती*\n• नाव: *${b.name}*\n• महिना: *${formatMonthMarathi(ym)}*\n• जमा रक्कम: *₹${paid.toLocaleString('en-IN')}*\n• शिल्लक बाकी: ₹${getStats(b).total.toLocaleString('en-IN')}\nधन्यवाद!`; 
+    const ph = (b.phone || '').replace(/\D/g, ''); 
+    window.open(`https://wa.me/${ph.length === 10 ? '91'+ph : ph}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+function sendWhatsAppToCustomer(bId, totalPend) {
+    const b = borrowers.find(x => x.id === bId);
+    if (!b) return;
+    const msg = `नमस्कार ${b.name}, तुमच्याकडील मुद्दल व ₹${totalPend.toLocaleString('en-IN')} व्याज बाकी आहे. कृपया जमा करावे.`; 
+    const ph = (b.phone || '').replace(/\D/g, ''); 
+    window.open(`https://wa.me/${ph.length === 10 ? '91'+ph : ph}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+function showUpiQr(bId, amount) {
+    const b = borrowers.find(x => x.id === bId);
+    if (!b) return;
+    const upiId = localStorage.getItem('vyajUpiId') || 'sandeep@upi';
+    const payAmt = amount > 0 ? amount : b.interest;
+    const upiString = `upi://pay?pa=${upiId}&pn=${encodeURIComponent('Sandeep Gadge')}&am=${payAmt}&cu=INR&tn=${encodeURIComponent('Vyaj ' + b.name)}`;
+    const qrApi = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiString)}`; 
+    showInfoModalWithHistory(`📲 UPI QR कोड (${b.name})`, `<div style="text-align:center;"><p>देय रक्कम: <b style="color:#16a34a;font-size:18px;">₹${payAmt.toLocaleString('en-IN')}</b></p><img src="${qrApi}" style="border-radius:8px;"></div>`);
+}
+
+function showLegalNote(bId) {
+    const b = borrowers.find(x => x.id === bId);
+    if (!b) return;
+    const today = new Date().toLocaleDateString('mr-IN');
+    showInfoModalWithHistory(`📄 वचनचिट्ठी (${b.name})`,
+    `<div style="border:2px solid #000; padding:12px; background:#fff; color:#000; border-radius:6px;">
+    <h3 style="text-align:center; margin-top:0;">वचनचिट्ठी (खाते पावती)</h3>
+    <p style="text-align:right;"><b>दिनांक:</b> ${today}</p> 
+    <p>मी <b>${b.name}</b>, मुद्दल <b>₹${b.principal.toLocaleString('en-IN')}/-</b> घेतली असून दरमहा <b>${b.dueDay || 10} तारखेला ₹${b.interest.toLocaleString('en-IN')}/-</b> व्याज देण्याचे कबूल करतो.</p> 
+    </div>`);
+}
+
+function openPassbook(bId) {
+    const b = borrowers.find(x => x.id === bId);
+    if (!b) return;
+    const logs = (b.ledger || []).slice().reverse().map(l => `<li><small>${l.date}:</small> ${l.text}</li>`).join('');
+    showInfoModalWithHistory(`📖 ${b.name} - पासबुक`,`<ul style="padding-left:18px;">${logs}</ul>`);
+}
+
+// ================= 📋 ८ ओळींची कार्ड्स रेंडर करणे (Active Month नुसार) =================
+function renderList() {
+    const container = document.getElementById('listContainer');
+    const q = document.getElementById('searchInput').value || '';
+    container.innerHTML = '';
+
+    document.getElementById('bigActiveMonthTitle').innerText = formatMonthMarathi(activeSelectedYm);
+    const todayIso = getTodayIsoDate();
+
+    let totalP = 0, totalMonthlyInt = 0, totalPend = 0, totalSelectedMonthCol = 0;
+    let dueTodayNames = [];
+
+    borrowers.forEach((b, index) => {
+        totalP += b.principal;
+        totalMonthlyInt += b.interest;
+
+        const paidCur = getPaidAmount(b, activeSelectedYm);
+        totalSelectedMonthCol += paidCur;
+        const remCur = (b.startMonth <= activeSelectedYm) ? Math.max(0, b.interest - paidCur) : 0;
+        totalPend += remCur;
+
+        const pastData = getCombinedPastDues(b, activeSelectedYm);
+        const unpaidPast = pastData.unpaidList;
+        const pastSum = pastData.pastSum;
+        totalPend += pastSum;
+
+        const personAllPending = remCur + pastSum;
+        if ((b.promises || []).includes(todayIso) && personAllPending > 0) {
+            dueTodayNames.push(`${b.name} (₹${personAllPending})`);
+        }
+
+        if (!matchesSmartSearch(b, q)) return;
+
+        let line4Html = '';
+        const curId = `in_${b.id}_${activeSelectedYm}`;
+        if (b.startMonth > activeSelectedYm) {
+            line4Html = `<span>हिशोब ${formatMonthMarathi(b.startMonth)} पासून सुरू होतो.</span>`; 
+        } else if (remCur === 0) { 
+            line4Html = `<div class="pay-row">
+            <span class="status-paid">✅ ${formatMonthMarathi(activeSelectedYm)}: पूर्ण ₹${b.interest.toLocaleString('en-IN')} जमा (${b.paidMonths[activeSelectedYm]?.date || ''})</span> 
+            <div class="pay-controls"> 
+            <button class="btn-sm btn-wa" onclick="sendWhatsAppReceipt(${b.id}, '${activeSelectedYm}')">🧾 पावती</button> 
+            <button class="btn-sm btn-gray admin-only" onclick="resetMonthPayment(${b.id}, '${activeSelectedYm}')">रद्द करा</button> 
+            </div> 
+            </div>`;
+        } else {
+            const partNote = paidCur > 0 ? `(जमा: ₹${paidCur} | बाकी: ₹${remCur})` : `बाकी: ₹${remCur.toLocaleString('en-IN')}`; 
+            line4Html = `<div class="pay-row">
+            <span class="status-unpaid">❌ ${formatMonthMarathi(activeSelectedYm)} - ${partNote}</span>
+            <div class="pay-controls">
+            <input type="number" id="${curId}" class="amt-input" value="${remCur}">
+            <button class="btn-sm btn-green" onclick="payMonthAmount(${b.id}, '${activeSelectedYm}', '${curId}')">जमा करा</button> 
+            </div> 
+            </div>`;
+        }
+
+        let line5Html = '';
+        if (unpaidPast.length === 0) {
+            line5Html = `<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;"> 
+            <span class="status-paid">✅ मागील कोणत्याही महिन्याचे व्याज बाकी नाही.</span> 
+            <button class="btn-sm btn-blue-sm admin-only" onclick="openEditModal(${b.id})">➕/✏️ मागील बाकी लिहा</button>
+            </div>`; 
+        } else { 
+            const rows = unpaidPast.map(item => { 
+                const pId = `in_${b.id}_${item.ym}`; 
+                return `<div class="pay-row pay-row-pending">
+                <div><strong>📅 ${formatMonthMarathi(item.ym)}</strong> <span class="status-unpaid">: बाकी ₹${item.rem.toLocaleString('en-IN')}</span></div>
+                <div class="pay-controls">
+                <input type="number" id="${pId}" class="amt-input" value="${item.rem}">
+                <button class="btn-sm btn-green" onclick="payMonthAmount(${b.id}, '${item.ym}', '${pId}')">जमा करा</button> 
+                </div> 
+                </div>`;
+            }).join('');
+
+            line5Html = `<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px; margin-top:4px;"> 
+            <span class="tag tag-penalty" style="font-size:12px; padding:4px 8px;"> ⚠️ मागील एकूण ${unpaidPast.length} महिन्यांचे बाकी: ₹${pastSum.toLocaleString('en-IN')} </span> 
+            <div style="display:flex; gap:4px;"> 
+            <button class="btn-sm btn-blue-sm admin-only" onclick="openEditModal(${b.id})">➕/✏️ बाकी बदला</button>
+            <button class="btn-sm btn-orange-sm admin-only" onclick="compoundPending(${b.id}, ${pastSum})">+ चक्रवाढ</button>
+            </div>
+            </div>
+            <div style="margin-top:5px;">${rows}</div>`;
+        }
+
+        const dueDayVal = b.dueDay || 10;
+        const pArr = b.promises || ['', '', ''];
+        const docCount = countTotalDocs(b);
+        const rateVal = b.rate || Number(((b.interest * 100) / b.principal).toFixed(2));
+        const trustBadge = getTrustBadge(unpaidPast.length, remCur);
+
+        const card = document.createElement('div');
+        card.className = 'borrower-card';
+        card.innerHTML = `<div class="line"> <span class="line-num">1) नाव (#${index + 1}):</span>
+        <span class="person-name">${b.name}</span> ${trustBadge}
+        <div style="float:right; display:flex; gap:4px; flex-wrap:wrap;">
+        <button class="btn-sm btn-blue-sm admin-only" onclick="openEditModal(${b.id})">✏️ सर्व एडिट</button> 
+        <button class="btn-sm btn-purple-sm" onclick="openDocsGallery(${b.id})">🖼️ फोटो (${docCount}/10)</button> 
+        <button class="btn-sm btn-red admin-only" onclick="deleteBorrower(${b.id})">🗑️</button>
+        </div>
+        </div>
+        <div class="line">
+        <span class="line-num">2) मुद्दल:</span>
+        <strong>₹${b.principal.toLocaleString('en-IN')}</strong> <span class="tag tag-date">सुरू: ${formatMonthMarathi(b.startMonth)}</span>
+        <button class="btn-sm btn-blue-sm admin-only" style="margin-left:4px;" onclick="reducePrincipal(${b.id})">▼ मुद्दल वजा</button> 
+        </div> 
+        <div class="line"> <span class="line-num">3) महिन्याचे व्याज:</span> <strong>₹${b.interest.toLocaleString('en-IN')}</strong> प्रति महिना
+        <span class="tag tag-rate">${rateVal}% दराने</span> 
+        </div> 
+        <div class="line"> <span class="line-num">4) निवडलेला महिना (${formatMonthMarathi(activeSelectedYm)}) नोंद:</span>
+        ${line4Html} 
+        </div> 
+        <div class="line"> <span class="line-num">5) मागील बाकी महिने व रक्कम:</span> ${line5Html}
+        </div>
+        <div class="line" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+        <div>
+        <span class="line-num">6) मोबाईल नंबर:</span>
+        <strong>${b.phone || 'जोडलेला नाही'}</strong> 
+        <button class="btn-sm btn-gray admin-only" style="margin-left:5px;" onclick="quickEditPhone(${b.id})">✏️ नंबर</button>
+        </div>
+        <div style="display:flex; gap:5px;">
+        ${b.phone ? `<a href="tel:${b.phone}" class="btn-sm bg-blue">📞 नंबर</a>` : ''} 
+        <button class="btn-sm btn-wa" onclick="sendWhatsAppToCustomer(${b.id}, ${personAllPending})">💬 ग्राहक WA</button> 
+        </div> 
+        </div> 
+        <div class="line" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;"> 
+        <div> <span class="line-num">7) दरमहा व्याजाची तारीख:</span> <strong>दर महिन्याची ${dueDayVal} तारीख</strong>
+        </div>
+        <div style="display:flex; gap:4px;">
+        <button class="btn-sm btn-gray admin-only" onclick="quickEditDueDay(${b.id})">✏️ तारीख</button> 
+        <button class="btn-sm btn-purple-sm" onclick="showUpiQr(${b.id}, ${personAllPending})">📲 QR</button> 
+        <button class="btn-sm btn-orange-sm" onclick="showLegalNote(${b.id})">📄 वचनचिट्ठी</button>
+        <button class="btn-sm btn-blue-sm" onclick="openPassbook(${b.id})">📖 पासबुक</button> 
+        </div> 
+        </div> 
+        <div class="line"> 
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;"> 
+        <span class="line-num">8) पैसे देण्याच्या वायद्याच्या ३ तारखा:</span> 
+        <button class="btn-sm btn-wa" onclick="sendPromiseAlertToSelf(${b.id}, ${personAllPending})">🔔 माझ्या WhatsApp वर रिमाईंडर</button> 
+        </div> 
+        <div class="row-3col"> 
+        <div class="promise-col"><small>वायदा १</small><input type="date" value="${pArr[0] || ''}" onchange="updatePromiseDateInline(${b.id}, 0, this.value)"></div> 
+        <div class="promise-col"><small>वायदा २</small><input type="date" value="${pArr[1] || ''}" onchange="updatePromiseDateInline(${b.id}, 1, this.value)"></div> 
+        <div class="promise-col"><small>वायदा ३</small><input type="date" value="${pArr[2] || ''}" onchange="updatePromiseDateInline(${b.id}, 2, this.value)"></div> 
+        </div> 
+        </div>`;
+        container.appendChild(card);
+    });
+
+    const banner = document.getElementById('todayPromiseBanner');
+    if (dueTodayNames.length > 0) {
+        banner.style.display = 'block';
+        banner.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;"><div>🚨 <b>आजचा वायदा (${dueTodayNames.length}):</b> ${dueTodayNames.join(' | ')}</div><button class="btn-sm btn-wa" onclick="sendAllDueTodayToMyWhatsApp()">📲 माझ्या WhatsApp वर</button></div>`;
+    } else banner.style.display = 'none';
+
+    document.getElementById('dashPrincipal').innerText = `${borrowers.length} खाती | ₹${totalP.toLocaleString('en-IN')}`;
+    document.getElementById('dashMonthlyInt').innerText = '₹' + totalMonthlyInt.toLocaleString('en-IN');
+    document.getElementById('dashPending').innerText = '₹' + totalPend.toLocaleString('en-IN');
+    document.getElementById('dashCollected').innerText = '₹' + totalSelectedMonthCol.toLocaleString('en-IN');
+}
+
+// ================= ☁️ GOOGLE DRIVE SYNC, SETTINGS & BACKUP =================
+async function syncEverythingToGoogleDrive() {
+    const ymName = formatMonthMarathi(activeSelectedYm).replace(/\s+/g, '_');
+    const csvContent = buildMonthlyCsvString(activeSelectedYm);
+    const jsonStr = JSON.stringify({ gmail: localStorage.getItem('vyajCloudGmail'), month: activeSelectedYm, borrowers }, null, 2);
+
+    try {
+        const excelFile = new File([csvContent], `Vyaj_Excel_${ymName}.csv`, { type: 'text/csv' }); 
+        const backupFile = new File([jsonStr], `Vyaj_Cloud_Backup_${ymName}.json`, { type: 'application/json' });
+        if (navigator.canShare && navigator.canShare({ files: [excelFile, backupFile] })) {
+            await navigator.share({
+                title: `व्याज हिशोब - ${formatMonthMarathi(activeSelectedYm)}`, 
+                text: `Google Drive वर ${formatMonthMarathi(activeSelectedYm)} चा संपूर्ण हिशोब सेव्ह करा`,
+                files: [excelFile, backupFile]
+            });
+            return;
+        }
+    } catch (e) {}
+    downloadMonthlyCSV();
+    exportBackup();
+    window.open('https://drive.google.com/drive/my-drive', '_blank');
+}
+
+function saveCloudGmail() {
+    const g = document.getElementById('cloudGmailInput').value.trim();
+    if (g) {
+        localStorage.setItem('vyajCloudGmail', g);
+        document.getElementById('drawerGmailText').innerText = `📧 ${g}`;
+        alert("✅ Gmail खाते क्लाउड बॅकअपसाठी जोडले गेले!");
+    }
+}
+
+function saveMyWaNumber() {
+    let num = document.getElementById('myWaInput').value.replace(/\D/g, '');
+    if (num.length === 10) num = '91' + num;
+    localStorage.setItem('vyajMyWa', num);
+    alert("✅ तुमचा मोबाईल नंबर सेव्ह झाला!");
+}
+function saveUpiId() {
+    localStorage.setItem('vyajUpiId', document.getElementById('upiIdInput').value.trim());
+    alert("✅ UPI ID सेव्ह झाला!");
+}
+function savePin() {
+    const pin = document.getElementById('newPinInput').value.trim();
+    if (pin.length >= 4) { localStorage.setItem('vyajAppPin', pin); alert("✅ पासवर्ड / पिन सेट झाला!"); }
+}
+function toggleTwoStepAuth(checked) {
+    localStorage.setItem('vyajTwoStep', checked ? '1' : '0');
+    alert(checked ? "🛡️ Two-Step Verification चालू केले!" : "Two-Step Verification बंद केले.");
+}
+
+async function registerBiometricLock() {
+    localStorage.setItem('vyajBioEnabled', '1');
+    if (window.PublicKeyCredential) {
+        try {
+            const challenge = new Uint8Array(32); window.crypto.getRandomValues(challenge);
+            const userId = new Uint8Array(16); window.crypto.getRandomValues(userId);
+            await navigator.credentials.create({
+                publicKey: {
+                    challenge, rp: { name: "Vyaj Hishob V5" },
+                    user: { id: userId, name: "sandeep", displayName: "Sandeep Gadge" },
+                    pubKeyCredParams: [{ alg: -7, type: "public-key" }],
+                    authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" }
+                }
+            });
+        } catch (e) {}
+    }
+    alert("👆 Fingerprint / Face Unlock रजिस्टर झाले!");
+}
+
+async function triggerBiometricUnlock() {
+    if (!window.PublicKeyCredential) {
+        alert("तुमच्या ब्राउझरमध्ये बायोमेट्रिक सेन्सर उपलब्ध नाही. कृपया पासवर्ड वापरा.");
+        return;
+    }
+    try {
+        const challenge = new Uint8Array(32); window.crypto.getRandomValues(challenge);
+        await navigator.credentials.get({ publicKey: { challenge, userVerification: "required" } });
+        unlockAppSuccess('Fingerprint / Biometric Unlock');
+    } catch (e) {
+        alert("❌ फिंगरप्रिंट ओळखता आले नाही! कृपया बरोबर पासवर्ड किंवा पिन टाका.");
+    }
+}
+
+// ================= 📊 AI, EMI, CSV & PDF EXPORT =================
+function getStats(b) {
+    const pastData = getCombinedPastDues(b, activeSelectedYm);
+    const cRem = (b.startMonth <= activeSelectedYm) ? Math.max(0, b.interest - getPaidAmount(b, activeSelectedYm)) : 0;
+    return { pCount: pastData.unpaidList.length, pAmt: pastData.pastSum, cRem, total: pastData.pastSum + cRem };
+}
+
+function askAI(type) {
+    const out = document.getElementById('aiOutput');
+    if (type === 'summary') {
+        let p = 0, i = 0, pend = 0;
+        borrowers.forEach(b => { p += b.principal; i += b.interest; pend += getStats(b).total; });
+        out.innerHTML = `<b>📊 ${formatMonthMarathi(activeSelectedYm)} गोषवारा:</b><br>• एकूण खाती: <b>${borrowers.length}</b><br>• एकूण मुद्दल: <b>₹${p.toLocaleString('en-IN')}</b><br>• दरमहा व्याज: <b>₹${i.toLocaleString('en-IN')}</b><br>• एकूण बाकी: <b style="color:#dc2626;">₹${pend.toLocaleString('en-IN')}</b>`; 
+    } else if (type === 'top_pending') { 
+        const list = borrowers.map(b => ({ name: b.name, ...getStats(b) })).filter(x => x.total > 0).sort((a,b) => b.total - a.total).slice(0, 15); 
+        out.innerHTML = list.length ? list.map((x, idx) => `• <b>${x.name}</b>: ₹${x.total.toLocaleString('en-IN')}`).join('<br>') : "थकबाकी नाही!"; 
+    } else if (type === 'promises_list') { 
+        const list = borrowers.filter(b => (b.promises || []).some(Boolean)); 
+        out.innerHTML = list.length ? list.map(b => `• <b>${b.name}</b>: ${(b.promises||[]).filter(Boolean).join(', ')}`).join('<br>') : "वायदा नोंद नाही."; 
+    } else if (type === 'guarantor_group') { 
+        const groups = ['चिन्मय', 'हर्षद पटेल', 'अक्षय', 'परमार', 'SRA', 'BMC']; 
+        out.innerHTML = groups.map(g => { 
+            const m = borrowers.filter(b => b.name.toLowerCase().includes(g.toLowerCase())); 
+            return `• <b>${g} (${m.length})</b>: मुद्दल ₹${m.reduce((s,x)=>s+x.principal,0).toLocaleString('en-IN')} | व्याज ₹${m.reduce((s,x)=>s+x.interest,0).toLocaleString('en-IN')}`;
+        }).join('<br>');
+    }
+}
+
+function calcEmiSimulator() {
+    const p = parseFloat(document.getElementById('simP').value) || 0;
+    const r = parseFloat(document.getElementById('simR').value) || 0;
+    const m = parseInt(document.getElementById('simM').value, 10) || 1;
+    const emi = Math.round((p + ((p * r / 100) * m)) / m);
+    document.getElementById('simResult').innerHTML = `दरमहा हप्ता: <span style="color:#ad1457;">₹${emi.toLocaleString('en-IN')}</span>`;
+}
+
+function drawChart() {
+    const canvas = document.getElementById('financeChart');
+    const ctx = canvas.getContext('2d');
+    let col = 0, pend = 0;
+    borrowers.forEach(b => { col += getPaidAmount(b, activeSelectedYm); pend += getStats(b).total; });
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const tot = col + pend || 1;
+    const angle = (col / tot) * Math.PI * 2;
+    ctx.fillStyle = '#16a34a'; ctx.beginPath(); ctx.moveTo(75,75); ctx.arc(75,75,60,0,angle); ctx.fill();
+    ctx.fillStyle = '#dc2626'; ctx.beginPath(); ctx.moveTo(75,75); ctx.arc(75,75,60,angle,Math.PI*2); ctx.fill();
+}
+
+function buildMonthlyCsvString(ym) {
+    let csv = "\uFEFFअ.क्र.,नाव,मोबाईल,मुद्दल (₹),महिन्याचे व्याज (₹),महिना,जमा व्याज (₹),चालू बाकी (₹),एकूण बाकी (₹)\n";
+    borrowers.forEach((b, i) => {
+        const paid = getPaidAmount(b, ym);
+        const rem = (b.startMonth <= ym) ? Math.max(0, b.interest - paid) : 0;
+        const past = getCombinedPastDues(b, ym);
+        csv += `${i+1},"${b.name}","${b.phone||''}",${b.principal},${b.interest},"${formatMonthMarathi(ym)}",${paid},${rem},${rem + past.pastSum}\n`;
+    });
+    return csv;
+}
+
+function downloadMonthlyCSV() {
+    const ym = document.getElementById('reportMonth').value || activeSelectedYm;
+    const monthLabel = formatMonthMarathi(ym).replace(/\s+/g, '_');
+    triggerDownload(buildMonthlyCsvString(ym), `Vyaj_Hishob_${monthLabel}.csv`);
+}
+
+function downloadFullCSV() {
+    let csv = "\uFEFFअ.क्र.,नाव,मोबाईल,मुद्दल (₹),व्याज दर (%),महिन्याचे व्याज (₹),वायदा तारीख,एकूण बाकी (₹)\n";
+    borrowers.forEach((b, i) => {
+        csv += `${i+1},"${b.name}","${b.phone||''}",${b.principal},${b.rate || ''},${b.interest},${b.dueDay||10},${getStats(b).total}\n`;
+    });
+    triggerDownload(csv, `Sampurn_47_Khatevahi_${activeSelectedYm}.csv`);
+}
+
+function triggerDownload(content, fileName) {
+    const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = fileName;
+    a.click();
+}
+
+function exportBackup() {
+    const payload = { gmail: localStorage.getItem('vyajCloudGmail'), encrypted: encryptPayload(borrowers), borrowers };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `Vyaj_Encrypted_Backup_${activeSelectedYm}.json`;
+    a.click();
+}
+
+function importBackup(e) {
+    const f = e.target.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = ev => {
+        try {
+            const parsed = JSON.parse(ev.target.result);
+            if (Array.isArray(parsed)) borrowers = parsed;
+            else if (parsed.borrowers) borrowers = parsed.borrowers;
+            else if (parsed.encrypted) borrowers = decryptPayload(parsed.encrypted);
+            saveAndRender('बॅकअप फाईल रिस्टोअर');
+            alert("✅ संपूर्ण डेटा यशस्वीरित्या परत मिळाला आहे!");
+        } catch (err) { alert("फाईल चुकीची आहे."); }
+    };
+    r.readAsText(f);
+}
+
+function resetToNov2026PdfData() {
+    if (confirm("मूळ ४७ खाती (नोव्हेंबर २०२६) पुन्हा रिसेट करायची आहेत का?")) {
+        borrowers = buildDefaultPdfBorrowers();
+        saveAndRender('४७ खाती मूळ स्थितीत रिसेट');
+    }
+}
+
+function toggleStaffMode() {
+    document.body.classList.toggle('staff-mode');
+    document.getElementById('roleBtn').innerText = document.body.classList.contains('staff-mode') ? '👷 स्टाफ' : '👤 मालक';
+}
+function toggleDarkMode() {
+    document.body.classList.toggle('dark-mode');
+    localStorage.setItem('vyajDarkMode', document.body.classList.contains('dark-mode') ? '1' : '0');
+}
+function startVoiceCommand() {
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRec) { alert("व्हॉइस कमांडसाठी Chrome वापरा."); return; }
+    const rec = new SpeechRec(); rec.lang = 'mr-IN'; rec.start();
+    rec.onresult = e => { document.getElementById('searchInput').value = e.results[0][0].transcript; renderList(); };
+}
+
+function parseRowsAndAdd(lines) {
+    let count = 0;
+    lines.forEach((line, idx) => {
+        const cols = line.split(',').map(c => c.replace(/"/g, '').trim());
+        if (cols.length >= 3) {
+            const name = cols[0], principal = parseFloat(cols[1]), interest = parseFloat(cols[2]);
+            if (name && !isNaN(principal) && !isNaN(interest)) {
+                borrowers.push({
+                    id: Date.now() + idx + Math.random(), name, phone: '', principal,
+                    rate: Number(((interest * 100) / principal).toFixed(2)), interest, calcType: 'REDUCING',
+                    startMonth: activeSelectedYm, dueDay: 10, dailyPenalty: 0, promises: ['', '', ''],
+                    customPastDues: {}, docs: { aadhar: [], pan: [], cheque: [], other: [] }, notes: [], paidMonths: {}, ledger: []
+                });
+                count++;
+            }
+        }
+    });
+    if (count > 0) { saveAndRender(`${count} खाती अपलोड`); document.getElementById('importStatus').innerText = `✅ ${count} खाती जोडली गेली!`; }
+}
+async function importFromGoogleSheet() {
+    const url = document.getElementById('gsheetUrl').value.trim();
+    if (!url) return;
+    try { const res = await fetch(url); parseRowsAndAdd((await res.text()).split(/\r?\n/)); } catch (e) { alert("Sheet लिंक वाचता आली नाही."); }
+}
+function importCSVFile(e) {
+    const f = e.target.files[0]; if (!f) return;
+    const r = new FileReader(); r.onload = ev => parseRowsAndAdd(ev.target.result.split(/\r?\n/)); r.readAsText(f);
+}
+async function importPDFFile(e) {
+    const f = e.target.files[0]; if (!f || typeof pdfjsLib === 'undefined') return;
+    const r = new FileReader();
+    r.onload = async function(ev) {
+        const pdf = await pdfjsLib.getDocument(new Uint8Array(ev.target.result)).promise;
+        let lines = [];
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            const matches = content.items.map(x => x.str).join(' ').match(/(\d[\d,])\s|\s*([^|]+)\s*|\s*(\d+)/g) || [];
+            matches.forEach(m => {
+                const p = m.split('|').map(s => s.trim());
+                if (p.length === 3) lines.push(`${p[1]},${p[2].replace(/,/g, '')},${p[0].replace(/,/g, '')}`);
+            });
+        }
+        parseRowsAndAdd(lines);
+    };
+    r.readAsArrayBuffer(f);
+}
+
+// Initial Boot
+if (localStorage.getItem('vyajDarkMode') === '1') document.body.classList.add('dark-mode');
+document.getElementById('loginGmail').value = localStorage.getItem('vyajCloudGmail') || '';
+document.getElementById('myWaInput').value = localStorage.getItem('vyajMyWa') || '';
+document.getElementById('upiIdInput').value = localStorage.getItem('vyajUpiId') || '';
+document.getElementById('twoStepToggle').checked = localStorage.getItem('vyajTwoStep') === '1';
+document.getElementById('startMonth').value = activeSelectedYm;
+document.getElementById('reportMonth').value = activeSelectedYm;
+</script>
+</body>
+</html>
