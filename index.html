@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>व्याज हिशोब प्रो V11.3 (Complete & Safe)</title>
+<title>व्याज हिशोब प्रो V11.4 (Complete & Safe)</title>
 <!-- ऑफलाईन UPI QR आणि PDF Import साठी लायब्ररी -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
@@ -100,6 +100,11 @@ body.dark-mode .borrower-card.card-paid-partial { background: #422006; }
 .installment-item { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; gap: 6px; flex-wrap: wrap; }
 .amt-input { width: 82px; padding: 5px; border: 1px solid var(--border); border-radius: 6px; background: var(--card); color: var(--text); }
 
+/* मॅन्युअल मागील बाकी बॉक्स */
+.custom-due-box { background: var(--row-bg); border: 1px dashed var(--accent); border-radius: 8px; padding: 8px; margin-top: 6px; display: none; }
+.custom-due-box.open { display: block; }
+.custom-due-item { display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap; background: var(--card); padding: 5px 8px; border-radius: 6px; border: 1px solid var(--border); margin-top: 5px; font-size: 12px; }
+
 .row-3col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 5px; }
 .promise-col { background: var(--row-bg); border: 1px solid var(--border); padding: 5px; border-radius: 6px; text-align: center; }
 .promise-col small { display: block; font-size: 10.5px; color: var(--muted); margin-bottom: 3px; }
@@ -167,7 +172,7 @@ input, select, textarea { width: 100%; padding: 8px; border: 1px solid var(--bor
 <!-- १. SPLASH SCREEN -->
 <div id="splashScreen">
   <div class="splash-logo">📒</div>
-  <h2 style="margin:0;">व्याज हिशोब प्रो V11.3</h2>
+  <h2 style="margin:0;">व्याज हिशोब प्रो V11.4</h2>
   <p style="font-size:13px; opacity:0.9; margin:6px 0 0;">१००% सुरक्षित क्लाउड व स्मार्ट हिशोब</p>
   <div class="splash-loader-wrap"><div class="splash-loader-bar"></div></div>
 </div>
@@ -175,7 +180,7 @@ input, select, textarea { width: 100%; padding: 8px; border: 1px solid var(--bor
 <!-- २. FIREBASE लॉगिन स्क्रीन -->
 <div id="authScreen">
   <div class="auth-card">
-    <h2>🔐 व्याज हिशोब प्रो V11.3</h2>
+    <h2>🔐 व्याज हिशोब प्रो V11.4</h2>
     <p>फक्त नोंदणीकृत मालकासाठी (Firebase Secure Login)</p>
     <div class="form-group">
       <label>📧 Gmail ID:</label>
@@ -194,7 +199,7 @@ input, select, textarea { width: 100%; padding: 8px; border: 1px solid var(--bor
 <div id="drawerBackdrop" class="drawer-backdrop" onclick="closeDrawer()"></div>
 <div id="sideDrawer" class="side-drawer">
   <div class="drawer-header">
-    <h3>📒 व्याज हिशोब प्रो V11.3</h3>
+    <h3>📒 व्याज हिशोब प्रो V11.4</h3>
     <p id="drawerEmailText">📧 Connected</p>
     <p id="drawerSyncText" style="color:#bbf7d0;">🟢 Cloud Sync Active</p>
   </div>
@@ -295,7 +300,7 @@ input, select, textarea { width: 100%; padding: 8px; border: 1px solid var(--bor
     <div style="display:flex; align-items:center; gap:8px;">
       <button class="menu-btn" onclick="openDrawer()">☰</button>
       <div>
-        <div style="font-weight:bold; font-size:15px;">व्याज हिशोब प्रो V11.3</div>
+        <div style="font-weight:bold; font-size:15px;">व्याज हिशोब प्रो V11.4</div>
         <div id="syncStatusBadge" class="sync-badge" onclick="loadBorrowersFromCloud(true)">🟢 Cloud Synced</div>
       </div>
     </div>
@@ -534,8 +539,9 @@ function escapeCsvCell(val) {
 // ================= ३. ग्लोबल व्हेरिएबल्स =================
 const marathiMonths = ["जानेवारी","फेब्रुवारी","मार्च","एप्रिल","मे","जून","जुलै","ऑगस्ट","सप्टेंबर","ऑक्टोबर","नोव्हेंबर","डिसेंबर"];
 let currentUser = null, borrowers = [], activeYm = getCurrentYearMonth();
-let currentFilter = 'ALL', expandedIds = new Set(), isAllExpanded = false, isPrivacyMasked = false;
-let searchTimer = null, tempEditDocs = [], splashDone = false;
+let currentFilter = 'ALL', expandedIds = new Set(), openCustomDueIds = new Set();
+let isAllExpanded = false, isPrivacyMasked = false;
+let searchTimer = null, tempEditDocs = [];
 
 function getCurrentYearMonth() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; }
 function getTodayIso() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
@@ -553,7 +559,7 @@ function setSyncStatus(type, text) {
 // ================= ४. SPLASH व FIREBASE AUTH =================
 setTimeout(() => {
   const sp = document.getElementById('splashScreen');
-  if (sp) { sp.style.opacity = '0'; setTimeout(() => { sp.style.display = 'none'; splashDone = true; }, 350); }
+  if (sp) { sp.style.opacity = '0'; setTimeout(() => { sp.style.display = 'none'; }, 350); }
 }, 1150);
 
 auth.onAuthStateChanged(user => {
@@ -659,7 +665,7 @@ async function saveSingleBorrowerToCloud(b) {
   } catch (e) { setSyncStatus('offline', '🔴 Save Failed'); alert('⚠️ क्लाउडवर सेव्ह करताना अडचण आली.'); }
 }
 
-// ================= ७. हिशोब व स्मार्ट सर्च इंजिन =================
+// ================= ७. हिशोब, मॅन्युअल मागील बाकी व स्मार्ट सर्च =================
 function marathiToRoman(str) {
   const map = {'अ':'a','आ':'a','इ':'i','ई':'i','उ':'u','ऊ':'u','ए':'e','ऐ':'ai','ओ':'o','औ':'au','क':'k','ख':'kh','ग':'g','घ':'gh','च':'ch','छ':'chh','ज':'j','झ':'jh','ट':'t','ठ':'th','ड':'d','ढ':'dh','ण':'n','त':'t','थ':'th','द':'d','ध':'dh','न':'n','प':'p','फ':'ph','ब':'b','भ':'bh','म':'m','य':'y','र':'r','ल':'l','व':'v','श':'sh','ष':'sh','स':'s','ह':'h','ळ':'l','क्ष':'ksh','ज्ञ':'dny','ा':'a','ि':'i','ी':'i','ु':'u','ू':'u','े':'e','ै':'ai','ो':'o','ौ':'au','ं':'n','्':''};
   let out = ''; for (let ch of (str || '').toLowerCase()) out += (map[ch] !== undefined) ? map[ch] : ch;
@@ -703,15 +709,30 @@ function getDueAndPenaltyInfo(b, ym, remAmount) {
   const diffDays = Math.max(0, Math.floor((today - new Date(y, m - 1, dueDay)) / (1000 * 60 * 60 * 24)));
   return { isUpcoming: false, lateDays: diffDays, penaltyAmt: diffDays * dailyPen };
 }
+
+// आपोआप मागील महिने + तुम्ही स्वतः लिहिलेले मागील महिने एकत्र मोजणे
 function getPastDues(b, targetYm) {
-  let unpaidList = [], sum = 0;
-  getPastMonthsList(b.startMonth || '2026-11', targetYm).forEach(ym => {
-    const info = getMonthPaymentInfo(b, ym); if (info.isCompounded) return;
-    const exp = getExpectedInterest(b, ym), rem = Math.max(0, exp - info.cashPaid);
-    if (rem > 0) { unpaidList.push({ ym, rem, exp, info }); sum += rem; }
+  const autoMonths = getPastMonthsList(b.startMonth || '2026-11', targetYm);
+  const customKeys = Object.keys(b.customPastDues || {}).filter(ym => ym < targetYm);
+  const allPastYms = Array.from(new Set([...autoMonths, ...customKeys])).sort();
+
+  let unpaidList = [], customEntries = [], sum = 0;
+  allPastYms.forEach(ym => {
+    const info = getMonthPaymentInfo(b, ym);
+    if (info.isCompounded) return;
+    const exp = getExpectedInterest(b, ym);
+    const rem = Math.max(0, exp - info.cashPaid);
+    if (rem > 0) {
+      const isCustom = !!(b.customPastDues && b.customPastDues[ym] !== undefined);
+      const entry = { ym, rem, exp, info, isCustom };
+      unpaidList.push(entry);
+      if (isCustom) customEntries.push(entry);
+      sum += rem;
+    }
   });
-  return { unpaidList, sum };
+  return { unpaidList, customEntries, sum };
 }
+
 function getPersonTotalPending(b) {
   const exp = getExpectedInterest(b, activeYm), info = getMonthPaymentInfo(b, activeYm);
   const remCur = (b.startMonth <= activeYm && !info.isCompounded) ? Math.max(0, exp - info.cashPaid) : 0;
@@ -737,6 +758,34 @@ function getRetirementBadge(retDateStr) {
   if (diffYrs <= 0) return `<span class="tag tag-retire-soon">⚠️ रिटायर्ड (${rd.getFullYear()})</span>`;
   if (diffYrs <= 1.5) return `<span class="tag tag-retire-soon">⏳ रिटायरमेंट: ${fmtDate(retDateStr)}</span>`;
   return `<span class="tag tag-retire">📅 रिटायरमेंट: ${rd.getFullYear()} (~${Math.round(diffYrs)} वर्षे)</span>`;
+}
+
+// मॅन्युअल मागील बाकी जोडणे / काढणे (फक्त निवडलेल्या महिन्याची नोंद अपडेट होते; इतर paidMonths सुरक्षित राहतात)
+function toggleCustomDueBox(id) {
+  const s = String(id);
+  if (openCustomDueIds.has(s)) openCustomDueIds.delete(s); else openCustomDueIds.add(s);
+  renderList();
+}
+async function addCustomPastDue(id, ymInputId, amtInputId) {
+  const b = borrowers.find(x => String(x.id) === String(id)); if (!b) return;
+  const ym = document.getElementById(ymInputId).value;
+  const amt = parseFloat(document.getElementById(amtInputId).value);
+  if (!ym) { alert('कृपया मागील महिना आणि वर्ष निवडा!'); return; }
+  if (ym >= activeYm) { alert(`कृपया ${formatMonthMarathi(activeYm)} पूर्वीचा मागील महिना निवडा!`); return; }
+  if (isNaN(amt) || amt < 0) { alert('कृपया वैध बाकी रक्कम (₹) टाका!'); return; }
+
+  if (!b.customPastDues) b.customPastDues = {};
+  b.customPastDues[ym] = amt;
+  // जर या महिन्यात आधी काही जमा केले असेल तर तिथूनच शिल्लक रक्कम मोजली जाईल
+  await saveSingleBorrowerToCloud(b);
+}
+async function removeCustomPastDue(id, ym) {
+  const b = borrowers.find(x => String(x.id) === String(id)); if (!b) return;
+  if (!confirm(`${formatMonthMarathi(ym)} ची मॅन्युअल बाकी काढून टाकायची का?`)) return;
+  if (b.customPastDues && b.customPastDues[ym] !== undefined) {
+    delete b.customPastDues[ym];
+  }
+  await saveSingleBorrowerToCloud(b);
 }
 
 // ================= ८. CRUD, डॉक्युमेंट्स, वायदे, टीप =================
@@ -1091,7 +1140,7 @@ async function importSafePdfFile(e) {
 }
 function exportJsonBackup() {
   const active = borrowers.filter(b => !b.isDeleted);
-  triggerFileDownload(JSON.stringify({ version: 'V11.3', exportedAt: new Date().toISOString(), borrowers: active }, null, 2), `Vyaj_Backup_V11_${activeYm}.json`, "application/json");
+  triggerFileDownload(JSON.stringify({ version: 'V11.4', exportedAt: new Date().toISOString(), borrowers: active }, null, 2), `Vyaj_Backup_V11_${activeYm}.json`, "application/json");
 }
 async function importJsonBackup(e) {
   const f = e.target.files[0]; if (!f || !currentUser) return;
@@ -1120,7 +1169,7 @@ function changeActiveMonth(ym) {
 }
 function renderMonthArchiveButtons() {
   const cur = getCurrentYearMonth(), set = new Set([cur, activeYm]);
-  borrowers.filter(b => !b.isDeleted).forEach(b => { if (b.startMonth) set.add(b.startMonth); Object.keys(b.paidMonths || {}).forEach(m => set.add(m)); });
+  borrowers.filter(b => !b.isDeleted).forEach(b => { if (b.startMonth) set.add(b.startMonth); Object.keys(b.paidMonths || {}).forEach(m => set.add(m)); Object.keys(b.customPastDues || {}).forEach(m => set.add(m)); });
   document.getElementById('monthArchiveButtons').innerHTML = Array.from(set).sort().reverse().map(ym => `<button class="btn-sm ${ym === activeYm ? 'bg-orange' : 'bg-blue'}" onclick="changeActiveMonth('${ym}')">${formatMonthMarathi(ym)} ${ym === cur ? '(चालू)' : ''}</button>`).join('');
 }
 function setFilter(f) { currentFilter = f; ['ALL','GOVERNMENT','PRIVATE','FULL','PARTIAL','UNPAID'].forEach(k => { const el = document.getElementById('f_' + k); if (el) el.classList.toggle('active', k === f); }); renderList(); }
@@ -1175,7 +1224,7 @@ function renderList() {
     if (currentFilter === 'UNPAID' && state !== 'UNPAID') return;
     if (!matchesSmartSearch(b, q)) return;
 
-    const safeId = escapeHtml(b.id), isExp = expandedIds.has(safeId);
+    const safeId = escapeHtml(b.id), isExp = expandedIds.has(safeId), isCustomOpen = openCustomDueIds.has(safeId);
     const cardCls = state === 'FULL' ? 'card-paid-full' : (state === 'PARTIAL' ? 'card-paid-partial' : '');
     const jobTag = b.jobType === 'GOVERNMENT' ? `<span class="tag tag-govt">🏛️ Govt ${escapeHtml(b.jobDept)}</span>` : (b.jobType === 'PRIVATE' ? `<span class="tag tag-pvt">🏢 Pvt ${escapeHtml(b.jobDept)}</span>` : '');
     const retireTag = getRetirementBadge(b.retirementDate), trustTag = getTrustBadge(past.unpaidList.length, remCur);
@@ -1191,7 +1240,39 @@ function renderList() {
     const curInputId = `pay_${safeId}_${activeYm}`;
     const instHtml = curInfo.payments.length ? `<div class="installment-list">${curInfo.payments.map((p, i) => `<div class="installment-item"><span>✅ हप्ता ${i+1}: <b>${fmtMoney(p.amount)}</b> (${escapeHtml(p.date)})</span><div><button class="btn-sm bg-wa" onclick="sendInstallmentWaReceipt('${safeId}','${activeYm}',${i})">🧾 पावती</button> <button class="btn-sm bg-gray" onclick="deleteSingleInstallment('${safeId}','${activeYm}',${i})">✕</button></div></div>`).join('')}</div>` : '';
     const curPayBox = `<div class="pay-row"><span>${remCur === 0 ? `<b style="color:#16a34a;">✅ पूर्ण जमा (${fmtMoney(curInfo.cashPaid)})</b>` : `<b style="color:#dc2626;">बाकी: ${fmtMoney(remCur)}</b>`}</span><div style="display:flex; gap:5px;"><input type="number" id="${curInputId}" class="amt-input" value="${remCur > 0 ? remCur : ''}" placeholder="रक्कम"><button class="btn-sm bg-green" onclick="payInterestInstallment('${safeId}','${activeYm}','${curInputId}')">+ जमा</button></div></div>${instHtml}`;
-    const pastHtml = !past.unpaidList.length ? '<span style="color:#16a34a;">✅ मागील कोणतीही बाकी नाही.</span>' : `<div style="margin-bottom:5px; display:flex; justify-content:space-between; align-items:center;"><span class="tag tag-penalty">मागील ${past.unpaidList.length} म. बाकी: ${fmtMoney(past.sum)}</span><button class="btn-sm bg-orange" onclick="compoundPastPending('${safeId}', ${past.sum})">🔄 चक्रवाढ</button></div>` + past.unpaidList.map(p => { const pid = `pay_${safeId}_${p.ym}`; return `<div class="pay-row pending"><span><b>${formatMonthMarathi(p.ym)}</b>: बाकी ${fmtMoney(p.rem)}</span><div style="display:flex; gap:5px;"><input type="number" id="${pid}" class="amt-input" value="${p.rem}"><button class="btn-sm bg-green" onclick="payInterestInstallment('${safeId}','${p.ym}','${pid}')">जमा</button></div></div>`; }).join('');
+
+    const cYmInputId = `c_ym_${safeId}`;
+    const cAmtInputId = `c_amt_${safeId}`;
+    const customSavedListHtml = past.customEntries.length
+      ? past.customEntries.map(ce => `<div class="custom-due-item"><span>📌 <b>${formatMonthMarathi(ce.ym)}</b>: बाकी <b>${fmtMoney(ce.rem)}</b></span><button type="button" class="btn-sm bg-gray" onclick="removeCustomPastDue('${safeId}','${ce.ym}')">✕ काढा</button></div>`).join('')
+      : '';
+
+    const customDueBoxHtml = `
+      <div id="custom_due_box_${safeId}" class="custom-due-box ${isCustomOpen ? 'open' : ''}">
+        <div style="font-size:11.5px; font-weight:bold; color:var(--primary); margin-bottom:5px;">कोणत्याही वर्षाचा मागील महिना व बाकी रक्कम लिहा:</div>
+        <div style="display:flex; gap:5px; flex-wrap:wrap;">
+          <input type="month" id="${cYmInputId}" style="flex:1; min-width:130px; padding:5px; font-size:12px;">
+          <input type="number" id="${cAmtInputId}" placeholder="बाकी ₹" style="width:95px; padding:5px; font-size:12px;">
+          <button type="button" class="btn-sm bg-green" onclick="addCustomPastDue('${safeId}','${cYmInputId}','${cAmtInputId}')">+ सेव्ह</button>
+        </div>
+        ${customSavedListHtml}
+      </div>`;
+
+    const pastHeaderRow = `
+      <div style="margin-bottom:5px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:5px;">
+        <div>
+          ${past.unpaidList.length ? `<span class="tag tag-penalty">मागील ${past.unpaidList.length} म. बाकी: ${fmtMoney(past.sum)}</span>` : '<span style="color:#16a34a;">✅ मागील कोणतीही बाकी नाही.</span>'}
+        </div>
+        <div style="display:flex; gap:4px; flex-wrap:wrap;">
+          <button type="button" class="btn-sm bg-blue" onclick="toggleCustomDueBox('${safeId}')">${isCustomOpen ? '✕ बंद' : '➕ मागील बाकी'}</button>
+          ${past.unpaidList.length ? `<button type="button" class="btn-sm bg-orange" onclick="compoundPastPending('${safeId}', ${past.sum})">🔄 चक्रवाढ</button>` : ''}
+        </div>
+      </div>`;
+
+    const pastRowsHtml = past.unpaidList.map(p => {
+      const pid = `pay_${safeId}_${p.ym}`;
+      return `<div class="pay-row pending"><span><b>${formatMonthMarathi(p.ym)}</b> ${p.isCustom ? '<small style="color:var(--primary);">(स्वतः लिहिलेले)</small>' : ''}: बाकी ${fmtMoney(p.rem)}</span><div style="display:flex; gap:5px;"><input type="number" id="${pid}" class="amt-input" value="${p.rem}"><button class="btn-sm bg-green" onclick="payInterestInstallment('${safeId}','${p.ym}','${pid}')">जमा</button></div></div>`;
+    }).join('');
 
     htmlParts.push(`
       <div class="borrower-card ${cardCls}">
@@ -1228,7 +1309,7 @@ function renderList() {
             </div>
           </div>
           <div class="line"><b>चालू महिना (${formatMonthMarathi(activeYm)}):</b>${curPayBox}</div>
-          <div class="line"><b>मागील बाकी महिने:</b>${pastHtml}
+          <div class="line"><b>मागील बाकी महिने:</b>${pastHeaderRow}${pastRowsHtml}${customDueBoxHtml}
             <div class="manual-tip-box"><label style="color:#b45309; font-size:11px;">📝 माझी टीप:</label><textarea rows="2" placeholder="टीप लिहा..." onchange="saveManualTipInline('${safeId}', this.value)">${escapeHtml(b.manualTip || '')}</textarea></div>
           </div>
           <div class="line">
