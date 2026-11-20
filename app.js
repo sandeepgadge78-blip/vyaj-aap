@@ -1,4 +1,4 @@
-// १. Hishob (hishob-4b548) साठी अचूक Firebase Configuration
+// १. Hishob (hishob-4b548) साठी अचूक Firebase Configuration (V12.9)
 const firebaseConfig = {
   apiKey: "AIzaSyDYpC1Pdm9jDtmNlT2J6BOPzk88QvBo8ds",
   authDomain: "hishob-4b548.firebaseapp.com",
@@ -9,18 +9,13 @@ const firebaseConfig = {
   measurementId: "G-RH91B88LZB"
 };
 
-if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
-}
+if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
 const auth = firebase.auth();
 const db = firebase.firestore();
 
 let persistenceReady = false;
 async function ensurePersistenceEnabled() {
-  try {
-    await db.enablePersistence({ synchronizeTabs: true });
-    persistenceReady = true;
-  } catch (_) {}
+  try { await db.enablePersistence({ synchronizeTabs: true }); persistenceReady = true; } catch (_) {}
 }
 ensurePersistenceEnabled();
 
@@ -29,54 +24,139 @@ const I18N = {
   mr: {
     dashTitle: '📊 सर्व खाती Dashboard', lblPrincipal: 'एकूण मुद्दल', lblExpected: 'मासिक अपेक्षित व्याज',
     lblCollected: 'महिन्यात जमा रक्कम', lblPending: 'एकूण बाकी व्याज / थकबाकी',
-    remTitle: '📲 WhatsApp व सकाळचे Notification रिमाइंडर', addTitle: 'नवीन ग्राहक / कर्ज नोंद',
-    ledgerTitle: 'मासिक हिशोब व जमा नोंद', reportsTitle: '📑 रिपोर्ट्स, CSV, Archive, Scheduled Backup व Webhook'
+    remTitle: '📲 WhatsApp, UPI QR व सकाळचे Notification रिमाइंडर', addTitle: 'नवीन ग्राहक / कर्ज नोंद',
+    ledgerTitle: 'मासिक हिशोब व जमा नोंद', reportsTitle: '📑 रिपोर्ट्स, CSV, Android Share, Backup व Webhook'
   },
   hi: {
     dashTitle: '📊 सभी खाते Dashboard', lblPrincipal: 'कुल मूलधन', lblExpected: 'मासिक अपेक्षित ब्याज',
     lblCollected: 'महीने में जमा राशि', lblPending: 'कुल बकाया ब्याज',
-    remTitle: '📲 WhatsApp और सुबह का Notification रिमाइंडर', addTitle: 'नया ग्राहक / कर्ज खाता जोड़ें',
-    ledgerTitle: 'मासिक हिसाब और जमा नोंद', reportsTitle: '📑 रिपोर्ट्स, CSV, Archive, Scheduled Backup और Webhook'
+    remTitle: '📲 WhatsApp, UPI QR और Notification रिमाइंडर', addTitle: 'नया ग्राहक / कर्ज खाता जोड़ें',
+    ledgerTitle: 'मासिक हिसाब और जमा नोंद', reportsTitle: '📑 रिपोर्ट्स, CSV, Share, Backup और Webhook'
   },
   en: {
     dashTitle: '📊 All Accounts Dashboard', lblPrincipal: 'Total Principal', lblExpected: 'Monthly Expected Interest',
     lblCollected: 'Collected This Month', lblPending: 'Total Pending Dues',
-    remTitle: '📲 WhatsApp & Morning Notification Reminders', addTitle: 'Add New Customer / Loan Account',
-    ledgerTitle: 'Monthly Ledger & Payments', reportsTitle: '📑 Reports, CSV, Archive, Scheduled Backup & Webhook'
+    remTitle: '📲 WhatsApp, UPI QR & Notification Reminders', addTitle: 'Add New Customer / Loan Account',
+    ledgerTitle: 'Monthly Ledger & Payments', reportsTitle: '📑 Reports, CSV, Share, Backup & Webhook'
   }
 };
 
 // ३. अ‍ॅप स्टेट
 const state = {
-  user: null,
-  borrowers: [],
-  auditLogs: [],
-  unsubscribeBorrowers: null,
-  unsubscribeAudit: null,
-  autoLockTimer: null,
-  autoLockMs: 300000,
-  currentPassbookBorrowerId: null,
-  currentPassbookTab: 'passbook',
-  currentDocsBorrowerId: null,
-  currentVersionBorrowerId: null,
-  accountFilter: 'active',
-  jobFilter: 'all',
-  statusFilter: 'all',
-  hideAmounts: false,
-  expandAllDetails: false,
+  user: null, borrowers: [], auditLogs: [],
+  unsubscribeBorrowers: null, unsubscribeAudit: null,
+  autoLockTimer: null, autoLockMs: 300000,
+  currentPassbookBorrowerId: null, currentPassbookTab: 'passbook',
+  currentDocsBorrowerId: null, currentVersionBorrowerId: null,
+  accountFilter: 'active', jobFilter: 'all', statusFilter: 'all',
+  hideAmounts: false, expandAllDetails: false,
   lang: localStorage.getItem('hishob_lang') || 'mr',
   scheduledBackup: localStorage.getItem('hishob_sched_backup') || 'off',
   selfWaNumber: localStorage.getItem('hishob_self_wa') || '',
+  selfUpiId: localStorage.getItem('hishob_self_upi') || '',
   webhookUrl: localStorage.getItem('hishob_webhook_url') || '',
-  todayPromisesCache: [],
-  pendingPartialCache: [],
+  todayPromisesCache: [], pendingPartialCache: [],
   security: { fileScans: 0, quarantined: 0, blockedThreats: 0, threatLog: [], writeTimestamps: [] }
 };
 
+// मोबाईल Back बटण कंट्रोल (अ‍ॅप बंद न होता पॉपअप/मेन्यू बंद होणे)
+const ALL_MODAL_IDS = ['smartInfoModal', 'pnlModal', 'securityModal', 'versionModal', 'notifModal', 'docsModal', 'editModal', 'passbookModal'];
+function openModalSafe(modalId) {
+  const el = document.getElementById(modalId);
+  if (el) {
+    el.classList.remove('hidden');
+    try { history.pushState({ hishobOverlay: modalId }, ''); } catch (_) {}
+  }
+}
+window.addEventListener('popstate', () => {
+  // आधी V3 Drawer किंवा Overlay उघडा असल्यास बंद करा
+  const hmDrawer = document.getElementById('hmDrawer');
+  if (hmDrawer && hmDrawer.classList.contains('open')) {
+    document.getElementById('hmBackdrop')?.click();
+    return;
+  }
+  const v3Ov = document.getElementById('v3Overlay');
+  if (v3Ov && !v3Ov.classList.contains('hidden')) {
+    v3Ov.classList.add('hidden');
+    return;
+  }
+  // उघडलेला कोणताही Modal बंद करा
+  for (const id of ALL_MODAL_IDS) {
+    const el = document.getElementById(id);
+    if (el && !el.classList.contains('hidden')) {
+      el.classList.add('hidden');
+      return;
+    }
+  }
+});
+
+// स्मार्ट Phonetic Search (इंग्रजीतून मराठी नावे शोधणे)
+function marathiToRomanSkeleton(str) {
+  if (!str) return '';
+  const map = {
+    'अ':'a','आ':'a','इ':'i','ई':'i','उ':'u','ऊ':'u','ए':'e','ऐ':'ai','ओ':'o','औ':'au',
+    'क':'k','ख':'kh','ग':'g','घ':'gh','च':'ch','छ':'chh','ज':'j','झ':'jh',
+    'ट':'t','ठ':'th','ड':'d','ढ':'dh','ण':'n','त':'t','थ':'th','द':'d','ध':'dh','न':'n',
+    'प':'p','फ':'ph','ब':'b','भ':'bh','म':'m','य':'y','र':'r','ल':'l','व':'v',
+    'श':'sh','ष':'sh','स':'s','ह':'h','ळ':'l','क्ष':'ksh','ज्ञ':'dny',
+    'ा':'a','ि':'i','ी':'i','ु':'u','ू':'u','े':'e','ै':'ai','ो':'o','ौ':'au','ं':'n','्':''
+  };
+  let out = '';
+  for (const ch of String(str).toLowerCase()) out += (map[ch] !== undefined) ? map[ch] : ch;
+  return out.replace(/[aeiou]/g, '');
+}
+
+function matchesSmartSearch(b, query) {
+  if (!query) return true;
+  const q = query.toLowerCase().trim();
+  const raw = [b.name, b.loanLabel, b.mobile, b.companyDept, b.guarantor, b.extraGuarantors, b.note].map(v => String(v || '').toLowerCase()).join(' ');
+  if (raw.includes(q)) return true;
+  const qSkel = q.replace(/f/g, 'ph').replace(/w/g, 'v').replace(/[aeiou\s]/g, '');
+  const tSkel = marathiToRomanSkeleton(raw).replace(/\s+/g, '');
+  return qSkel.length > 0 && tSkel.includes(qSkel);
+}
+
+// नावावरून नोकरी व जामीनदार ऑटो-डिटेक्शन
+function detectJobAndGuarantor(nameStr) {
+  const s = String(nameStr || '');
+  const up = s.toUpperCase();
+  let jobType = '', companyDept = '', guarantor = '';
+  if (up.includes('BMC') || s.includes('बीएमसी')) { jobType = 'govt'; companyDept = 'BMC'; }
+  else if (up.includes('SRA')) { jobType = 'govt'; companyDept = 'SRA'; }
+  else if (s.includes('प्राइवेट') || up.includes('PRIVATE')) { jobType = 'private'; }
+  const m = s.match(/\(([^0-9\)]+)\)/);
+  if (m) guarantor = m[1].replace('जमीनदार', '').replace('।', '').trim();
+  return { jobType, companyDept, guarantor };
+}
+
+// व्याज दर (%) <-> व्याज (₹) ऑटो-गणना (नवीन व Edit दोन्ही फॉर्मसाठी)
+function wireInterestAutoCalc(pId, rId, iId) {
+  const pEl = document.getElementById(pId), rEl = document.getElementById(rId), iEl = document.getElementById(iId);
+  const fromRate = () => {
+    const p = Number(pEl.value || 0), r = Number(rEl.value || 0);
+    if (p > 0 && r > 0) iEl.value = Math.round((p * r) / 100);
+  };
+  const fromAmt = () => {
+    const p = Number(pEl.value || 0), i = Number(iEl.value || 0);
+    if (p > 0 && i > 0) rEl.value = Number(((i * 100) / p).toFixed(2));
+  };
+  pEl.addEventListener('input', fromRate);
+  rEl.addEventListener('input', fromRate);
+  iEl.addEventListener('input', fromAmt);
+}
+wireInterestAutoCalc('bPrincipal', 'bRate', 'bFixedInterest');
+wireInterestAutoCalc('ePrincipal', 'eRate', 'eFixedInterest');
+
+document.getElementById('bName').addEventListener('blur', () => {
+  const auto = detectJobAndGuarantor(document.getElementById('bName').value);
+  if (auto.jobType && !document.getElementById('bJobType').value) document.getElementById('bJobType').value = auto.jobType;
+  if (auto.companyDept && !document.getElementById('bCompanyDept').value) document.getElementById('bCompanyDept').value = auto.companyDept;
+  if (auto.guarantor && !document.getElementById('bGuarantor').value) document.getElementById('bGuarantor').value = auto.guarantor;
+});
+
 function applyLanguage(lang) {
   const dict = I18N[lang] || I18N.mr;
-  state.lang = lang;
-  localStorage.setItem('hishob_lang', lang);
+  state.lang = lang; localStorage.setItem('hishob_lang', lang);
   document.getElementById('langSelect').value = lang;
   document.getElementById('tDashTitle').textContent = dict.dashTitle;
   document.getElementById('tLblPrincipal').textContent = dict.lblPrincipal;
@@ -91,7 +171,6 @@ function applyLanguage(lang) {
 document.getElementById('langSelect').addEventListener('change', (e) => applyLanguage(e.target.value));
 applyLanguage(state.lang);
 
-// Network Status Indicator
 function updateNetworkBadge() {
   const el = document.getElementById('networkBadge');
   if (navigator.onLine) { el.textContent = 'Online 🟢'; el.className = 'badge paid'; }
@@ -109,42 +188,34 @@ function recordThreat(type, reason, isQuarantine = false) {
   if (state.security.threatLog.length > 50) state.security.threatLog.pop();
   updateSecurityDashboardUI();
 }
-
 function checkRateLimit(actionLabel) {
   const now = Date.now();
   state.security.writeTimestamps = state.security.writeTimestamps.filter(t => now - t < 5000);
   if (state.security.writeTimestamps.length >= 15) {
-    recordThreat('RATE_LIMIT', `${actionLabel} साठी खूप वेगवान रिक्वेस्ट्स थांबवल्या.`);
-    alert('कृपया काही सेकंद थांबा — सुरक्षिततेसाठी तात्पुरते Rate Limit लागू झाले आहे.');
+    recordThreat('RATE_LIMIT', `${actionLabel} साठी वेगवान रिक्वेस्ट्स थांबवल्या.`);
+    alert('कृपया काही सेकंद थांबा — सुरक्षिततेसाठी Rate Limit लागू आहे.');
     return false;
   }
-  state.security.writeTimestamps.push(now);
-  return true;
+  state.security.writeTimestamps.push(now); return true;
 }
-
 async function validateFileUpload(file, mode) {
-  state.security.fileScans++;
-  updateSecurityDashboardUI();
+  state.security.fileScans++; updateSecurityDashboardUI();
   if (!file) return { ok: false, reason: 'फाईल निवडलेली नाही.' };
   const nameLower = String(file.name || '').toLowerCase();
-
   if (mode === 'image') {
-    const validExt = /\.(jpg|jpeg|png|webp)$/.test(nameLower);
-    const validMime = ['image/jpeg', 'image/png', 'image/webp'].includes(file.type);
+    const validExt = /\.(jpg|jpeg|png|webp)$/.test(nameLower), validMime = ['image/jpeg', 'image/png', 'image/webp'].includes(file.type);
     if (!validExt || !validMime) { recordThreat('INVALID_IMAGE_MIME', `चुकीची इमेज: ${file.name}`, true); return { ok: false, reason: 'फक्त JPG, PNG किंवा WEBP फोटोलाच परवानगी आहे.' }; }
     if (file.size > 5 * 1024 * 1024) { recordThreat('FILE_SIZE_EXCEEDED', `5MB पेक्षा मोठा फोटो: ${file.name}`, true); return { ok: false, reason: 'फोटो 5MB पेक्षा लहान असावा.' }; }
     const head = new Uint8Array(await file.slice(0, 12).arrayBuffer());
-    const isJpeg = head[0] === 0xFF && head[1] === 0xD8 && head[2] === 0xFF;
-    const isPng = head[0] === 0x89 && head[1] === 0x50 && head[2] === 0x4E && head[3] === 0x47;
-    const isWebp = head[0] === 0x52 && head[1] === 0x49 && head[2] === 0x46 && head[3] === 0x46;
-    if (!isJpeg && !isPng && !isWebp) { recordThreat('MAGIC_BYTES_MISMATCH', `बनावट इमेज Quarantine केली: ${file.name}`, true); return { ok: false, reason: 'ही खरी इमेज फाईल नाही (Quarantine केले).' }; }
+    const okMagic = (head[0] === 0xFF && head[1] === 0xD8 && head[2] === 0xFF) || (head[0] === 0x89 && head[1] === 0x50 && head[2] === 0x4E && head[3] === 0x47) || (head[0] === 0x52 && head[1] === 0x49 && head[2] === 0x46 && head[3] === 0x46);
+    if (!okMagic) { recordThreat('MAGIC_BYTES_MISMATCH', `बनावट इमेज Quarantine केली: ${file.name}`, true); return { ok: false, reason: 'ही खरी इमेज फाईल नाही (Quarantine केले).' }; }
     return { ok: true };
   }
   if (mode === 'csv' || mode === 'json') {
     const extOk = mode === 'csv' ? /\.csv$/.test(nameLower) : /\.(json|txt)$/.test(nameLower);
     if (!extOk) { recordThreat('INVALID_EXTENSION', `चुकीचे एक्सटेंशन: ${file.name}`, true); return { ok: false, reason: `फक्त .${mode} फाईललाच परवानगी आहे.` }; }
     if (file.size > 2 * 1024 * 1024) { recordThreat('FILE_SIZE_EXCEEDED', `2MB पेक्षा मोठी फाईल: ${file.name}`, true); return { ok: false, reason: 'फाईल 2MB पेक्षा लहान असावी.' }; }
-    if (/<script|javascript:|onerror\s*=/i.test(await file.slice(0, 4096).text())) { recordThreat('SCRIPT_INJECTION_BLOCKED', `संशयास्पद स्क्रिप्ट Quarantine केली: ${file.name}`, true); return { ok: false, reason: 'फाईलमध्ये संशयास्पद स्क्रिप्ट आढळली.' }; }
+    if (/<script|javascript:|onerror\s*=/i.test(await file.slice(0, 4096).text())) { recordThreat('SCRIPT_INJECTION_BLOCKED', `संशयास्पद स्क्रिप्ट Quarantine: ${file.name}`, true); return { ok: false, reason: 'फाईलमध्ये संशयास्पद स्क्रिप्ट आढळली.' }; }
     return { ok: true };
   }
   return { ok: true };
@@ -160,7 +231,7 @@ function updateSecurityDashboardUI() {
     : '<div class="muted">कोणताही धोका आढळला नाही.</div>';
 }
 
-document.getElementById('openSecurityDashBtn').addEventListener('click', () => { updateSecurityDashboardUI(); document.getElementById('securityModal').classList.remove('hidden'); });
+document.getElementById('openSecurityDashBtn').addEventListener('click', () => { updateSecurityDashboardUI(); openModalSafe('securityModal'); });
 document.getElementById('closeSecurityModalBtn').addEventListener('click', () => document.getElementById('securityModal').classList.add('hidden'));
 document.getElementById('runDiagnosticsBtn').addEventListener('click', () => {
   const isHttps = location.protocol === 'https:' || location.hostname === 'localhost';
@@ -183,6 +254,7 @@ function fmtAmt(val) { return state.hideAmounts ? '₹••••' : `₹${Numb
 document.getElementById('bStartYm').value = currentYmDefault();
 document.getElementById('activeYm').value = currentYmDefault();
 document.getElementById('selfWaNumber').value = state.selfWaNumber;
+document.getElementById('selfUpiId').value = state.selfUpiId;
 document.getElementById('webhookUrlInput').value = state.webhookUrl;
 document.getElementById('scheduledBackupSelect').value = state.scheduledBackup;
 
@@ -196,72 +268,47 @@ document.getElementById('autoLockSelect').addEventListener('change', (e) => { st
 
 // Scheduled Cloud Backup
 document.getElementById('scheduledBackupSelect').addEventListener('change', (e) => {
-  state.scheduledBackup = e.target.value;
-  localStorage.setItem('hishob_sched_backup', state.scheduledBackup);
+  state.scheduledBackup = e.target.value; localStorage.setItem('hishob_sched_backup', state.scheduledBackup);
   checkAndRunScheduledBackup();
 });
-
 async function checkAndRunScheduledBackup() {
   if (!state.user || state.scheduledBackup === 'off' || !state.borrowers.length) return;
-  const lastTs = Number(localStorage.getItem('hishob_last_sched_backup_ts') || 0);
-  const now = Date.now();
+  const lastTs = Number(localStorage.getItem('hishob_last_sched_backup_ts') || 0), now = Date.now();
   const intervalMs = state.scheduledBackup === 'daily' ? 86400000 : state.scheduledBackup === 'weekly' ? 7 * 86400000 : 30 * 86400000;
   if (now - lastTs >= intervalMs) {
     try {
       const nowIso = new Date().toISOString();
-      await db.collection('users').doc(state.user.uid).collection('cloudBackups').add({
-        createdAt: nowIso, scheduled: state.scheduledBackup, count: state.borrowers.length, borrowers: state.borrowers
-      });
+      await db.collection('users').doc(state.user.uid).collection('cloudBackups').add({ createdAt: nowIso, scheduled: state.scheduledBackup, count: state.borrowers.length, borrowers: state.borrowers });
       localStorage.setItem('hishob_last_sched_backup_ts', String(now));
       document.getElementById('lastBackupBadge').textContent = `शेवटचा Auto-Backup: ${nowIso.slice(0, 10)}`;
     } catch (_) {}
-  } else if (lastTs > 0) {
-    document.getElementById('lastBackupBadge').textContent = `शेवटचा Auto-Backup: ${new Date(lastTs).toISOString().slice(0, 10)}`;
-  }
+  } else if (lastTs > 0) document.getElementById('lastBackupBadge').textContent = `शेवटचा Auto-Backup: ${new Date(lastTs).toISOString().slice(0, 10)}`;
 }
 
 // Automatic Month-End Report अलर्ट
 function checkAutomaticMonthEndReport() {
-  const banner = document.getElementById('monthEndBanner');
-  const today = new Date();
-  const day = today.getDate();
-  const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-  if (day >= lastDayOfMonth - 1 || day <= 3) {
+  const banner = document.getElementById('monthEndBanner'), today = new Date(), day = today.getDate();
+  const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+  if (day >= lastDay - 1 || day <= 3) {
     const activeYm = document.getElementById('activeYm').value || currentYmDefault();
     banner.classList.remove('hidden');
-    banner.innerHTML = `
-      <div class="row" style="justify-content:space-between;">
-        <span>📆 <strong>Automatic Month-End Report:</strong> महिन्याचा शेवट / सुरुवात आहे. ${escapeHtml(activeYm)} चा PDF रिपोर्ट किंवा Archive सेव्ह करून घ्या.</span>
-        <button id="quickMonthEndPrintBtn" class="primary sm">🖨️ Month-End PDF काढा</button>
-      </div>
-    `;
+    banner.innerHTML = `<div class="row" style="justify-content:space-between;"><span>📆 <strong>Automatic Month-End Report:</strong> ${escapeHtml(activeYm)} चा PDF रिपोर्ट किंवा Archive सेव्ह करून घ्या.</span><button id="quickMonthEndPrintBtn" class="primary sm">🖨️ Month-End PDF काढा</button></div>`;
     const btn = document.getElementById('quickMonthEndPrintBtn');
     if (btn) btn.onclick = () => document.getElementById('printMonthlyPdfBtn').click();
-  } else {
-    banner.classList.add('hidden');
-  }
+  } else banner.classList.add('hidden');
 }
 
-// Profit & Loss Report Modal
+// Profit & Loss Modal
 document.getElementById('openPnlBtn').addEventListener('click', () => {
   const activeYm = document.getElementById('activeYm').value || currentYmDefault();
-  const nonDeleted = state.borrowers.filter(b => !b.isDeleted);
   let totalDisbursed = 0, totalActivePrincipal = 0, totalRecoveredPrincipal = 0, totalInterestEarned = 0, totalPendingDues = 0, closedCount = 0;
-
-  nonDeleted.forEach(b => {
-    const orig = Number(b.originalPrincipal || b.principal || 0);
-    totalDisbursed += orig;
-    if (b.accountStatus === 'closed') {
-      closedCount++;
-      totalRecoveredPrincipal += Number((b.settlement && b.settlement.amount) || orig);
-    } else {
-      totalActivePrincipal += Number(b.principal || 0);
-      totalPendingDues += computeLedgerUpToMonth(b, activeYm).totalPayable;
-    }
+  state.borrowers.filter(b => !b.isDeleted).forEach(b => {
+    const orig = Number(b.originalPrincipal || b.principal || 0); totalDisbursed += orig;
+    if (b.accountStatus === 'closed') { closedCount++; totalRecoveredPrincipal += Number((b.settlement && b.settlement.amount) || orig); }
+    else { totalActivePrincipal += Number(b.principal || 0); totalPendingDues += computeLedgerUpToMonth(b, activeYm).totalPayable; }
     (b.principalReductions || []).forEach(r => { totalRecoveredPrincipal += Number(r.amount || 0); });
     (b.paymentHistory || []).forEach(p => { totalInterestEarned += Number(p.amount || 0); });
   });
-
   document.getElementById('pnlContent').innerHTML = `
     <div class="dash-grid">
       <div class="dash-box"><div class="dash-label">एकूण दिलेले मुद्दल</div><div class="dash-val">${fmtAmt(totalDisbursed)}</div></div>
@@ -270,38 +317,83 @@ document.getElementById('openPnlBtn').addEventListener('click', () => {
       <div class="dash-box"><div class="dash-label">सध्याचे सक्रिय मुद्दल</div><div class="dash-val warn-text">${fmtAmt(totalActivePrincipal)}</div></div>
       <div class="dash-box"><div class="dash-label">सध्याची एकूण थकबाकी</div><div class="dash-val err">${fmtAmt(totalPendingDues)}</div></div>
       <div class="dash-box"><div class="dash-label">बंद झालेली खाती</div><div class="dash-val">${closedCount}</div></div>
-    </div>
-  `;
-  document.getElementById('pnlModal').classList.remove('hidden');
+    </div>`;
+  openModalSafe('pnlModal');
 });
 document.getElementById('closePnlModalBtn').addEventListener('click', () => document.getElementById('pnlModal').classList.add('hidden'));
 
-// Hide/Show, Dark/Light, Expand All
-document.getElementById('toggleHideAmtBtn').addEventListener('click', (e) => {
-  state.hideAmounts = !state.hideAmounts;
-  e.target.textContent = state.hideAmounts ? '👁️ रकमा दाखवा' : '👁️ रकमा लपवा';
-  renderBorrowers();
-});
-document.getElementById('toggleThemeBtn').addEventListener('click', (e) => {
-  const isLight = document.body.classList.toggle('light-mode');
-  e.target.textContent = isLight ? '🌙 Dark' : '☀️ Light';
-});
-document.getElementById('toggleExpandAllBtn').addEventListener('click', (e) => {
-  state.expandAllDetails = !state.expandAllDetails;
-  e.target.textContent = state.expandAllDetails ? '📁 सर्व तपशील बंद करा' : '📂 सर्व तपशील उघडा';
-  renderBorrowers();
+// वचनचिट्ठी व UPI QR Modal
+document.getElementById('closeSmartInfoBtn').addEventListener('click', () => document.getElementById('smartInfoModal').classList.add('hidden'));
+document.getElementById('printSmartInfoBtn').addEventListener('click', () => {
+  document.getElementById('printArea').innerHTML = document.getElementById('smartInfoBody').innerHTML;
+  window.print();
 });
 
-// WhatsApp & Notifications
+function openVachanChitthi(borrowerId) {
+  const b = state.borrowers.find(x => x.id === borrowerId); if (!b) return;
+  const calc = computeLedgerUpToMonth(b, document.getElementById('activeYm').value || currentYmDefault());
+  document.getElementById('smartInfoTitle').textContent = `📄 वचनचिट्ठी — ${b.name}`;
+  document.getElementById('smartInfoBody').innerHTML = `
+    <div style="border:2px solid var(--border); padding:16px; border-radius:10px; line-height:1.8;">
+      <h3 style="text-align:center; margin-top:0;">वचनचिट्ठी (Promissory Note)</h3>
+      <div style="text-align:right;"><strong>दिनांक:</strong> ${escapeHtml(getLocalDateIso(0))}</div>
+      <p>मी <strong>${escapeHtml(b.name || '')}</strong> (मोबाईल: ${escapeHtml(b.mobile || '-')}, जामीनदार: <strong>${escapeHtml(b.guarantor || '-')}</strong>),
+      रक्कम <strong>₹${calc.principal}</strong> मुद्दल म्हणून घेतली असून दरमहा <strong>${b.interestDay || 10} तारखेला ₹${calc.monthlyInterest}</strong> व्याज वेळेवर परत करण्याची हमी देतो/देते.</p>
+      <div style="display:flex; justify-content:space-between; margin-top:36px; padding-top:8px;">
+        <div>__________________<br/>ग्राहकाची सही</div>
+        <div>__________________<br/>जामीनदाराची सही</div>
+      </div>
+    </div>`;
+  openModalSafe('smartInfoModal');
+}
+
+function openUpiQr(borrowerId, amount) {
+  const b = state.borrowers.find(x => x.id === borrowerId); if (!b) return;
+  const upiId = (state.selfUpiId || document.getElementById('selfUpiId').value || '').trim();
+  if (!upiId || !upiId.includes('@')) { alert('कृपया आधी वर तुमचा UPI ID (उदा. name@okaxis) सेव्ह करा.'); return; }
+  const payAmt = Number(amount || 0) > 0 ? Number(amount) : getMonthlyInterestAmount(b);
+  const upiStr = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent('Hishob Payment')}&am=${payAmt}&cu=INR&tn=${encodeURIComponent('Vyaj ' + (b.name || ''))}`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiStr)}`;
+  document.getElementById('smartInfoTitle').textContent = `📲 UPI QR — ${b.name}`;
+  document.getElementById('smartInfoBody').innerHTML = `
+    <div style="text-align:center; padding:10px;">
+      <div style="margin-bottom:8px;">UPI ID: <strong>${escapeHtml(upiId)}</strong></div>
+      <div style="font-size:1.25rem; font-weight:700; margin-bottom:10px;" class="ok">देय रक्कम: ₹${payAmt}</div>
+      <img src="${qrUrl}" alt="UPI QR" style="border-radius:10px; border:4px solid #fff; background:#fff;" />
+      <div class="muted" style="margin-top:8px;">GPay / PhonePe / Paytm ने स्कॅन करून भरणा करा.</div>
+    </div>`;
+  openModalSafe('smartInfoModal');
+}
+
+function sendWaReceipt(borrowerId, ym, paidAmt, totalPending) {
+  const b = state.borrowers.find(x => x.id === borrowerId); if (!b) return;
+  const mob = String(b.mobile || '').replace(/\D/g, '');
+  if (mob.length < 10) { alert('या ग्राहकाचा वैध मोबाईल नंबर सेव्ह नाही.'); return; }
+  const target = mob.length === 10 ? `91${mob}` : mob;
+  const msg = `🧾 *व्याज जमा पावती (Hishob)*\n• ग्राहक: *${b.name}*\n• महिना: *${ym}*\n• जमा रक्कम: *₹${paidAmt}*\n• एकूण बाकी: ₹${totalPending}\n• दिनांक: ${getLocalDateIso(0)}\n\nधन्यवाद!`;
+  window.open(`https://wa.me/${target}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener,noreferrer');
+}
+
+// Hide/Show, Dark/Light, Expand All
+document.getElementById('toggleHideAmtBtn').addEventListener('click', (e) => { state.hideAmounts = !state.hideAmounts; e.target.textContent = state.hideAmounts ? '👁️ रकमा दाखवा' : '👁️ रकमा लपवा'; renderBorrowers(); });
+document.getElementById('toggleThemeBtn').addEventListener('click', (e) => { const isLight = document.body.classList.toggle('light-mode'); e.target.textContent = isLight ? '🌙 Dark' : '☀️ Light'; });
+document.getElementById('toggleExpandAllBtn').addEventListener('click', (e) => { state.expandAllDetails = !state.expandAllDetails; e.target.textContent = state.expandAllDetails ? '📁 सर्व तपशील बंद करा' : '📂 सर्व तपशील उघडा'; renderBorrowers(); });
+
+// WhatsApp, UPI ID & Notifications
 document.getElementById('saveWaNumberBtn').addEventListener('click', async () => {
-  const num = document.getElementById('selfWaNumber').value.replace(/\D/g, '');
-  const msgEl = document.getElementById('notifStatusMsg');
-  if (num.length < 10) { msgEl.textContent = 'कृपया योग्य १० अंकी किंवा 91 सहित नंबर टाका.'; return; }
+  const num = document.getElementById('selfWaNumber').value.replace(/\D/g, ''), msgEl = document.getElementById('notifStatusMsg');
+  if (num.length < 10) { msgEl.textContent = 'कृपया योग्य १० अंकी नंबर टाका.'; return; }
   const formatted = num.length === 10 ? `91${num}` : num;
-  state.selfWaNumber = formatted; document.getElementById('selfWaNumber').value = formatted;
-  localStorage.setItem('hishob_self_wa', formatted);
+  state.selfWaNumber = formatted; document.getElementById('selfWaNumber').value = formatted; localStorage.setItem('hishob_self_wa', formatted);
   if (state.user) { try { await db.collection('users').doc(state.user.uid).set({ selfWaNumber: formatted }, { merge: true }); } catch (_) {} }
   msgEl.textContent = `स्वतःचा WhatsApp नंबर (${formatted}) सेव्ह झाला.`;
+});
+document.getElementById('saveUpiBtn').addEventListener('click', async () => {
+  const upi = document.getElementById('selfUpiId').value.trim(), msgEl = document.getElementById('notifStatusMsg');
+  if (!upi || !upi.includes('@')) { msgEl.textContent = 'कृपया योग्य UPI ID (उदा. name@okaxis) टाका.'; return; }
+  state.selfUpiId = upi; localStorage.setItem('hishob_self_upi', upi);
+  if (state.user) { try { await db.collection('users').doc(state.user.uid).set({ selfUpiId: upi }, { merge: true }); } catch (_) {} }
+  msgEl.textContent = `UPI ID (${upi}) सेव्ह झाला.`;
 });
 
 function openSelfWhatsApp(messageText) {
@@ -309,24 +401,18 @@ function openSelfWhatsApp(messageText) {
   if (num.length < 10) { alert('कृपया आधी तुमचा स्वतःचा WhatsApp नंबर सेव्ह करा.'); return; }
   window.open(`https://wa.me/${num.length === 10 ? `91${num}` : num}?text=${encodeURIComponent(messageText)}`, '_blank', 'noopener,noreferrer');
 }
-
 document.getElementById('waTodayPromiseBtn').addEventListener('click', () => {
   const todayStr = getLocalDateIso(0);
-  if (!state.todayPromisesCache.length) { alert(`आज (${todayStr}) कोणत्याही ग्राहकाचा बाकी वायदा नाही.`); return; }
-  const lines = state.todayPromisesCache.map((x, idx) => `${idx + 1}. ${x.name} (${x.mobile || '-'}) — बाकी ₹${x.amount}`);
-  openSelfWhatsApp(`🔔 *Hishob — आजच्या वायद्याची यादी (${todayStr})*\n\n${lines.join('\n')}`);
+  if (!state.todayPromisesCache.length) { alert(`आज (${todayStr}) कोणताही बाकी वायदा नाही.`); return; }
+  openSelfWhatsApp(`🔔 *Hishob — आजच्या वायद्याची यादी (${todayStr})*\n\n${state.todayPromisesCache.map((x, i) => `${i + 1}. ${x.name} (${x.mobile || '-'}) — बाकी ₹${x.amount}`).join('\n')}`);
 });
 document.getElementById('waPendingListBtn').addEventListener('click', () => {
   const activeYm = document.getElementById('activeYm').value || currentYmDefault();
-  if (!state.pendingPartialCache.length) { alert(`${activeYm} साठी कोणतेही बाकी किंवा अर्धवट खाते नाही.`); return; }
-  const lines = state.pendingPartialCache.map((x, idx) => `${idx + 1}. ${x.name} (${x.status === 'partial' ? 'अर्धवट' : 'बाकी'}) — ₹${x.totalPayable} | ${x.mobile || '-'}`);
-  openSelfWhatsApp(`📋 *Hishob — बाकी / अर्धवट खात्यांची यादी (${activeYm})*\n\n${lines.join('\n')}`);
+  if (!state.pendingPartialCache.length) { alert(`${activeYm} साठी कोणतेही बाकी खाते नाही.`); return; }
+  openSelfWhatsApp(`📋 *Hishob — बाकी / अर्धवट खात्यांची यादी (${activeYm})*\n\n${state.pendingPartialCache.map((x, i) => `${i + 1}. ${x.name} (${x.status === 'partial' ? 'अर्धवट' : 'बाकी'}) — ₹${x.totalPayable} | ${x.mobile || '-'}`).join('\n')}`);
 });
 
-function showBrowserNotification(title, body) {
-  if (!('Notification' in window) || Notification.permission !== 'granted') return;
-  try { new Notification(title, { body }); } catch (_) {}
-}
+function showBrowserNotification(title, body) { if ('Notification' in window && Notification.permission === 'granted') { try { new Notification(title, { body }); } catch (_) {} } }
 document.getElementById('enableNotifBtn').addEventListener('click', async () => {
   const msgEl = document.getElementById('notifStatusMsg');
   if (!('Notification' in window)) { msgEl.textContent = 'Notification उपलब्ध नाही.'; return; }
@@ -354,7 +440,7 @@ document.getElementById('notifBellBtn').addEventListener('click', () => {
   const todayHtml = state.todayPromisesCache.length ? state.todayPromisesCache.map(x => `<div class="meta-box"><strong>${escapeHtml(x.name)}</strong> (${escapeHtml(x.mobile || '-')}) — <strong class="err">${fmtAmt(x.amount)}</strong></div>`).join('') : '<p class="muted">आज वायदा नाही.</p>';
   const pendingHtml = state.pendingPartialCache.length ? state.pendingPartialCache.map(x => `<div class="meta-box"><strong>${escapeHtml(x.name)}</strong> (${x.status === 'partial' ? 'अर्धवट' : 'बाकी'}) — <strong class="warn-text">${fmtAmt(x.totalPayable)}</strong></div>`).join('') : '<p class="muted">सर्व खात्यांचे व्याज जमा आहे.</p>';
   box.innerHTML = `<h4>📅 आजचे वायदे (${state.todayPromisesCache.length})</h4>${todayHtml}<h4 style="margin-top:12px;">⏳ बाकी / अर्धवट खाती (${state.pendingPartialCache.length})</h4>${pendingHtml}`;
-  document.getElementById('notifModal').classList.remove('hidden');
+  openModalSafe('notifModal');
 });
 document.getElementById('closeNotifModalBtn').addEventListener('click', () => document.getElementById('notifModal').classList.add('hidden'));
 
@@ -368,28 +454,9 @@ document.getElementById('voiceSearchBtn').addEventListener('click', () => {
   recognition.onend = () => { if (msgEl.textContent.startsWith('🎙️')) msgEl.textContent = ''; };
   recognition.start();
 });
-
-document.querySelectorAll('button[data-accfilter]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    state.accountFilter = btn.getAttribute('data-accfilter');
-    document.querySelectorAll('button[data-accfilter]').forEach(b => b.classList.remove('filter-active'));
-    btn.classList.add('filter-active'); renderBorrowers();
-  });
-});
-document.querySelectorAll('button[data-jobfilter]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    state.jobFilter = btn.getAttribute('data-jobfilter');
-    document.querySelectorAll('button[data-jobfilter]').forEach(b => b.classList.remove('filter-active'));
-    btn.classList.add('filter-active'); renderBorrowers();
-  });
-});
-document.querySelectorAll('button[data-statusfilter]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    state.statusFilter = btn.getAttribute('data-statusfilter');
-    document.querySelectorAll('button[data-statusfilter]').forEach(b => b.classList.remove('filter-active'));
-    btn.classList.add('filter-active'); renderBorrowers();
-  });
-});
+document.querySelectorAll('button[data-accfilter]').forEach(btn => btn.addEventListener('click', () => { state.accountFilter = btn.getAttribute('data-accfilter'); document.querySelectorAll('button[data-accfilter]').forEach(b => b.classList.remove('filter-active')); btn.classList.add('filter-active'); renderBorrowers(); }));
+document.querySelectorAll('button[data-jobfilter]').forEach(btn => btn.addEventListener('click', () => { state.jobFilter = btn.getAttribute('data-jobfilter'); document.querySelectorAll('button[data-jobfilter]').forEach(b => b.classList.remove('filter-active')); btn.classList.add('filter-active'); renderBorrowers(); }));
+document.querySelectorAll('button[data-statusfilter]').forEach(btn => btn.addEventListener('click', () => { state.statusFilter = btn.getAttribute('data-statusfilter'); document.querySelectorAll('button[data-statusfilter]').forEach(b => b.classList.remove('filter-active')); btn.classList.add('filter-active'); renderBorrowers(); }));
 
 // ४. Base64, SHA-256 व AES-GCM Helpers
 function uint8ToBase64(bytes) { let b = ''; for (let i = 0; i < bytes.length; i += 0x8000) b += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)); return btoa(b); }
@@ -410,93 +477,80 @@ async function decryptPayload(jsonText, passkey) {
   if (!passkey || passkey.trim().length < 6) throw new Error('योग्य Passkey टाका.');
   const parsed = JSON.parse(jsonText);
   const plainText = new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: base64ToUint8(parsed.iv) }, await deriveAesKey(passkey, base64ToUint8(parsed.salt)), base64ToUint8(parsed.data)));
-  if (parsed.sha256 && (await computeSha256Hex(plainText)) !== parsed.sha256) {
-    recordThreat('TAMPERING_DETECTED', 'Backup फाईलचा SHA-256 हॅश जुळला नाही.', true);
-    throw new Error('SHA-256 तपासणी अयशस्वी!');
-  }
+  if (parsed.sha256 && (await computeSha256Hex(plainText)) !== parsed.sha256) { recordThreat('TAMPERING_DETECTED', 'Backup फाईलचा SHA-256 हॅश जुळला नाही.', true); throw new Error('SHA-256 तपासणी अयशस्वी!'); }
   return JSON.parse(plainText);
 }
-
 async function appendAuditLog(action, details) {
   if (!state.user) return;
   try { await db.collection('users').doc(state.user.uid).collection('auditLogs').add({ action, details, by: state.user.email || state.user.uid, ts: new Date().toISOString() }); } catch (_) {}
 }
 
-// ५. हिशोब गणित
+// ५. हिशोब गणित, Trust Rating व Retirement Countdown
 function compareYm(a, b) { return String(a || '').localeCompare(String(b || '')); }
 function nextYm(ym) { const [y, m] = ym.split('-').map(Number); return m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, '0')}`; }
-
 function calculateLateFee(borrower, targetYm, isFullyPaid) {
   if (isFullyPaid || borrower.accountStatus === 'closed') return { lateDays: 0, lateFee: 0 };
   const interestDay = Number(borrower.interestDay || 0), lateFeePerDay = Number(borrower.lateFeePerDay || 0);
   if (!interestDay || !lateFeePerDay) return { lateDays: 0, lateFee: 0 };
-  const [y, m] = targetYm.split('-').map(Number);
-  const dueDate = new Date(y, m - 1, Math.min(interestDay, new Date(y, m, 0).getDate()));
+  const [y, m] = targetYm.split('-').map(Number), dueDate = new Date(y, m - 1, Math.min(interestDay, new Date(y, m, 0).getDate()));
   const today = new Date(); today.setHours(0, 0, 0, 0);
   if (today <= dueDate) return { lateDays: 0, lateFee: 0 };
   const diffDays = Math.floor((today - dueDate) / 86400000);
   return { lateDays: diffDays, lateFee: diffDays * lateFeePerDay };
 }
-
 function getMonthlyInterestAmount(borrower) {
   if (borrower.accountStatus === 'closed') return 0;
   const fixedInt = Number(borrower.fixedMonthlyInterest || 0);
   if (fixedInt > 0) return Math.round(fixedInt);
-  const principal = Number(borrower.principal || 0);
-  const base = borrower.interestType === 'flat' ? Number(borrower.originalPrincipal || principal) : principal;
+  const principal = Number(borrower.principal || 0), base = borrower.interestType === 'flat' ? Number(borrower.originalPrincipal || principal) : principal;
   return Math.round((base * Number(borrower.rate || 0)) / 100);
 }
-
 function computeLedgerUpToMonth(borrower, targetYm) {
-  const principal = Number(borrower.principal || 0);
-  const originalPrincipal = Number(borrower.originalPrincipal || principal);
-  const interestType = borrower.interestType === 'flat' ? 'flat' : 'reducing';
-  if (borrower.accountStatus === 'closed') {
-    return { principal: 0, originalPrincipal, interestType, monthlyInterest: 0, paidThisMonth: 0, collectedInMonth: 0, remainingThisMonth: 0, status: 'closed', isPaid: true, pastDue: 0, lateDays: 0, lateFee: 0, totalPayable: 0 };
-  }
-  const monthlyInterest = getMonthlyInterestAmount(borrower);
-  const paidMonths = borrower.paidMonths || {}, partialPayments = borrower.partialPayments || {};
-  const customPastDues = borrower.customPastDues || {}, customCashPaid = borrower.customCashPaid || {};
+  const principal = Number(borrower.principal || 0), originalPrincipal = Number(borrower.originalPrincipal || principal), interestType = borrower.interestType === 'flat' ? 'flat' : 'reducing';
+  if (borrower.accountStatus === 'closed') return { principal: 0, originalPrincipal, interestType, monthlyInterest: 0, paidThisMonth: 0, collectedInMonth: 0, remainingThisMonth: 0, status: 'closed', isPaid: true, pastDue: 0, lateDays: 0, lateFee: 0, totalPayable: 0 };
+  const monthlyInterest = getMonthlyInterestAmount(borrower), paidMonths = borrower.paidMonths || {}, partialPayments = borrower.partialPayments || {}, customPastDues = borrower.customPastDues || {}, customCashPaid = borrower.customCashPaid || {};
   let runningPastDue = 0, cursor = borrower.startYm || targetYm, guard = 0;
-
   while (compareYm(cursor, targetYm) <= 0 && guard < 240) {
     guard++;
     const paidThisMonth = Boolean(paidMonths[cursor]) ? monthlyInterest : Math.min(monthlyInterest, Number(partialPayments[cursor] || 0));
-    const remainingThisMonth = Math.max(0, monthlyInterest - paidThisMonth);
-    const pastPaidThisMonth = Number(customCashPaid[cursor] || 0);
+    const remainingThisMonth = Math.max(0, monthlyInterest - paidThisMonth), pastPaidThisMonth = Number(customCashPaid[cursor] || 0);
     if (Object.prototype.hasOwnProperty.call(customPastDues, cursor)) runningPastDue += Number(customPastDues[cursor] || 0);
     if (Object.prototype.hasOwnProperty.call(customCashPaid, cursor)) runningPastDue = Math.max(0, runningPastDue - pastPaidThisMonth);
-
     if (cursor === targetYm) {
       let status = 'pending';
       if (remainingThisMonth === 0 && monthlyInterest > 0) status = 'paid';
       else if (paidThisMonth > 0 && remainingThisMonth > 0) status = 'partial';
       const lateInfo = calculateLateFee(borrower, targetYm, status === 'paid');
-      return {
-        principal, originalPrincipal, interestType, monthlyInterest, paidThisMonth,
-        collectedInMonth: paidThisMonth + pastPaidThisMonth, remainingThisMonth,
-        status, isPaid: status === 'paid', pastDue: Math.max(0, runningPastDue),
-        lateDays: lateInfo.lateDays, lateFee: lateInfo.lateFee,
-        totalPayable: Math.max(0, runningPastDue) + remainingThisMonth + lateInfo.lateFee
-      };
+      return { principal, originalPrincipal, interestType, monthlyInterest, paidThisMonth, collectedInMonth: paidThisMonth + pastPaidThisMonth, remainingThisMonth, status, isPaid: status === 'paid', pastDue: Math.max(0, runningPastDue), lateDays: lateInfo.lateDays, lateFee: lateInfo.lateFee, totalPayable: Math.max(0, runningPastDue) + remainingThisMonth + lateInfo.lateFee };
     }
     if (remainingThisMonth > 0) runningPastDue += remainingThisMonth;
     cursor = nextYm(cursor);
   }
   const paidThisMonth = Boolean(paidMonths[targetYm]) ? monthlyInterest : Math.min(monthlyInterest, Number(partialPayments[targetYm] || 0));
-  const remainingThisMonth = Math.max(0, monthlyInterest - paidThisMonth);
-  const pastPaidThisMonth = Number(customCashPaid[targetYm] || 0);
+  const remainingThisMonth = Math.max(0, monthlyInterest - paidThisMonth), pastPaidThisMonth = Number(customCashPaid[targetYm] || 0);
   let status = 'pending';
   if (remainingThisMonth === 0 && monthlyInterest > 0) status = 'paid';
   else if (paidThisMonth > 0 && remainingThisMonth > 0) status = 'partial';
   const lateInfo = calculateLateFee(borrower, targetYm, status === 'paid');
-  return {
-    principal, originalPrincipal, interestType, monthlyInterest, paidThisMonth,
-    collectedInMonth: paidThisMonth + pastPaidThisMonth, remainingThisMonth,
-    status, isPaid: status === 'paid', pastDue: Math.max(0, runningPastDue),
-    lateDays: lateInfo.lateDays, lateFee: lateInfo.lateFee,
-    totalPayable: Math.max(0, runningPastDue) + remainingThisMonth + lateInfo.lateFee
-  };
+  return { principal, originalPrincipal, interestType, monthlyInterest, paidThisMonth, collectedInMonth: paidThisMonth + pastPaidThisMonth, remainingThisMonth, status, isPaid: status === 'paid', pastDue: Math.max(0, runningPastDue), lateDays: lateInfo.lateDays, lateFee: lateInfo.lateFee, totalPayable: Math.max(0, runningPastDue) + remainingThisMonth + lateInfo.lateFee };
+}
+
+function getTrustBadgeHtml(calc) {
+  if (calc.status === 'closed') return '';
+  if (calc.pastDue === 0 && calc.remainingThisMonth === 0) return `<span class="badge paid">⭐⭐⭐⭐⭐ उत्तम</span>`;
+  if (calc.pastDue === 0 && calc.remainingThisMonth > 0) return `<span class="badge partial">⭐⭐⭐⭐ चालू बाकी</span>`;
+  if (calc.monthlyInterest > 0 && calc.pastDue <= calc.monthlyInterest) return `<span class="badge partial">⭐⭐⭐ १ म. बाकी</span>`;
+  return `<span class="badge pending">⭐ डिफॉल्टर</span>`;
+}
+
+function getRetirementBadgeHtml(retDateStr) {
+  if (!retDateStr) return '';
+  const d = new Date(retDateStr + 'T00:00:00');
+  if (isNaN(d.getTime())) return `<span class="badge">📅 Ret: ${escapeHtml(retDateStr)}</span>`;
+  const yr = d.getFullYear(), diffY = (d - new Date()) / (1000 * 60 * 60 * 24 * 365.25);
+  if (diffY <= 0) return `<span class="badge pending">⚠️ रिटायर्ड (${yr})</span>`;
+  if (diffY <= 1.5) return `<span class="badge pending">⏳ रिटायरमेंट: ${yr} (लवकरच!)</span>`;
+  return `<span class="badge">📅 रिटायरमेंट: ${yr} (~${Math.round(diffY)} वर्षे)</span>`;
 }
 
 function getPromiseStatusHtml(borrower, totalPayable) {
@@ -513,83 +567,70 @@ function getPromiseStatusHtml(borrower, totalPayable) {
   return `<div>📅 वायद्यानुसार बाकी: ${parts.join(' | ')}</div>`;
 }
 
-// ६. खाते बंद (Final Settlement), Re-open, Follow-up व एकाच ग्राहकाचे नवीन कर्ज
-async function closeAccountWithSettlement(borrowerId, name, currentPrincipal, totalPending) {
-  if (!state.user || !checkRateLimit('CLOSE_ACC')) return;
-  const suggested = Number(currentPrincipal || 0) + Number(totalPending || 0);
-  const amtStr = prompt(`'${name}' यांचे खाते बंद करण्यासाठी Final Settlement रक्कम (₹) टाका:`, String(suggested));
-  if (amtStr === null) return;
-  const note = prompt('Final Settlement टीप (पर्यायी):', 'संपूर्ण हिशोब पूर्ण') || '';
-  const nowIso = new Date().toISOString();
+// ६. चक्रवाढ व्याज, खाते बंद, Follow-up, नवीन कर्ज
+async function compoundPastDue(borrowerId, ym, pastDueAmt) {
+  if (!state.user || !checkRateLimit('COMPOUND')) return;
+  const b = state.borrowers.find(x => x.id === borrowerId); if (!b || pastDueAmt <= 0) return;
+  if (!confirm(`'${b.name}' यांचे मागील थकीत ₹${pastDueAmt} व्याज मुद्दलात जोडून चक्रवाढ करायचे का?`)) return;
+  const nextPrincipal = Number(b.principal || 0) + pastDueAmt;
+  const nextOrig = Number(b.originalPrincipal || b.principal || 0) + pastDueAmt;
+  const prevCashPaid = Number((b.customCashPaid && b.customCashPaid[ym]) || 0);
   await getBorrowerDoc(borrowerId).update({
-    accountStatus: 'closed',
-    settlement: { amount: Number(amtStr || 0), date: nowIso.slice(0, 10), note: note.trim(), closedAt: nowIso }
+    principal: nextPrincipal,
+    originalPrincipal: nextOrig,
+    [`customCashPaid.${ym}`]: prevCashPaid + pastDueAmt,
+    extraPrincipals: firebase.firestore.FieldValue.arrayUnion({ date: new Date().toISOString(), amount: pastDueAmt, balanceAfter: nextPrincipal, note: 'थकीत व्याज चक्रवाढ' })
   });
-  await appendAuditLog('ACCOUNT_CLOSED', `${name} खाते बंद केले (Final Settlement: ₹${amtStr})`);
+  await appendAuditLog('COMPOUND_PAST_DUE', `${b.name} चे ₹${pastDueAmt} मुद्दलात चक्रवाढ केले`);
 }
 
+async function closeAccountWithSettlement(borrowerId, name, currentPrincipal, totalPending) {
+  if (!state.user || !checkRateLimit('CLOSE_ACC')) return;
+  const amtStr = prompt(`'${name}' यांचे खाते बंद करण्यासाठी Final Settlement रक्कम (₹) टाका:`, String(Number(currentPrincipal || 0) + Number(totalPending || 0)));
+  if (amtStr === null) return;
+  const note = prompt('Final Settlement टीप (पर्यायी):', 'संपूर्ण हिशोब पूर्ण') || '', nowIso = new Date().toISOString();
+  await getBorrowerDoc(borrowerId).update({ accountStatus: 'closed', settlement: { amount: Number(amtStr || 0), date: nowIso.slice(0, 10), note: note.trim(), closedAt: nowIso } });
+  await appendAuditLog('ACCOUNT_CLOSED', `${name} खाते बंद (Settlement: ₹${amtStr})`);
+}
 async function reopenAccount(borrowerId, name) {
   if (!state.user || !confirm(`'${name}' यांचे बंद खाते पुन्हा Active करायचे का?`)) return;
   await getBorrowerDoc(borrowerId).update({ accountStatus: 'active' });
   await appendAuditLog('ACCOUNT_REOPENED', `${name} खाते पुन्हा Active केले`);
 }
-
 async function addFollowUpNote(borrowerId, name) {
   if (!state.user || !checkRateLimit('FOLLOWUP')) return;
-  const note = prompt(`'${name}' यांच्याशी झालेल्या Follow-up ची टीप लिहा (उदा. कॉल केला, सोमवारी देतील):`);
-  if (!note || !note.trim()) return;
-  const entry = { date: getLocalDateIso(0), ts: new Date().toISOString(), note: note.trim() };
-  await getBorrowerDoc(borrowerId).update({
-    followUps: firebase.firestore.FieldValue.arrayUnion(entry)
-  });
+  const note = prompt(`'${name}' यांच्याशी झालेल्या Follow-up ची टीप लिहा:`); if (!note || !note.trim()) return;
+  await getBorrowerDoc(borrowerId).update({ followUps: firebase.firestore.FieldValue.arrayUnion({ date: getLocalDateIso(0), ts: new Date().toISOString(), note: note.trim() }) });
   await appendAuditLog('FOLLOWUP_LOGGED', `${name}: ${note.trim()}`);
 }
-
 function prefillNewLoanForCustomer(borrowerId) {
-  const b = state.borrowers.find(x => x.id === borrowerId);
-  if (!b) return;
-  const existingLoansCount = state.borrowers.filter(x => !x.isDeleted && String(x.name || '').trim().toLowerCase() === String(b.name || '').trim().toLowerCase()).length;
-  document.getElementById('bName').value = b.name || '';
-  document.getElementById('bLoanLabel').value = `कर्ज #${existingLoansCount + 1}`;
-  document.getElementById('bMobile').value = b.mobile || '';
-  document.getElementById('bGuarantor').value = b.guarantor || '';
-  document.getElementById('bExtraGuarantors').value = b.extraGuarantors || '';
-  document.getElementById('bJobType').value = b.jobType || '';
-  document.getElementById('bCompanyDept').value = b.companyDept || '';
-  document.getElementById('bPrincipal').value = '';
-  document.getElementById('addBorrowerSection').scrollIntoView({ behavior: 'smooth' });
-  document.getElementById('bPrincipal').focus();
+  const b = state.borrowers.find(x => x.id === borrowerId); if (!b) return;
+  const cnt = state.borrowers.filter(x => !x.isDeleted && String(x.name || '').trim().toLowerCase() === String(b.name || '').trim().toLowerCase()).length;
+  document.getElementById('bName').value = b.name || ''; document.getElementById('bLoanLabel').value = `कर्ज #${cnt + 1}`;
+  document.getElementById('bMobile').value = b.mobile || ''; document.getElementById('bGuarantor').value = b.guarantor || '';
+  document.getElementById('bExtraGuarantors').value = b.extraGuarantors || ''; document.getElementById('bJobType').value = b.jobType || '';
+  document.getElementById('bCompanyDept').value = b.companyDept || ''; document.getElementById('bPrincipal').value = '';
+  document.getElementById('addBorrowerSection').scrollIntoView({ behavior: 'smooth' }); document.getElementById('bPrincipal').focus();
 }
 
 // ७. Version History व Conflict Rollback
 function buildVersionSnapshot(b) {
-  return {
-    savedAt: new Date().toISOString(), name: b.name || '', mobile: b.mobile || '',
-    principal: Number(b.principal || 0), originalPrincipal: Number(b.originalPrincipal || b.principal || 0),
-    rate: Number(b.rate || 0), fixedMonthlyInterest: Number(b.fixedMonthlyInterest || 0),
-    interestType: b.interestType || 'reducing', interestDay: Number(b.interestDay || 0),
-    guarantor: b.guarantor || '', extraGuarantors: b.extraGuarantors || '', note: b.note || ''
-  };
+  return { savedAt: new Date().toISOString(), name: b.name || '', mobile: b.mobile || '', principal: Number(b.principal || 0), originalPrincipal: Number(b.originalPrincipal || b.principal || 0), rate: Number(b.rate || 0), fixedMonthlyInterest: Number(b.fixedMonthlyInterest || 0), interestType: b.interestType || 'reducing', interestDay: Number(b.interestDay || 0), guarantor: b.guarantor || '', extraGuarantors: b.extraGuarantors || '', note: b.note || '' };
 }
-
 function openVersionModal(borrowerId) {
-  const b = state.borrowers.find(x => x.id === borrowerId);
-  if (!b) return;
+  const b = state.borrowers.find(x => x.id === borrowerId); if (!b) return;
   state.currentVersionBorrowerId = borrowerId;
   document.getElementById('versionModalTitle').textContent = `🕒 ${b.name || 'ग्राहक'} — Version History व Rollback`;
   const list = Array.isArray(b.versionHistory) ? b.versionHistory : [];
-  document.getElementById('versionModalContent').innerHTML = !list.length
-    ? '<p class="muted">अद्याप कोणतीही जुनी आवृत्ती सेव्ह झालेली नाही.</p>'
-    : list.slice().reverse().map((v, revIdx) => {
-        const origIdx = list.length - 1 - revIdx;
-        return `<div class="meta-box"><div class="row" style="justify-content:space-between;"><div><strong>आवृत्ती #${origIdx + 1}</strong> <span class="muted">(${escapeHtml(String(v.savedAt || '').slice(0, 19).replace('T', ' '))})</span><div>नाव: ${escapeHtml(v.name)} | मुद्दल: ${fmtAmt(v.principal)} | दर: ${v.rate}%</div></div><button data-rollback-idx="${origIdx}" class="warn sm">↩️ Rollback</button></div></div>`;
-      }).join('');
-  document.getElementById('versionModal').classList.remove('hidden');
+  document.getElementById('versionModalContent').innerHTML = !list.length ? '<p class="muted">कोणतीही जुनी आवृत्ती नाही.</p>' : list.slice().reverse().map((v, revIdx) => {
+    const origIdx = list.length - 1 - revIdx;
+    return `<div class="meta-box"><div class="row" style="justify-content:space-between;"><div><strong>आवृत्ती #${origIdx + 1}</strong> <span class="muted">(${escapeHtml(String(v.savedAt || '').slice(0, 19).replace('T', ' '))})</span><div>नाव: ${escapeHtml(v.name)} | मुद्दल: ${fmtAmt(v.principal)} | दर: ${v.rate}%</div></div><button data-rollback-idx="${origIdx}" class="warn sm">↩️ Rollback</button></div></div>`;
+  }).join('');
+  openModalSafe('versionModal');
 }
 document.getElementById('closeVersionModalBtn').addEventListener('click', () => document.getElementById('versionModal').classList.add('hidden'));
 document.getElementById('versionModalContent').addEventListener('click', async (e) => {
-  const btn = e.target.closest('button[data-rollback-idx]');
-  if (!btn || !state.currentVersionBorrowerId || !checkRateLimit('ROLLBACK')) return;
+  const btn = e.target.closest('button[data-rollback-idx]'); if (!btn || !state.currentVersionBorrowerId || !checkRateLimit('ROLLBACK')) return;
   const idx = Number(btn.getAttribute('data-rollback-idx')), b = state.borrowers.find(x => x.id === state.currentVersionBorrowerId);
   if (!b || !b.versionHistory || !b.versionHistory[idx] || !confirm(`आवृत्ती #${idx + 1} वर Rollback करायचे का?`)) return;
   const v = b.versionHistory[idx];
@@ -598,12 +639,20 @@ document.getElementById('versionModalContent').addEventListener('click', async (
   document.getElementById('versionModal').classList.add('hidden');
 });
 
-// ८. रिपोर्ट्स, CSV, Gmail, Webhook, Vault, Cloud Backup व Archive
+// ८. रिपोर्ट्स, CSV, Native Android Share, Gmail, Webhook, Vault, Cloud Backup व Archive
 function downloadTextFile(filename, content, mimeType) {
   const url = URL.createObjectURL(new Blob([content], { type: mimeType }));
   const a = document.createElement('a'); a.href = url; a.download = filename; a.click(); URL.revokeObjectURL(url);
 }
 function csvCell(val) { return `"${String(val === undefined || val === null ? '' : val).replace(/"/g, '""')}"`; }
+function buildMonthlyCsvText(activeYm) {
+  const lines = [['नाव', 'कर्ज खाते', 'मोबाईल', 'मुद्दल', 'दर (%)', 'मासिक व्याज', 'चालू जमा', 'मागील बाकी', 'एकूण थकबाकी', 'स्थिती'].map(csvCell).join(',')];
+  state.borrowers.filter(b => !b.isDeleted && b.accountStatus !== 'closed').forEach(b => {
+    const c = computeLedgerUpToMonth(b, activeYm);
+    lines.push([b.name, b.loanLabel || '', b.mobile || '', c.principal, b.rate || 0, c.monthlyInterest, c.paidThisMonth, c.pastDue, c.totalPayable, c.status].map(csvCell).join(','));
+  });
+  return '\uFEFF' + lines.join('\r\n');
+}
 
 document.getElementById('printMonthlyPdfBtn').addEventListener('click', () => {
   const activeYm = document.getElementById('activeYm').value || currentYmDefault();
@@ -620,13 +669,22 @@ document.getElementById('printMonthlyPdfBtn').addEventListener('click', () => {
 
 document.getElementById('exportMonthlyCsvBtn').addEventListener('click', () => {
   const activeYm = document.getElementById('activeYm').value || currentYmDefault();
-  const lines = [['नाव', 'कर्ज खाते', 'मोबाईल', 'मुद्दल', 'दर (%)', 'मासिक व्याज', 'चालू जमा', 'मागील बाकी', 'एकूण थकबाकी', 'स्थिती'].map(csvCell).join(',')];
-  state.borrowers.filter(b => !b.isDeleted && b.accountStatus !== 'closed').forEach(b => {
-    const c = computeLedgerUpToMonth(b, activeYm);
-    lines.push([b.name, b.loanLabel || '', b.mobile || '', c.principal, b.rate || 0, c.monthlyInterest, c.paidThisMonth, c.pastDue, c.totalPayable, c.status].map(csvCell).join(','));
-  });
-  downloadTextFile(`hishob-monthly-${activeYm}.csv`, '\uFEFF' + lines.join('\r\n'), 'text/csv;charset=utf-8;');
+  downloadTextFile(`hishob-monthly-${activeYm}.csv`, buildMonthlyCsvText(activeYm), 'text/csv;charset=utf-8;');
   document.getElementById('ioMsg').textContent = `${activeYm} ची Excel-सुसंगत CSV डाउनलोड झाली.`;
+});
+
+document.getElementById('shareMonthlyCsvBtn').addEventListener('click', async () => {
+  const activeYm = document.getElementById('activeYm').value || currentYmDefault();
+  const csvText = buildMonthlyCsvText(activeYm), fileName = `hishob-monthly-${activeYm}.csv`;
+  try {
+    const f = new File([csvText], fileName, { type: 'text/csv' });
+    if (navigator.canShare && navigator.canShare({ files: [f] })) {
+      await navigator.share({ title: `Hishob अहवाल (${activeYm})`, text: `${activeYm} चा मासिक हिशोब CSV`, files: [f] });
+      return;
+    }
+  } catch (_) {}
+  downloadTextFile(fileName, csvText, 'text/csv;charset=utf-8;');
+  document.getElementById('ioMsg').textContent = 'या ब्राउझरमध्ये थेट Share नाही — CSV डाउनलोड झाली.';
 });
 
 document.getElementById('exportAllCsvBtn').addEventListener('click', () => {
@@ -641,16 +699,17 @@ document.getElementById('exportAllCsvBtn').addEventListener('click', () => {
 document.getElementById('importCsvBtn').addEventListener('click', async () => {
   const msgEl = document.getElementById('ioMsg'), file = document.getElementById('importCsvFile').files && document.getElementById('importCsvFile').files[0];
   if (!state.user || !checkRateLimit('CSV_IMPORT')) return;
-  const check = await validateFileUpload(file, 'csv');
-  if (!check.ok) { msgEl.textContent = `❌ ${check.reason}`; return; }
+  const check = await validateFileUpload(file, 'csv'); if (!check.ok) { msgEl.textContent = `❌ ${check.reason}`; return; }
   try {
     const lines = (await file.text()).replace(/^\uFEFF/, '').split(/\r?\n/).map(l => l.trim()).filter(Boolean);
     let count = 0;
     for (let i = 1; i < lines.length; i++) {
       const cols = parseCsvLine(lines[i]), name = cols[0], principal = Number(cols[1] || 0), rate = Number(cols[2] || 2), startYm = cols[3] || currentYmDefault();
       if (name && principal > 0) {
+        const auto = detectJobAndGuarantor(name);
         await db.collection('users').doc(state.user.uid).collection('borrowers').add({
           name, principal, originalPrincipal: principal, rate, fixedMonthlyInterest: 0, startYm, mobile: cols[4] || '',
+          guarantor: auto.guarantor, jobType: auto.jobType, companyDept: auto.companyDept,
           accountStatus: 'active', interestType: 'reducing', isDeleted: false, paidMonths: {}, partialPayments: {},
           paymentHistory: [], extraPrincipals: [], principalReductions: [], versionHistory: [], followUps: [],
           customPastDues: {}, customCashPaid: {}, createdAt: new Date().toISOString()
@@ -694,40 +753,26 @@ document.getElementById('sendWebhookBtn').addEventListener('click', async () => 
 
 document.getElementById('saveLocalVaultBtn').addEventListener('click', async () => {
   const msgEl = document.getElementById('ioMsg');
-  try {
-    const res = await encryptPayload({ savedAt: new Date().toISOString(), borrowers: state.borrowers }, document.getElementById('backupPasskey').value);
-    localStorage.setItem('hishob_emergency_vault', res.jsonString);
-    msgEl.textContent = '🛡️ Encrypted Emergency Local Vault सेव्ह झाला.';
-  } catch (err) { msgEl.textContent = `Vault एरर: ${err.message}`; }
+  try { const res = await encryptPayload({ savedAt: new Date().toISOString(), borrowers: state.borrowers }, document.getElementById('backupPasskey').value); localStorage.setItem('hishob_emergency_vault', res.jsonString); msgEl.textContent = '🛡️ Encrypted Emergency Local Vault सेव्ह झाला.'; }
+  catch (err) { msgEl.textContent = `Vault एरर: ${err.message}`; }
 });
 document.getElementById('restoreLocalVaultBtn').addEventListener('click', async () => {
   const msgEl = document.getElementById('ioMsg'), raw = localStorage.getItem('hishob_emergency_vault');
   if (!raw || !checkRateLimit('VAULT_RESTORE')) { msgEl.textContent = 'कोणताही Local Vault सापडला नाही.'; return; }
-  try {
-    const list = (await decryptPayload(raw, document.getElementById('backupPasskey').value)).borrowers || [];
-    for (const item of list) { const copy = { ...item }; delete copy.id; await db.collection('users').doc(state.user.uid).collection('borrowers').add(copy); }
-    msgEl.textContent = `♻️ Local Vault मधून ${list.length} नोंदी रिस्टोर झाल्या.`;
-  } catch (err) { msgEl.textContent = `Vault Restore एरर: ${err.message}`; }
+  try { const list = (await decryptPayload(raw, document.getElementById('backupPasskey').value)).borrowers || []; for (const item of list) { const copy = { ...item }; delete copy.id; await db.collection('users').doc(state.user.uid).collection('borrowers').add(copy); } msgEl.textContent = `♻️ Local Vault मधून ${list.length} नोंदी रिस्टोर झाल्या.`; }
+  catch (err) { msgEl.textContent = `Vault Restore एरर: ${err.message}`; }
 });
 document.getElementById('saveCloudBackupBtn').addEventListener('click', async () => {
   if (!state.user || !checkRateLimit('CLOUD_BACKUP')) return;
   const msgEl = document.getElementById('ioMsg');
-  try {
-    const nowIso = new Date().toISOString();
-    await db.collection('users').doc(state.user.uid).collection('cloudBackups').add({ createdAt: nowIso, count: state.borrowers.length, borrowers: state.borrowers });
-    await appendAuditLog('CLOUD_BACKUP', `${state.borrowers.length} खात्यांचा Cloud Backup सेव्ह`);
-    msgEl.textContent = `☁️ Cloud Backup सेव्ह झाला (${nowIso.slice(0, 10)}).`;
-  } catch (err) { msgEl.textContent = `Cloud Backup एरर: ${err.message}`; }
+  try { const nowIso = new Date().toISOString(); await db.collection('users').doc(state.user.uid).collection('cloudBackups').add({ createdAt: nowIso, count: state.borrowers.length, borrowers: state.borrowers }); await appendAuditLog('CLOUD_BACKUP', `${state.borrowers.length} खात्यांचा Cloud Backup सेव्ह`); msgEl.textContent = `☁️ Cloud Backup सेव्ह झाला (${nowIso.slice(0, 10)}).`; }
+  catch (err) { msgEl.textContent = `Cloud Backup एरर: ${err.message}`; }
 });
 document.getElementById('saveMonthlyArchiveBtn').addEventListener('click', async () => {
   if (!state.user || !checkRateLimit('MONTHLY_ARCHIVE')) return;
   const msgEl = document.getElementById('ioMsg'), activeYm = document.getElementById('activeYm').value || currentYmDefault();
-  try {
-    const summary = state.borrowers.filter(b => !b.isDeleted).map(b => ({ id: b.id, name: b.name, ...computeLedgerUpToMonth(b, activeYm) }));
-    await db.collection('users').doc(state.user.uid).collection('monthlyArchives').doc(activeYm).set({ ym: activeYm, archivedAt: new Date().toISOString(), count: summary.length, records: summary });
-    await appendAuditLog('MONTHLY_ARCHIVE', `${activeYm} चा Archive सेव्ह`);
-    msgEl.textContent = `📦 ${activeYm} चा मासिक Archive सेव्ह झाला.`;
-  } catch (err) { msgEl.textContent = `Archive एरर: ${err.message}`; }
+  try { const summary = state.borrowers.filter(b => !b.isDeleted).map(b => ({ id: b.id, name: b.name, ...computeLedgerUpToMonth(b, activeYm) })); await db.collection('users').doc(state.user.uid).collection('monthlyArchives').doc(activeYm).set({ ym: activeYm, archivedAt: new Date().toISOString(), count: summary.length, records: summary }); await appendAuditLog('MONTHLY_ARCHIVE', `${activeYm} चा Archive सेव्ह`); msgEl.textContent = `📦 ${activeYm} चा मासिक Archive सेव्ह झाला.`; }
+  catch (err) { msgEl.textContent = `Archive एरर: ${err.message}`; }
 });
 
 // ९. Document Upload व Gallery
@@ -736,12 +781,7 @@ function compressImageToBase64(file, maxWidth = 800, quality = 0.65) {
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
-      img.onload = () => {
-        const scale = Math.min(1, maxWidth / img.width), canvas = document.createElement('canvas');
-        canvas.width = Math.round(img.width * scale); canvas.height = Math.round(img.height * scale);
-        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL('image/jpeg', quality));
-      };
+      img.onload = () => { const scale = Math.min(1, maxWidth / img.width), canvas = document.createElement('canvas'); canvas.width = Math.round(img.width * scale); canvas.height = Math.round(img.height * scale); canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height); resolve(canvas.toDataURL('image/jpeg', quality)); };
       img.onerror = () => reject(new Error('फोटो वाचता आला नाही.')); img.src = e.target.result;
     };
     reader.onerror = () => reject(new Error('फाईल वाचता आली नाही.')); reader.readAsDataURL(file);
@@ -751,10 +791,7 @@ async function loadBorrowerDocs(borrowerId) {
   const grid = document.getElementById('docGalleryGrid'); grid.innerHTML = '<div class="muted">लोड होत आहे...</div>';
   try {
     const snap = await getBorrowerDoc(borrowerId).collection('documents').orderBy('uploadedAt', 'desc').get();
-    grid.innerHTML = snap.empty ? '<div class="muted">कोणतेही डॉक्युमेंट नाही.</div>' : snap.docs.map(d => {
-      const doc = d.data();
-      return `<div class="doc-card"><img src="${doc.dataUrl}" alt="${escapeHtml(doc.docName || 'Doc')}" /><div style="margin-top:6px;"><strong>${escapeHtml(doc.docName || 'डॉक्युमेंट')}</strong></div><div class="muted">${escapeHtml(String(doc.uploadedAt || '').slice(0, 10))}</div><button data-deldoc="${d.id}" class="danger sm" style="margin-top:6px;">डिलीट</button></div>`;
-    }).join('');
+    grid.innerHTML = snap.empty ? '<div class="muted">कोणतेही डॉक्युमेंट नाही.</div>' : snap.docs.map(d => { const doc = d.data(); return `<div class="doc-card"><img src="${doc.dataUrl}" alt="${escapeHtml(doc.docName || 'Doc')}" /><div style="margin-top:6px;"><strong>${escapeHtml(doc.docName || 'डॉक्युमेंट')}</strong></div><div class="muted">${escapeHtml(String(doc.uploadedAt || '').slice(0, 10))}</div><button data-deldoc="${d.id}" class="danger sm" style="margin-top:6px;">डिलीट</button></div>`; }).join('');
   } catch (err) { grid.innerHTML = `<div class="err">एरर: ${escapeHtml(err.message)}</div>`; }
 }
 function openDocsModal(borrowerId) {
@@ -762,28 +799,20 @@ function openDocsModal(borrowerId) {
   state.currentDocsBorrowerId = borrowerId;
   document.getElementById('docsModalTitle').textContent = `📎 ${b.name || 'ग्राहक'} — Document Gallery`;
   document.getElementById('docUploadMsg').textContent = '';
-  document.getElementById('docsModal').classList.remove('hidden'); loadBorrowerDocs(borrowerId);
+  openModalSafe('docsModal'); loadBorrowerDocs(borrowerId);
 }
 document.getElementById('closeDocsModalBtn').addEventListener('click', () => document.getElementById('docsModal').classList.add('hidden'));
 document.getElementById('uploadDocBtn').addEventListener('click', async () => {
   if (!state.user || !state.currentDocsBorrowerId || !checkRateLimit('DOC_UPLOAD')) return;
   const docName = document.getElementById('docNameInput').value.trim(), fileInput = document.getElementById('docFileInput'), file = fileInput.files && fileInput.files[0], msgEl = document.getElementById('docUploadMsg');
   if (!docName || !file) { msgEl.textContent = 'डॉक्युमेंटचे नाव आणि फोटो निवडा.'; return; }
-  const check = await validateFileUpload(file, 'image');
-  if (!check.ok) { msgEl.textContent = `❌ ${check.reason}`; return; }
-  try {
-    msgEl.textContent = 'फोटो तपासून अपलोड करत आहे...';
-    await getBorrowerDoc(state.currentDocsBorrowerId).collection('documents').add({ docName, dataUrl: await compressImageToBase64(file), uploadedAt: new Date().toISOString() });
-    await appendAuditLog('DOC_UPLOADED', `${state.currentDocsBorrowerId} साठी '${docName}' अपलोड`);
-    document.getElementById('docNameInput').value = ''; fileInput.value = ''; msgEl.textContent = '✅ सेव्ह झाले.';
-    loadBorrowerDocs(state.currentDocsBorrowerId);
-  } catch (err) { msgEl.textContent = `Upload एरर: ${err.message}`; }
+  const check = await validateFileUpload(file, 'image'); if (!check.ok) { msgEl.textContent = `❌ ${check.reason}`; return; }
+  try { msgEl.textContent = 'फोटो तपासून अपलोड करत आहे...'; await getBorrowerDoc(state.currentDocsBorrowerId).collection('documents').add({ docName, dataUrl: await compressImageToBase64(file), uploadedAt: new Date().toISOString() }); await appendAuditLog('DOC_UPLOADED', `${state.currentDocsBorrowerId} साठी '${docName}' अपलोड`); document.getElementById('docNameInput').value = ''; fileInput.value = ''; msgEl.textContent = '✅ सेव्ह झाले.'; loadBorrowerDocs(state.currentDocsBorrowerId); }
+  catch (err) { msgEl.textContent = `Upload एरर: ${err.message}`; }
 });
 document.getElementById('docGalleryGrid').addEventListener('click', async (e) => {
-  const btn = e.target.closest('button[data-deldoc]');
-  if (!btn || !state.currentDocsBorrowerId || !confirm('डिलीट करायचे का?')) return;
-  await getBorrowerDoc(state.currentDocsBorrowerId).collection('documents').doc(btn.getAttribute('data-deldoc')).delete();
-  loadBorrowerDocs(state.currentDocsBorrowerId);
+  const btn = e.target.closest('button[data-deldoc]'); if (!btn || !state.currentDocsBorrowerId || !confirm('डिलीट करायचे का?')) return;
+  await getBorrowerDoc(state.currentDocsBorrowerId).collection('documents').doc(btn.getAttribute('data-deldoc')).delete(); loadBorrowerDocs(state.currentDocsBorrowerId);
 });
 
 // १०. ग्राहक अ‍ॅक्शन्स
@@ -823,8 +852,7 @@ async function payCustomPastDue(borrowerId, ym, currentPastDue) {
   if (!state.user || !checkRateLimit('PAY_PAST')) return;
   const inputEl = document.getElementById(`payPastInput_${borrowerId}`), amountToPay = Number(inputEl ? inputEl.value : 0);
   if (!amountToPay || amountToPay <= 0) { alert('जमा करायची रक्कम (₹) टाका.'); return; }
-  const existing = state.borrowers.find(b => b.id === borrowerId) || {};
-  const newPastDue = Math.max(0, Number(currentPastDue || 0) - amountToPay);
+  const existing = state.borrowers.find(b => b.id === borrowerId) || {}, newPastDue = Math.max(0, Number(currentPastDue || 0) - amountToPay);
   const updatePayload = { [`customCashPaid.${ym}`]: Number((existing.customCashPaid && existing.customCashPaid[ym]) || 0) + amountToPay, paymentHistory: firebase.firestore.FieldValue.arrayUnion({ date: new Date().toISOString(), ym, type: 'PAST_DUE_PAID', amount: amountToPay, note: `${ym} मागील बाकी जमा` }) };
   if (newPastDue === 0 && existing.customPastDues && Object.prototype.hasOwnProperty.call(existing.customPastDues, ym)) updatePayload[`customPastDues.${ym}`] = firebase.firestore.FieldValue.delete();
   await getBorrowerDoc(borrowerId).update(updatePayload); if (inputEl) inputEl.value = '';
@@ -876,20 +904,18 @@ async function permanentDeleteBorrower(borrowerId, name) {
 function buildBorrowerEvents(b) {
   const events = [];
   if (b.loanDate || b.createdAt) events.push({ date: b.loanDate || String(b.createdAt).slice(0, 10), type: 'कर्ज सुरुवात', principalDebit: Number(b.originalPrincipal || b.principal || 0), principalCredit: 0, interestCredit: 0, note: `मुद्दल वितरण (${b.interestType === 'flat' ? 'Flat' : 'Reducing'} @ ${b.rate || 0}%)` });
-  (b.extraPrincipals || []).forEach(ep => events.push({ date: String(ep.date || '').slice(0, 10), type: 'अतिरिक्त मुद्दल', principalDebit: Number(ep.amount || 0), principalCredit: 0, interestCredit: 0, note: 'मुद्दल वाढले' }));
+  (b.extraPrincipals || []).forEach(ep => events.push({ date: String(ep.date || '').slice(0, 10), type: 'अतिरिक्त मुद्दल', principalDebit: Number(ep.amount || 0), principalCredit: 0, interestCredit: 0, note: ep.note || 'मुद्दल वाढले' }));
   (b.principalReductions || []).forEach(pr => events.push({ date: String(pr.date || '').slice(0, 10), type: 'मुद्दल कपात', principalDebit: 0, principalCredit: Number(pr.amount || 0), interestCredit: 0, note: 'मुद्दल कमी झाले' }));
   (b.paymentHistory || []).forEach(ph => events.push({ date: String(ph.date || '').slice(0, 10), type: ph.type || 'व्याज भरणा', principalDebit: 0, principalCredit: 0, interestCredit: Number(ph.amount || 0), note: ph.note || `${ph.ym || ''} जमा` }));
   if (b.settlement && b.settlement.date) events.push({ date: b.settlement.date, type: 'Final Settlement', principalDebit: 0, principalCredit: Number(b.settlement.amount || 0), interestCredit: 0, note: b.settlement.note || 'खाते बंद' });
   events.sort((a, c) => String(a.date).localeCompare(String(c.date)));
   return events;
 }
-
 function renderPassbookContent() {
   const b = state.borrowers.find(x => x.id === state.currentPassbookBorrowerId), content = document.getElementById('pbContent');
   if (!b) return;
   document.getElementById('pbTitle').textContent = `${b.name || 'ग्राहक'} — Passbook व Timeline`;
   const tab = state.currentPassbookTab, events = buildBorrowerEvents(b);
-
   if (tab === 'passbook') {
     let principalBal = 0;
     const rows = events.map(ev => {
@@ -897,13 +923,10 @@ function renderPassbookContent() {
       return `<tr><td>${escapeHtml(ev.date)}</td><td>${escapeHtml(ev.type)} — ${escapeHtml(ev.note)}</td><td class="err">${ev.principalDebit > 0 ? `+${fmtAmt(ev.principalDebit)}` : '-'}</td><td class="ok">${ev.principalCredit > 0 ? `-${fmtAmt(ev.principalCredit)}` : '-'}</td><td class="ok">${ev.interestCredit > 0 ? fmtAmt(ev.interestCredit) : '-'}</td><td><strong>${fmtAmt(principalBal)}</strong></td></tr>`;
     }).join('');
     content.innerHTML = `<table class="passbook-table"><thead><tr><th>तारीख</th><th>तपशील</th><th>मुद्दल नावे (+)</th><th>मुद्दल जमा (-)</th><th>व्याज/बाकी जमा</th><th>मुद्दल शिल्लक</th></tr></thead><tbody>${rows || '<tr><td colspan="6">कोणतीही नोंद नाही.</td></tr>'}</tbody></table>`;
-  } else if (tab === 'timeline') {
-    content.innerHTML = events.length ? events.map(ev => `<div class="meta-box"><strong>[${escapeHtml(ev.date)}] ${escapeHtml(ev.type)}</strong> — ${escapeHtml(ev.note)}</div>`).join('') : '<p class="muted">नोंदी नाहीत.</p>';
-  } else if (tab === 'payments') {
-    const list = b.paymentHistory || [];
-    content.innerHTML = list.length ? list.slice().reverse().map(p => `<div class="meta-box"><strong>${escapeHtml(String(p.date || '').slice(0, 10))}</strong> | ${escapeHtml(p.ym || '')} | <span class="ok">${fmtAmt(p.amount || 0)}</span> — ${escapeHtml(p.note || p.type || '')}</div>`).join('') : '<p class="muted">कोणतीही Payment History नाही.</p>';
-  } else if (tab === 'principals') {
-    const extras = (b.extraPrincipals || []).map(x => `<div class="meta-box">➕ <strong>${escapeHtml(String(x.date || '').slice(0, 10))}</strong>: अतिरिक्त मुद्दल ${fmtAmt(x.amount)}</div>`).join('');
+  } else if (tab === 'timeline') content.innerHTML = events.length ? events.map(ev => `<div class="meta-box"><strong>[${escapeHtml(ev.date)}] ${escapeHtml(ev.type)}</strong> — ${escapeHtml(ev.note)}</div>`).join('') : '<p class="muted">नोंदी नाहीत.</p>';
+  else if (tab === 'payments') { const list = b.paymentHistory || []; content.innerHTML = list.length ? list.slice().reverse().map(p => `<div class="meta-box"><strong>${escapeHtml(String(p.date || '').slice(0, 10))}</strong> | ${escapeHtml(p.ym || '')} | <span class="ok">${fmtAmt(p.amount || 0)}</span> — ${escapeHtml(p.note || p.type || '')}</div>`).join('') : '<p class="muted">कोणतीही Payment History नाही.</p>'; }
+  else if (tab === 'principals') {
+    const extras = (b.extraPrincipals || []).map(x => `<div class="meta-box">➕ <strong>${escapeHtml(String(x.date || '').slice(0, 10))}</strong>: अतिरिक्त मुद्दल ${fmtAmt(x.amount)} ${x.note ? `(${escapeHtml(x.note)})` : ''}</div>`).join('');
     const reds = (b.principalReductions || []).map(x => `<div class="meta-box">➖ <strong>${escapeHtml(String(x.date || '').slice(0, 10))}</strong>: मुद्दल कपात ${fmtAmt(x.amount)}</div>`).join('');
     content.innerHTML = `<h4>अतिरिक्त मुद्दल</h4>${extras || '<p class="muted">नाही.</p>'}<h4>मुद्दल कपात</h4>${reds || '<p class="muted">नाही.</p>'}`;
   }
@@ -911,26 +934,17 @@ function renderPassbookContent() {
 function openPassbookModal(borrowerId) {
   state.currentPassbookBorrowerId = borrowerId; state.currentPassbookTab = 'passbook';
   document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.getAttribute('data-pbtab') === 'passbook'));
-  renderPassbookContent(); document.getElementById('passbookModal').classList.remove('hidden');
+  renderPassbookContent(); openModalSafe('passbookModal');
 }
 document.getElementById('closePassbookBtn').addEventListener('click', () => document.getElementById('passbookModal').classList.add('hidden'));
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    state.currentPassbookTab = btn.getAttribute('data-pbtab');
-    document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active'));
-    btn.classList.add('active'); renderPassbookContent();
-  });
-});
+document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => { state.currentPassbookTab = btn.getAttribute('data-pbtab'); document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active')); btn.classList.add('active'); renderPassbookContent(); }));
 
 document.getElementById('calcEmiBtn').addEventListener('click', () => {
   const P = Number(document.getElementById('emiPrincipal').value || 0), r = Number(document.getElementById('emiMonthlyRate').value || 0) / 100, n = Number(document.getElementById('emiMonths').value || 0), type = document.getElementById('emiType').value, out = document.getElementById('emiResult');
   if (P <= 0 || n <= 0) { out.textContent = 'योग्य मुद्दल आणि महिने टाका.'; return; }
   let emi = 0, totalPayable = 0, totalInterest = 0;
   if (type === 'flat') { totalInterest = Math.round(P * r * n); totalPayable = P + totalInterest; emi = Math.round(totalPayable / n); }
-  else {
-    if (r === 0) { emi = Math.round(P / n); totalPayable = P; }
-    else { const f = Math.pow(1 + r, n); emi = Math.round((P * r * f) / (f - 1)); totalPayable = emi * n; totalInterest = Math.max(0, totalPayable - P); }
-  }
+  else { if (r === 0) { emi = Math.round(P / n); totalPayable = P; } else { const f = Math.pow(1 + r, n); emi = Math.round((P * r * f) / (f - 1)); totalPayable = emi * n; totalInterest = Math.max(0, totalPayable - P); } }
   out.innerHTML = `<div><strong>मासिक EMI:</strong> <span class="ok">${fmtAmt(emi)}</span></div><div><strong>एकूण व्याज:</strong> ${fmtAmt(totalInterest)} | <strong>एकूण परतफेड:</strong> ${fmtAmt(totalPayable)}</div>`;
 });
 
@@ -948,7 +962,7 @@ function openEditModal(borrowerId) {
   document.getElementById('eRetirementDate').value = b.retirementDate || '';
   document.getElementById('ePromise1').value = b.promiseDate1 || ''; document.getElementById('ePromise2').value = b.promiseDate2 || '';
   document.getElementById('ePromise3').value = b.promiseDate3 || ''; document.getElementById('eNote').value = b.note || '';
-  document.getElementById('editModal').classList.remove('hidden');
+  openModalSafe('editModal');
 }
 document.getElementById('closeEditModalBtn').addEventListener('click', () => document.getElementById('editModal').classList.add('hidden'));
 document.getElementById('saveEditBtn').addEventListener('click', async () => {
@@ -977,7 +991,7 @@ document.getElementById('saveEditBtn').addEventListener('click', async () => {
 
 // १२. CSV Parser व Helpers
 function parseCsvLine(line) {
-  const result = []; let current = ''; let inQuotes = false;
+  const result = []; let current = '', inQuotes = false;
   for (let i = 0; i < line.length; i++) {
     const ch = line[i];
     if (ch === '"') { if (inQuotes && line[i + 1] === '"') { current += '"'; i++; } else inQuotes = !inQuotes; }
@@ -991,18 +1005,12 @@ function jobLabel(jobType) { return jobType === 'govt' ? 'सरकारी न
 
 // १३. UI Render
 function renderBorrowers() {
-  const container = document.getElementById('borrowersList');
-  const recycleContainer = document.getElementById('recycleBinList');
-  const activeYm = document.getElementById('activeYm').value || currentYmDefault();
-  const query = (document.getElementById('searchInput').value || '').trim().toLowerCase();
-
-  const nonDeleted = state.borrowers.filter(b => !b.isDeleted);
-  const deletedList = state.borrowers.filter(b => b.isDeleted);
+  const container = document.getElementById('borrowersList'), recycleContainer = document.getElementById('recycleBinList');
+  const activeYm = document.getElementById('activeYm').value || currentYmDefault(), query = (document.getElementById('searchInput').value || '').trim();
+  const nonDeleted = state.borrowers.filter(b => !b.isDeleted), deletedList = state.borrowers.filter(b => b.isDeleted);
   document.getElementById('recycleCountBadge').textContent = String(deletedList.length);
 
-  const activeAccs = nonDeleted.filter(b => b.accountStatus !== 'closed');
-  const closedAccs = nonDeleted.filter(b => b.accountStatus === 'closed');
-
+  const activeAccs = nonDeleted.filter(b => b.accountStatus !== 'closed'), closedAccs = nonDeleted.filter(b => b.accountStatus === 'closed');
   const todayStr = getLocalDateIso(0), tomorrowStr = getLocalDateIso(1);
   let totalPrincipal = 0, totalExpectedInterest = 0, totalCollectedMonth = 0, totalPending = 0;
   const todayPromises = [], tomorrowPromises = [], pendingOrPartial = [];
@@ -1022,8 +1030,7 @@ function renderBorrowers() {
 
   state.todayPromisesCache = todayPromises; state.pendingPartialCache = pendingOrPartial;
   document.getElementById('dueCounterBadge').textContent = String(todayPromises.length + pendingOrPartial.length);
-  triggerDailyMorningNotification(false);
-  checkAutomaticMonthEndReport();
+  triggerDailyMorningNotification(false); checkAutomaticMonthEndReport();
 
   document.getElementById('dashActiveCount').textContent = `सक्रिय खाती: ${activeAccs.length}`;
   document.getElementById('dashClosedCount').textContent = `बंद खाती: ${closedAccs.length}`;
@@ -1033,16 +1040,12 @@ function renderBorrowers() {
   document.getElementById('dashTotalPending').textContent = fmtAmt(totalPending);
 
   const todayAlertEl = document.getElementById('todayPromiseAlert');
-  if (todayPromises.length) {
-    todayAlertEl.classList.remove('hidden');
-    todayAlertEl.innerHTML = `<strong>🔔 आजच्या वायद्याचा अलर्ट (${todayStr}):</strong> ${todayPromises.map(x => `${escapeHtml(x.name)} (${escapeHtml(x.mobile || '-')}) — <strong>${fmtAmt(x.amount)}</strong>`).join(' | ')}`;
-  } else todayAlertEl.classList.add('hidden');
+  if (todayPromises.length) { todayAlertEl.classList.remove('hidden'); todayAlertEl.innerHTML = `<strong>🔔 आजच्या वायद्याचा अलर्ट (${todayStr}):</strong> ${todayPromises.map(x => `${escapeHtml(x.name)} (${escapeHtml(x.mobile || '-')}) — <strong>${fmtAmt(x.amount)}</strong>`).join(' | ')}`; }
+  else todayAlertEl.classList.add('hidden');
 
   const tmrCard = document.getElementById('tomorrowPromiseCard');
-  if (tomorrowPromises.length) {
-    tmrCard.classList.remove('hidden');
-    document.getElementById('tomorrowPromiseList').innerHTML = tomorrowPromises.map(x => `<div class="meta-box"><strong>${escapeHtml(x.name)}</strong> (${escapeHtml(x.mobile || '-')}) — अपेक्षित बाकी: <strong class="warn-text">${fmtAmt(x.amount)}</strong></div>`).join('');
-  } else tmrCard.classList.add('hidden');
+  if (tomorrowPromises.length) { tmrCard.classList.remove('hidden'); document.getElementById('tomorrowPromiseList').innerHTML = tomorrowPromises.map(x => `<div class="meta-box"><strong>${escapeHtml(x.name)}</strong> (${escapeHtml(x.mobile || '-')}) — अपेक्षित बाकी: <strong class="warn-text">${fmtAmt(x.amount)}</strong></div>`).join(''); }
+  else tmrCard.classList.add('hidden');
 
   const filtered = enriched.filter(({ b, calc }) => {
     const isClosed = b.accountStatus === 'closed';
@@ -1050,8 +1053,7 @@ function renderBorrowers() {
     if (state.accountFilter === 'closed' && !isClosed) return false;
     if (state.jobFilter !== 'all' && b.jobType !== state.jobFilter) return false;
     if (state.statusFilter !== 'all' && calc.status !== state.statusFilter) return false;
-    if (!query) return true;
-    return [b.name, b.loanLabel, b.mobile, b.companyDept, b.guarantor, b.extraGuarantors].map(v => String(v || '').toLowerCase()).join(' ').includes(query);
+    return matchesSmartSearch(b, query);
   });
 
   if (!filtered.length) {
@@ -1065,6 +1067,7 @@ function renderBorrowers() {
       const detailsHiddenClass = state.expandAllDetails ? '' : 'hidden';
       const cleanMobile = String(b.mobile || '').replace(/\D/g, '');
       const lastFollowUp = (b.followUps && b.followUps.length) ? b.followUps[b.followUps.length - 1] : null;
+      const partialPct = (calc.status === 'partial' && calc.monthlyInterest > 0) ? Math.min(100, Math.round((calc.paidThisMonth / calc.monthlyInterest) * 100)) : 0;
 
       return `
         <div class="borrower-item ${cardColorClass}">
@@ -1072,6 +1075,8 @@ function renderBorrowers() {
             <div class="row">
               <strong>1. ग्राहक: ${escapeHtml(b.name || 'नाव नाही')} ${b.loanLabel ? `<span class="badge">${escapeHtml(b.loanLabel)}</span>` : ''}</strong>
               <span class="badge ${isClosed ? 'closed' : calc.status}">${statusText}</span>
+              ${getTrustBadgeHtml(calc)}
+              ${getRetirementBadgeHtml(b.retirementDate)}
             </div>
             <div class="row">
               ${cleanMobile ? `<button data-action="call-borrower" data-mobile="${escapeHtml(cleanMobile)}" class="success sm">📞 Call</button>` : ''}
@@ -1094,6 +1099,7 @@ function renderBorrowers() {
             <div><strong>2. मुद्दल व पद्धत:</strong> ${fmtAmt(calc.principal)} | ${interestModeLabel} ${b.loanDate ? `| तारीख: ${escapeHtml(b.loanDate)}` : ''}</div>
             <div><strong>3. मासिक अपेक्षित व्याज:</strong> ${fmtAmt(calc.monthlyInterest)} ${b.interestDay ? `| व्याजाची तारीख: दरमहा ${b.interestDay}` : ''}</div>
             <div><strong>4. चालू महिना (${activeYm}):</strong> जमा ${fmtAmt(calc.paidThisMonth)} | उरलेले व्याज ${fmtAmt(calc.remainingThisMonth)} ${calc.lateFee > 0 ? `<span class="err">| विलंब दंड (${calc.lateDays} दिवस): ${fmtAmt(calc.lateFee)}</span>` : ''}</div>
+            ${partialPct > 0 ? `<div class="partial-prog-wrap" title="अर्धवट जमा ${partialPct}%"><div class="partial-prog-fill" style="width:${partialPct}%;"></div></div>` : ''}
             <div><strong>5. मागील बाकी व एकूण देणे:</strong> मागील बाकी ${fmtAmt(calc.pastDue)} | एकूण थकबाकी <strong class="ok">${fmtAmt(calc.totalPayable)}</strong></div>
           `}
 
@@ -1109,11 +1115,17 @@ function renderBorrowers() {
             </div>
             ${!isClosed ? `
               <div style="margin-top:8px;" class="row">
+                <button data-action="wa-receipt" data-id="${b.id}" data-ym="${activeYm}" data-paidamt="${calc.paidThisMonth}" data-pending="${calc.totalPayable}" class="success sm">🧾 WhatsApp पावती</button>
+                <button data-action="upi-qr" data-id="${b.id}" data-pending="${calc.totalPayable}" class="primary sm">📲 UPI QR</button>
+                <button data-action="vachan" data-id="${b.id}" class="warn sm">📄 वचनचिट्ठी</button>
+                ${calc.pastDue > 0 ? `<button data-action="compound-past" data-id="${b.id}" data-ym="${activeYm}" data-past="${calc.pastDue}" class="danger sm">+ चक्रवाढ (₹${calc.pastDue})</button>` : ''}
+              </div>
+              <div style="margin-top:8px;" class="row">
                 <button data-action="quick-mobile" data-id="${b.id}" data-val="${escapeHtml(b.mobile || '')}" class="sm">📱 मोबाईल Add/Edit</button>
                 <button data-action="quick-guarantor" data-id="${b.id}" data-val="${escapeHtml(b.guarantor || '')}" class="sm">🤝 जामीनदार Edit</button>
                 <button data-action="quick-day" data-id="${b.id}" data-val="${b.interestDay || ''}" class="sm">📅 व्याज तारीख Edit</button>
                 <button data-action="add-manual-month" data-id="${b.id}" class="warn sm">+ Manual Pending Month</button>
-                <button data-action="close-acc" data-id="${b.id}" data-name="${escapeHtml(b.name || '')}" data-principal="${calc.principal}" data-pending="${calc.totalPayable}" class="danger sm">✅ खाते बंद (Final Settlement)</button>
+                <button data-action="close-acc" data-id="${b.id}" data-name="${escapeHtml(b.name || '')}" data-principal="${calc.principal}" data-pending="${calc.totalPayable}" class="danger sm">✅ खाते बंद (Settlement)</button>
               </div>
               <div style="margin-top:10px;" class="row">
                 <button data-action="full-pay" data-id="${b.id}" data-ym="${activeYm}" data-interest="${calc.monthlyInterest}" class="success sm">पूर्ण व्याज जमा</button>
@@ -1147,6 +1159,10 @@ document.getElementById('borrowersList').addEventListener('click', (e) => {
   const btn = e.target.closest('button[data-action]'); if (!btn) return;
   const action = btn.getAttribute('data-action'), id = btn.getAttribute('data-id'), ym = btn.getAttribute('data-ym');
   if (action === 'call-borrower') { const mob = btn.getAttribute('data-mobile'); if (mob) window.location.href = `tel:${mob}`; }
+  else if (action === 'wa-receipt') sendWaReceipt(id, ym, Number(btn.getAttribute('data-paidamt') || 0), Number(btn.getAttribute('data-pending') || 0));
+  else if (action === 'upi-qr') openUpiQr(id, Number(btn.getAttribute('data-pending') || 0));
+  else if (action === 'vachan') openVachanChitthi(id);
+  else if (action === 'compound-past') compoundPastDue(id, ym, Number(btn.getAttribute('data-past') || 0));
   else if (action === 'followup') addFollowUpNote(id, btn.getAttribute('data-name'));
   else if (action === 'add-loan-same') prefillNewLoanForCustomer(id);
   else if (action === 'close-acc') closeAccountWithSettlement(id, btn.getAttribute('data-name'), Number(btn.getAttribute('data-principal') || 0), Number(btn.getAttribute('data-pending') || 0));
@@ -1182,12 +1198,13 @@ function renderAuditLogs() {
     : '<div class="muted">कोणत्याही Audit नोंदी नाहीत.</div>';
 }
 
-// १४. नवीन ग्राहक / कर्ज जोडणे
+// १४. नवीन ग्राहक / कर्ज जोडणे (ऑटो-डिटेक्शनसह)
 document.getElementById('addBorrowerBtn').addEventListener('click', async () => {
   if (!state.user || !checkRateLimit('ADD_BORROWER')) return;
   const name = document.getElementById('bName').value.trim(), principal = Number(document.getElementById('bPrincipal').value || 0);
   const startYm = document.getElementById('bStartYm').value || currentYmDefault(), customDue = Number(document.getElementById('bCustomDue').value || 0);
   if (!name || principal <= 0) { alert('कृपया ग्राहकाचे नाव आणि मुद्दल रक्कम टाका.'); return; }
+  const auto = detectJobAndGuarantor(name);
 
   await db.collection('users').doc(state.user.uid).collection('borrowers').add({
     name, loanLabel: document.getElementById('bLoanLabel').value.trim(), mobile: document.getElementById('bMobile').value.trim(),
@@ -1195,8 +1212,10 @@ document.getElementById('addBorrowerBtn').addEventListener('click', async () => 
     rate: Number(document.getElementById('bRate').value || 0), fixedMonthlyInterest: Number(document.getElementById('bFixedInterest').value || 0),
     interestType: document.getElementById('bInterestType').value === 'flat' ? 'flat' : 'reducing',
     interestDay: Number(document.getElementById('bInterestDay').value || 0), lateFeePerDay: Number(document.getElementById('bLateFee').value || 0),
-    guarantor: document.getElementById('bGuarantor').value.trim(), extraGuarantors: document.getElementById('bExtraGuarantors').value.trim(),
-    jobType: document.getElementById('bJobType').value || '', companyDept: document.getElementById('bCompanyDept').value.trim(),
+    guarantor: document.getElementById('bGuarantor').value.trim() || auto.guarantor,
+    extraGuarantors: document.getElementById('bExtraGuarantors').value.trim(),
+    jobType: document.getElementById('bJobType').value || auto.jobType,
+    companyDept: document.getElementById('bCompanyDept').value.trim() || auto.companyDept,
     retirementDate: document.getElementById('bRetirementDate').value || '',
     promiseDate1: document.getElementById('bPromise1').value || '', promiseDate2: document.getElementById('bPromise2').value || '',
     promiseDate3: document.getElementById('bPromise3').value || '', note: document.getElementById('bNote').value.trim(),
@@ -1228,8 +1247,10 @@ document.getElementById('importSheetBtn').addEventListener('click', async () => 
     for (let i = 1; i < lines.length; i++) {
       const cols = parseCsvLine(lines[i]), name = cols[0], principal = Number(cols[1] || 0), rate = Number(cols[2] || 2), startYm = cols[3] || currentYmDefault();
       if (name && principal > 0) {
+        const auto = detectJobAndGuarantor(name);
         await db.collection('users').doc(state.user.uid).collection('borrowers').add({
           name, principal, originalPrincipal: principal, rate, fixedMonthlyInterest: 0, startYm, accountStatus: 'active',
+          guarantor: auto.guarantor, jobType: auto.jobType, companyDept: auto.companyDept,
           interestType: 'reducing', isDeleted: false, paidMonths: {}, partialPayments: {}, paymentHistory: [],
           extraPrincipals: [], principalReductions: [], versionHistory: [], followUps: [], customPastDues: {}, customCashPaid: {},
           importedFromSheet: true, createdAt: new Date().toISOString()
@@ -1255,8 +1276,7 @@ document.getElementById('exportEncBtn').addEventListener('click', async () => {
 document.getElementById('importEncBtn').addEventListener('click', async () => {
   const msgEl = document.getElementById('ioMsg'), file = document.getElementById('importEncFile').files && document.getElementById('importEncFile').files[0];
   if (!checkRateLimit('ENC_RESTORE')) return;
-  const check = await validateFileUpload(file, 'json');
-  if (!check.ok) { msgEl.textContent = `❌ ${check.reason}`; return; }
+  const check = await validateFileUpload(file, 'json'); if (!check.ok) { msgEl.textContent = `❌ ${check.reason}`; return; }
   try {
     const list = (await decryptPayload(await file.text(), document.getElementById('backupPasskey').value)).borrowers || [];
     for (const item of list) { const cleanCopy = { ...item }; delete cleanCopy.id; await db.collection('users').doc(state.user.uid).collection('borrowers').add(cleanCopy); }
@@ -1285,9 +1305,7 @@ async function performFullLockAndLogout() {
   try { await auth.signOut(); } catch (_) {}
   try {
     localStorage.removeItem('vyaj_v11_audit');
-    Object.keys(localStorage).forEach(k => {
-      if ((k.startsWith('vyaj_') || k.startsWith('hishob_')) && k !== 'hishob_emergency_vault') localStorage.removeItem(k);
-    });
+    Object.keys(localStorage).forEach(k => { if ((k.startsWith('vyaj_') || k.startsWith('hishob_')) && k !== 'hishob_emergency_vault') localStorage.removeItem(k); });
     sessionStorage.clear();
   } catch (_) {}
   try { await db.terminate(); await db.clearPersistence(); } catch (_) {}
@@ -1321,6 +1339,7 @@ auth.onAuthStateChanged(async (user) => {
     if (docSnap.exists) {
       const d = docSnap.data();
       if (d.selfWaNumber) { state.selfWaNumber = d.selfWaNumber; document.getElementById('selfWaNumber').value = d.selfWaNumber; }
+      if (d.selfUpiId) { state.selfUpiId = d.selfUpiId; document.getElementById('selfUpiId').value = d.selfUpiId; }
       if (d.webhookUrl) { state.webhookUrl = d.webhookUrl; document.getElementById('webhookUrlInput').value = d.webhookUrl; }
     }
   }).catch(() => {});
@@ -1346,7 +1365,7 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(() => {}); });
 }
 
-// १९. Advanced Dashboard V2 (dashboard.js) साठी सुरक्षित डेटा ब्रिज
+// १९. Advanced Dashboard V3 (dashboard.js) साठी सुरक्षित डेटा ब्रिज
 window.HishobBridge = {
   getBorrowers: () => state.borrowers,
   computeLedgerUpToMonth,
