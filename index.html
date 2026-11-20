@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0f172a" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://sandeepgadge78-blip.github.io; script-src 'self' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://docs.google.com https://*.googleusercontent.com; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com;" />
-  <title>Hishob — व्याज व कर्ज हिशोब (V12.2)</title>
+  <title>Hishob — व्याज व कर्ज हिशोब (V12.3)</title>
 
   <link rel="manifest" href="./manifest.json" />
 
@@ -158,7 +158,7 @@
     }
     .modal-card {
       width: 100%;
-      max-width: 820px;
+      max-width: 840px;
       max-height: 92vh;
       overflow-y: auto;
       background: var(--card);
@@ -175,7 +175,7 @@
 
   <header>
     <div class="brand">
-      <span>Hishob V12.2</span>
+      <span>Hishob V12.3</span>
       <span id="syncStatus" class="badge">Offline / Ready</span>
     </div>
     <div id="topActions" class="row hidden">
@@ -215,6 +215,7 @@
         <div class="field"><label>मुद्दल दिल्याची तारीख</label><input type="date" id="bLoanDate" /></div>
         <div class="field"><label>हिशोब सुरू महिना</label><input type="month" id="bStartYm" /></div>
         <div class="field"><label>व्याज दर (% मासिक)</label><input type="number" id="bRate" step="0.1" value="2" /></div>
+        <div class="field"><label>महिन्याचे निश्चित व्याज (₹, पर्यायी)</label><input type="number" id="bFixedInterest" min="0" placeholder="रिकामे ठेवल्यास % नुसार" /></div>
         <div class="field">
           <label>व्याज पद्धत</label>
           <select id="bInterestType">
@@ -333,6 +334,7 @@
         <div class="field"><label>मुद्दल दिल्याची तारीख</label><input type="date" id="eLoanDate" /></div>
         <div class="field"><label>हिशोब सुरू महिना</label><input type="month" id="eStartYm" /></div>
         <div class="field"><label>व्याज दर (%)</label><input type="number" id="eRate" step="0.1" /></div>
+        <div class="field"><label>महिन्याचे निश्चित व्याज (₹, 0 = % नुसार)</label><input type="number" id="eFixedInterest" min="0" /></div>
         <div class="field">
           <label>व्याज पद्धत</label>
           <select id="eInterestType">
