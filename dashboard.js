@@ -1,6 +1,6 @@
 // =========================================================================
 // Hishob Premium Fintech Dashboard V3 + Gmail-Style Hamburger Menu (☰)
-// जुन्या V12.8 कोडला व डेटाला धक्का न लावता 100% Real Firestore Data वर आधारित
+// + Month Archive (Year & Month Instant Filter + Cloud Snapshots)
 // =========================================================================
 
 (function () {
@@ -17,6 +17,13 @@
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
 
+  const MARATHI_MONTHS = ["जानेवारी", "फेब्रुवारी", "मार्च", "एप्रिल", "मे", "जून", "जुलै", "ऑगस्ट", "सप्टेंबर", "ऑक्टोबर", "नोव्हेंबर", "डिसेंबर"];
+  function fmtYmMarathi(ym) {
+    if (!ym || !ym.includes('-')) return ym || '';
+    const [y, m] = ym.split('-');
+    return `${MARATHI_MONTHS[parseInt(m, 10) - 1] || m} ${y}`;
+  }
+
   // Toast Notification
   function showToast(msg, isError = false) {
     let t = document.getElementById('v3Toast');
@@ -31,10 +38,9 @@
     t._timer = setTimeout(() => t.classList.remove('show'), 3200);
   }
 
-  // १. Premium CSS (Hamburger Drawer + V3 Dashboard + Mobile Bottom Bar + 3-Dot Menu)
+  // १. Premium CSS
   const styleEl = document.createElement('style');
   styleEl.textContent = `
-    /* Hamburger Button (Top-Left) */
     .hm-btn {
       width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--border);
       background: var(--card-2); color: var(--text); font-size: 1.2rem;
@@ -44,7 +50,6 @@
     .hm-btn:hover { border-color: var(--accent); background: rgba(56,189,248,0.14); }
     .hm-btn.open { background: #991b1b; border-color: #ef4444; color: #fff; }
 
-    /* Gmail-Style Slide-in Sidebar Drawer */
     .hm-backdrop {
       position: fixed; inset: 0; background: rgba(2, 6, 23, 0.72);
       z-index: 88; opacity: 0; pointer-events: none; transition: opacity 0.24s ease;
@@ -69,32 +74,21 @@
       overflow: hidden;
     }
     .hm-avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .hm-mini-stats {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px;
-    }
-    .hm-mini-box {
-      background: var(--card-2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px;
-      font-size: 0.74rem;
-    }
+    .hm-mini-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; }
+    .hm-mini-box { background: var(--card-2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; font-size: 0.74rem; }
     .hm-body { flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 3px; }
     .hm-item {
       display: flex; align-items: center; justify-content: space-between; width: 100%;
       padding: 9px 11px; border-radius: 9px; border: 1px solid transparent;
       background: transparent; color: var(--text); font-size: 0.86rem; text-align: left; cursor: pointer;
     }
-    .hm-item:hover, .hm-item.active {
-      background: var(--card-2); border-color: var(--border); color: var(--accent);
-    }
+    .hm-item:hover, .hm-item.active { background: var(--card-2); border-color: var(--border); color: var(--accent); }
     .hm-item-left { display: flex; align-items: center; gap: 10px; }
-    .hm-badge {
-      background: var(--danger); color: #fff; font-size: 0.7rem; font-weight: 700;
-      padding: 1px 6px; border-radius: 999px;
-    }
+    .hm-badge { background: var(--danger); color: #fff; font-size: 0.7rem; font-weight: 700; padding: 1px 6px; border-radius: 999px; }
     .hm-sub { padding-left: 24px; display: flex; flex-direction: column; gap: 3px; margin: 2px 0 6px; }
     .hm-div { height: 1px; background: var(--border); margin: 6px 4px; }
     .hm-foot { padding: 10px; border-top: 1px solid var(--border); display: flex; gap: 6px; }
 
-    /* Three-Dot Menu */
     .td-wrap { position: relative; display: inline-block; }
     .td-btn { font-size: 1.15rem; padding: 4px 10px; line-height: 1; }
     .td-menu {
@@ -106,7 +100,6 @@
     .td-menu button:hover { background: var(--card-2); border-color: var(--border); }
     .td-divider { height: 1px; background: var(--border); margin: 4px 0; }
 
-    /* Mobile Bottom Navigation Bar & Floating + Button */
     .v3-bottom-nav {
       position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
       background: var(--card); border-top: 1px solid var(--border);
@@ -126,7 +119,6 @@
       display: flex; align-items: center; justify-content: center; cursor: pointer;
     }
 
-    /* Fullscreen Premium V3 Dashboard Shell */
     .v3-overlay { position: fixed; inset: 0; z-index: 70; background: var(--bg); display: flex; overflow: hidden; }
     .v3-overlay.v3-gradient-theme { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 55%, #0f172a 100%); }
     .v3-sidebar {
@@ -196,12 +188,12 @@
   `;
   document.head.appendChild(styleEl);
 
-  // २. Real Business Data Analytics Engine
-  function computeV3Data() {
+  // २. Real Business Data Analytics Engine (कोणत्याही विशिष्ट महिन्यासाठी गणना करणारा)
+  function computeV3Data(overrideYm = null) {
     const br = getBridge();
     if (!br) return null;
     const borrowers = (br.getBorrowers() || []).filter(b => !b.isDeleted);
-    const activeYm = document.getElementById('activeYm')?.value || getTodayIso().slice(0, 7);
+    const activeYm = overrideYm || document.getElementById('activeYm')?.value || getTodayIso().slice(0, 7);
     const todayIso = getTodayIso(0), tomorrowIso = getTodayIso(1);
 
     let activeLoans = 0, closedLoans = 0, totalPrincipal = 0, remainingPrincipal = 0;
@@ -240,7 +232,11 @@
         const isOverdue = c.lateDays > 0 || c.pastDue > 0;
         if (isOverdue && c.totalPayable > 0) totalOverdue += c.totalPayable;
 
-        const row = { id: b.id, name: b.name, mobile: b.mobile || '', principal: c.principal, monthlyInterest: c.monthlyInterest, outstanding: c.totalPayable, status: c.status, lateDays: c.lateDays, raw: b };
+        const row = {
+          id: b.id, name: b.name, mobile: b.mobile || '', principal: c.principal,
+          monthlyInterest: c.monthlyInterest, paidThisMonth: c.paidThisMonth,
+          outstanding: c.totalPayable, status: c.status, lateDays: c.lateDays, raw: b
+        };
         allActiveRows.push(row);
         if (c.totalPayable > 0) dueCustomers.push(row);
       }
@@ -318,26 +314,9 @@
       hmBtn.textContent = '☰';
       brandEl.insertBefore(hmBtn, brandEl.firstChild);
 
-      // Header मध्ये Quick Global Search Icon (🔍)
-      const qSearchBtn = document.createElement('button');
-      qSearchBtn.id = 'hmQuickSearchBtn';
-      qSearchBtn.className = 'sm';
-      qSearchBtn.title = 'ग्राहक शोधा';
-      qSearchBtn.textContent = '🔍';
-      brandEl.appendChild(qSearchBtn);
-
       hmBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         setDrawerState(!isDrawerOpen);
-      });
-
-      qSearchBtn.addEventListener('click', () => {
-        document.getElementById('v3Overlay')?.classList.add('hidden');
-        const inp = document.getElementById('searchInput');
-        if (inp) {
-          inp.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          setTimeout(() => inp.focus(), 300);
-        }
       });
     }
 
@@ -368,6 +347,7 @@
 
       <div class="hm-body">
         <button class="hm-item active" data-hm="home"><span class="hm-item-left"><span>🏠</span><span>मुख्य Dashboard</span></span></button>
+        <button class="hm-item" data-hm="archive"><span class="hm-item-left"><span>📅</span><span>मागील महिने (Month Archive)</span></span></button>
         <button class="hm-item" data-hm="v3-dash"><span class="hm-item-left"><span>🚀</span><span>Premium Dashboard V3</span></span></button>
         <button class="hm-item" data-hm="add-cust"><span class="hm-item-left"><span>➕</span><span>नवीन ग्राहक / कर्ज जोडा</span></span></button>
         <button class="hm-item" data-hm="quick-pay"><span class="hm-item-left"><span>⚡</span><span>Quick Add Payment</span></span></button>
@@ -407,14 +387,11 @@
     backdrop.addEventListener('click', () => setDrawerState(false));
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && isDrawerOpen) setDrawerState(false); });
 
-    // Mobile Swipe-to-Close
     drawer.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, { passive: true });
     drawer.addEventListener('touchend', (e) => {
-      const diff = touchStartX - e.changedTouches[0].clientX;
-      if (diff > 55) setDrawerState(false);
+      if (touchStartX - e.changedTouches[0].clientX > 55) setDrawerState(false);
     }, { passive: true });
 
-    // Expandable Reports Submenu
     document.getElementById('hmReportsToggle').addEventListener('click', () => {
       document.getElementById('hmReportsSub').classList.toggle('hidden');
     });
@@ -426,6 +403,7 @@
       setDrawerState(false);
 
       if (act === 'home') { document.getElementById('v3Overlay')?.classList.add('hidden'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+      else if (act === 'archive') openV3Dashboard('archive');
       else if (act === 'v3-dash') openV3Dashboard('overview');
       else if (act === 'add-cust') {
         document.getElementById('v3Overlay')?.classList.add('hidden');
@@ -447,12 +425,10 @@
       else if (act === 'reset-pass') {
         const u = firebase.auth().currentUser;
         if (!u || !u.email) { showToast('ईमेल सापडला नाही.', true); return; }
-        try {
-          await firebase.auth().sendPasswordResetEmail(u.email);
-          showToast(`✅ ${u.email} वर Password Reset लिंक पाठवली.`);
-        } catch (err) { showToast(`एरर: ${err.message}`, true); }
+        try { await firebase.auth().sendPasswordResetEmail(u.email); showToast(`✅ ${u.email} वर Password Reset लिंक पाठवली.`); }
+        catch (err) { showToast(`एरर: ${err.message}`, true); }
       }
-      else if (act === 'about') showToast('Hishob V12.8 + Premium V3 — Secure Loan Ledger');
+      else if (act === 'about') showToast('व्याज हिशोब वही V13.0 — Secure Loan Ledger');
       else if (act === 'logout') document.getElementById('lockBtn')?.click();
     });
   }
@@ -468,6 +444,7 @@
         <div class="td-wrap">
           <button id="threeDotBtn" class="sm td-btn" title="अधिक पर्याय (Menu)">⋮</button>
           <div id="threeDotDropdown" class="td-menu hidden">
+            <button data-td="archive">📅 मागील महिने (Month Archive)</button>
             <button data-td="v3-dash">🚀 Premium Dashboard V3</button>
             <button data-td="v3-pay">⚡ Quick Add Payment</button>
             <button data-td="pnl">📈 Profit & Loss Report</button>
@@ -491,7 +468,8 @@
         const item = e.target.closest('button[data-td]'); if (!item) return;
         menu.classList.add('hidden');
         const act = item.getAttribute('data-td');
-        if (act === 'v3-dash') openV3Dashboard('overview');
+        if (act === 'archive') openV3Dashboard('archive');
+        else if (act === 'v3-dash') openV3Dashboard('overview');
         else if (act === 'v3-pay') openV3Dashboard('payments');
         else if (act === 'pnl') document.getElementById('openPnlBtn')?.click();
         else if (act === 'security') document.getElementById('openSecurityDashBtn')?.click();
@@ -510,9 +488,9 @@
       nav.className = 'v3-bottom-nav';
       nav.innerHTML = `
         <button data-bnav="home" class="active"><span>🏠</span><span>Home</span></button>
+        <button data-bnav="archive"><span>📅</span><span>Months</span></button>
         <button data-bnav="v3"><span>🚀</span><span>V3 Dash</span></button>
         <button data-bnav="pay"><span>⚡</span><span>Pay</span></button>
-        <button data-bnav="analytics"><span>📊</span><span>Charts</span></button>
         <button data-bnav="drawer"><span>☰</span><span>Menu</span></button>
       `;
       document.body.appendChild(nav);
@@ -529,9 +507,9 @@
         const b = e.target.closest('button[data-bnav]'); if (!b) return;
         const t = b.getAttribute('data-bnav');
         if (t === 'home') { document.getElementById('v3Overlay')?.classList.add('hidden'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+        else if (t === 'archive') openV3Dashboard('archive');
         else if (t === 'v3') openV3Dashboard('overview');
         else if (t === 'pay') openV3Dashboard('payments');
-        else if (t === 'analytics') openV3Dashboard('analytics');
         else if (t === 'drawer') setDrawerState(true);
       });
     }
@@ -541,6 +519,8 @@
   let v3Tab = 'overview';
   let v3Gradient = localStorage.getItem('hishob_v3_grad') !== '0';
   let isSavingPay = false;
+  let archiveSelectedYear = getTodayIso().slice(0, 4);
+  let archiveSelectedMonth = getTodayIso().slice(5, 7);
 
   function ensureV3Overlay() {
     if (document.getElementById('v3Overlay')) return;
@@ -554,6 +534,7 @@
           <button id="v3ToggleSideBtn" class="sm" title="Sidebar लहान/मोठा">☰</button>
         </div>
         <button class="v3-nav-item active" data-v3tab="overview"><span>📊</span><span class="v3-nav-lbl">Dashboard</span></button>
+        <button class="v3-nav-item" data-v3tab="archive"><span>📅</span><span class="v3-nav-lbl">Month Archive</span></button>
         <button class="v3-nav-item" data-v3tab="payments"><span>⚡</span><span class="v3-nav-lbl">Quick Payment</span></button>
         <button class="v3-nav-item" data-v3tab="customers"><span>👥</span><span class="v3-nav-lbl">Due Customers</span></button>
         <button class="v3-nav-item" data-v3tab="analytics"><span>📈</span><span class="v3-nav-lbl">Analytics & Charts</span></button>
@@ -571,6 +552,7 @@
           </div>
           <div class="row">
             <button id="v3MobOverviewBtn" class="sm primary">📊 Dash</button>
+            <button id="v3MobArchiveBtn" class="sm warn">📅 Archive</button>
             <button id="v3MobPayBtn" class="sm success">⚡ Pay</button>
             <button id="v3MobChartsBtn" class="sm">📈 Charts</button>
             <button id="v3TopRefreshBtn" class="sm">🔄</button>
@@ -587,11 +569,11 @@
     document.getElementById('v3TopCloseBtn').addEventListener('click', () => ov.classList.add('hidden'));
     document.getElementById('v3TopRefreshBtn').addEventListener('click', () => { renderV3Body(); showToast('Dashboard रिफ्रेश झाले!'); });
     document.getElementById('v3GradThemeBtn').addEventListener('click', () => {
-      v3Gradient = !v3Gradient;
-      localStorage.setItem('hishob_v3_grad', v3Gradient ? '1' : '0');
+      v3Gradient = !v3Gradient; localStorage.setItem('hishob_v3_grad', v3Gradient ? '1' : '0');
       ov.classList.toggle('v3-gradient-theme', v3Gradient);
     });
     document.getElementById('v3MobOverviewBtn').addEventListener('click', () => switchV3Tab('overview'));
+    document.getElementById('v3MobArchiveBtn').addEventListener('click', () => switchV3Tab('archive'));
     document.getElementById('v3MobPayBtn').addEventListener('click', () => switchV3Tab('payments'));
     document.getElementById('v3MobChartsBtn').addEventListener('click', () => switchV3Tab('analytics'));
     document.getElementById('v3Sidebar').addEventListener('click', (e) => {
@@ -610,6 +592,9 @@
 
   function openV3Dashboard(tab = 'overview') {
     ensureV3Overlay();
+    const curYm = document.getElementById('activeYm')?.value || getTodayIso().slice(0, 7);
+    archiveSelectedYear = curYm.slice(0, 4);
+    archiveSelectedMonth = curYm.slice(5, 7);
     document.getElementById('v3Overlay').classList.remove('hidden');
     switchV3Tab(tab);
   }
@@ -659,7 +644,58 @@
     `;
   }
 
-  // ७. V3 Dashboard Body Render
+  // ७. Saved Cloud Archives लोड व Render करणे
+  async function loadSavedArchivesList() {
+    const listBox = document.getElementById('v3SavedArchivesBox');
+    const user = (window.firebase && firebase.auth) ? firebase.auth().currentUser : null;
+    if (!listBox || !user) return;
+    listBox.innerHTML = '<div class="muted">सेव्ह केलेले Archives शोधत आहे...</div>';
+    try {
+      const snap = await firebase.firestore().collection('users').doc(user.uid).collection('monthlyArchives').get();
+      if (snap.empty) {
+        listBox.innerHTML = '<div class="muted">अद्याप कोणताही पक्का Archive सेव्ह केलेला नाही. वरच्या बटणावरून सेव्ह करा.</div>';
+        return;
+      }
+      const docs = snap.docs.map(d => d.data()).sort((a, b) => String(b.ym).localeCompare(String(a.ym)));
+      listBox.innerHTML = docs.map(doc => `
+        <div class="meta-box row" style="justify-content:space-between;">
+          <div>
+            <strong>📦 ${esc(fmtYmMarathi(doc.ym))} (${esc(doc.ym)})</strong>
+            <div class="muted" style="font-size:0.75rem;">खाती: ${doc.count || 0} | सेव्ह तारीख: ${esc(String(doc.archivedAt || '').slice(0, 10))}</div>
+          </div>
+          <button class="primary sm" data-open-snap="${esc(doc.ym)}">👁️ Snapshot पहा</button>
+        </div>
+      `).join('');
+
+      listBox.querySelectorAll('button[data-open-snap]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const ym = btn.getAttribute('data-open-snap');
+          const found = docs.find(x => x.ym === ym);
+          const det = document.getElementById('v3ArchiveSnapshotView');
+          if (!found || !det) return;
+          const recs = found.records || [];
+          det.classList.remove('hidden');
+          det.innerHTML = `
+            <div class="row" style="justify-content:space-between; margin-bottom:8px;">
+              <strong>🔒 पक्का बंद Snapshot: ${esc(fmtYmMarathi(ym))} (${recs.length} खाती)</strong>
+              <button class="danger sm" id="closeSnapViewBtn">✕ बंद करा</button>
+            </div>
+            <table class="passbook-table">
+              <thead><tr><th>ग्राहक</th><th>मुद्दल</th><th>मासिक व्याज</th><th>जमा</th><th>थकबाकी</th></tr></thead>
+              <tbody>
+                ${recs.map(r => `<tr><td>${esc(r.name)}</td><td>${fmt(r.principal)}</td><td>${fmt(r.monthlyInterest)}</td><td class="ok">${fmt(r.collectedInMonth)}</td><td class="err">${fmt(r.totalPayable)}</td></tr>`).join('')}
+              </tbody>
+            </table>
+          `;
+          document.getElementById('closeSnapViewBtn')?.addEventListener('click', () => det.classList.add('hidden'));
+        });
+      });
+    } catch (err) {
+      listBox.innerHTML = `<div class="err">एरर: ${esc(err.message)}</div>`;
+    }
+  }
+
+  // ८. V3 Dashboard Body Render
   function renderV3Body() {
     const body = document.getElementById('v3Body');
     const clock = document.getElementById('v3DateClock');
@@ -671,7 +707,128 @@
     const target = Number(localStorage.getItem('hishob_monthly_target') || d.monthlyExpected || 0);
     const pct = target > 0 ? Math.min(100, Math.round((d.monthlyCollected / target) * 100)) : 0;
 
-    if (v3Tab === 'overview') {
+    if (v3Tab === 'archive') {
+      const selYm = `${archiveSelectedYear}-${archiveSelectedMonth}`;
+      const archData = computeV3Data(selYm) || d;
+      const years = ['2024', '2025', '2026', '2027', '2028', '2029', '2030'];
+
+      body.innerHTML = `
+        <div class="v3-panel">
+          <div class="row" style="justify-content:space-between; margin-bottom:10px;">
+            <h3 style="margin:0;">📅 Month Archive — वर्ष व महिना निवडा</h3>
+            <div class="row">
+              <button id="v3ApplyMainYmBtn" class="primary sm">📂 मुख्य अ‍ॅपवर हा महिना उघडा</button>
+              <button id="v3SaveSnapNowBtn" class="success sm">📦 पक्का Archive सेव्ह करा</button>
+            </div>
+          </div>
+
+          <div class="row" style="margin-bottom:12px;">
+            <div style="flex:1; min-width:130px;">
+              <label class="muted" style="font-size:0.75rem; display:block; margin-bottom:4px;">वर्ष निवडा (Year):</label>
+              <select id="v3ArchYearSel" style="width:100%;">
+                ${years.map(y => `<option value="${y}" ${y === archiveSelectedYear ? 'selected' : ''}>${y}</option>`).join('')}
+              </select>
+            </div>
+            <div style="flex:1.4; min-width:160px;">
+              <label class="muted" style="font-size:0.75rem; display:block; margin-bottom:4px;">महिना निवडा (Month):</label>
+              <select id="v3ArchMonthSel" style="width:100%;">
+                ${MARATHI_MONTHS.map((mName, idx) => {
+                  const mm = String(idx + 1).padStart(2, '0');
+                  return `<option value="${mm}" ${mm === archiveSelectedMonth ? 'selected' : ''}>${mName} (${mm})</option>`;
+                }).join('')}
+              </select>
+            </div>
+          </div>
+
+          <div class="v3-kpi-row">
+            <div class="v3-wave-card">
+              <div class="v3-kpi-title">निवडलेला महिना (${esc(fmtYmMarathi(selYm))})</div>
+              <div class="v3-kpi-num">${archData.activeLoans} खाती</div>
+              <div class="v3-kpi-sub">मुद्दल: ${fmt(archData.remainingPrincipal)}</div>
+            </div>
+            <div class="v3-wave-card">
+              <div class="v3-kpi-title">अपेक्षित व्याज</div>
+              <div class="v3-kpi-num" style="color:#38bdf8;">${fmt(archData.monthlyExpected)}</div>
+              <div class="v3-kpi-sub ok">जमा: ${fmt(archData.monthlyCollected)}</div>
+            </div>
+            <div class="v3-wave-card">
+              <div class="v3-kpi-title">त्या महिन्यापर्यंत बाकी</div>
+              <div class="v3-kpi-num err">${fmt(archData.totalOutstanding)}</div>
+              <div class="v3-kpi-sub">पूर्ण: ${archData.paidCnt} | अर्धवट: ${archData.partialCnt} | बाकी: ${archData.unpaidCnt}</div>
+            </div>
+          </div>
+
+          <h4 style="margin:10px 0 6px;">📋 ${esc(fmtYmMarathi(selYm))} मधील सर्व खात्यांचा हिशोब</h4>
+          <div style="overflow-x:auto;">
+            <table class="passbook-table">
+              <thead><tr><th>क्र.</th><th>ग्राहक</th><th>मुद्दल</th><th>मासिक व्याज</th><th>जमा</th><th>एकूण बाकी</th><th>स्थिती</th></tr></thead>
+              <tbody>
+                ${archData.allActiveRows.map((r, i) => `
+                  <tr>
+                    <td>${i + 1}</td>
+                    <td><strong>${esc(r.name)}</strong></td>
+                    <td>${fmt(r.principal)}</td>
+                    <td>${fmt(r.monthlyInterest)}</td>
+                    <td class="ok">${fmt(r.paidThisMonth)}</td>
+                    <td class="err">${fmt(r.outstanding)}</td>
+                    <td>${r.status === 'paid' ? '🟢 जमा' : r.status === 'partial' ? '🟡 अर्धवट' : '🔴 बाकी'}</td>
+                  </tr>
+                `).join('') || '<tr><td colspan="7">डेटा नाही.</td></tr>'}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="v3-panel">
+          <h4 style="margin:0 0 8px;">🗄️ सेव्ह केलेले पक्के Cloud Archives (Snapshot Records)</h4>
+          <div id="v3ArchiveSnapshotView" class="meta-box hidden" style="margin-bottom:10px;"></div>
+          <div id="v3SavedArchivesBox"></div>
+        </div>
+      `;
+
+      // वर्ष किंवा महिना बदलताच लगेच अपडेट होणे
+      document.getElementById('v3ArchYearSel')?.addEventListener('change', (e) => {
+        archiveSelectedYear = e.target.value;
+        renderV3Body();
+      });
+      document.getElementById('v3ArchMonthSel')?.addEventListener('change', (e) => {
+        archiveSelectedMonth = e.target.value;
+        renderV3Body();
+      });
+
+      // मुख्य अ‍ॅपवर निवडलेला महिना लगेच उघडणे
+      document.getElementById('v3ApplyMainYmBtn')?.addEventListener('click', () => {
+        const mainYmInp = document.getElementById('activeYm');
+        if (mainYmInp) {
+          mainYmInp.value = selYm;
+          mainYmInp.dispatchEvent(new Event('change'));
+        }
+        document.getElementById('v3Overlay')?.classList.add('hidden');
+        showToast(`📅 मुख्य अ‍ॅपवर ${fmtYmMarathi(selYm)} उघडले!`);
+      });
+
+      // पक्का Cloud Archive सेव्ह करणे
+      document.getElementById('v3SaveSnapNowBtn')?.addEventListener('click', async () => {
+        const user = (window.firebase && firebase.auth) ? firebase.auth().currentUser : null;
+        if (!user) return;
+        try {
+          const summary = archData.allActiveRows.map(r => ({
+            id: r.id, name: r.name, principal: r.principal,
+            monthlyInterest: r.monthlyInterest, collectedInMonth: r.paidThisMonth, totalPayable: r.outstanding
+          }));
+          await firebase.firestore().collection('users').doc(user.uid).collection('monthlyArchives').doc(selYm).set({
+            ym: selYm, archivedAt: new Date().toISOString(), count: summary.length, records: summary
+          });
+          showToast(`📦 ${fmtYmMarathi(selYm)} चा पक्का Archive सेव्ह झाला!`);
+          loadSavedArchivesList();
+        } catch (err) {
+          showToast(`एरर: ${err.message}`, true);
+        }
+      });
+
+      loadSavedArchivesList();
+
+    } else if (v3Tab === 'overview') {
       body.innerHTML = `
         <div class="v3-kpi-row">
           <div class="v3-wave-card" data-jump="customers">
@@ -681,7 +838,7 @@
             <svg class="wave" viewBox="0 0 200 44" preserveAspectRatio="none"><path d="M0,25 Q50,5 100,25 T200,20 L200,44 L0,44 Z" fill="#38bdf8"/></svg>
           </div>
           <div class="v3-wave-card" data-jump="analytics">
-            <div class="v3-kpi-title">महिन्याची वसुली (${esc(d.activeYm)})</div>
+            <div class="v3-kpi-title">महिन्याची वसुली (${esc(fmtYmMarathi(d.activeYm))})</div>
             <div class="v3-kpi-num ok">${fmt(d.monthlyCollected)}</div>
             <div class="v3-kpi-sub">आज जमा: ${fmt(d.todayCollected)} | Target: ${pct}%</div>
             <svg class="wave" viewBox="0 0 200 44" preserveAspectRatio="none"><path d="M0,30 Q60,10 120,28 T200,15 L200,44 L0,44 Z" fill="#22c55e"/></svg>
@@ -822,7 +979,7 @@
       const rem = Math.max(0, target - d.monthlyCollected);
       body.innerHTML = `
         <div class="v3-panel" style="max-width:560px; margin:0 auto;">
-          <h3 style="margin-top:0;">🎯 Monthly Collection Goal (${esc(d.activeYm)})</h3>
+          <h3 style="margin-top:0;">🎯 Monthly Collection Goal (${esc(fmtYmMarathi(d.activeYm))})</h3>
           <div class="row" style="margin-bottom:12px;">
             <input type="number" id="v3GoalInput" value="${target}" style="flex:1;" />
             <button id="v3SaveGoalBtn" class="primary sm">Target सेव्ह करा</button>
