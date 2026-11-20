@@ -7,8 +7,8 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://www.gstatic.com 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data: blob:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://docs.google.com https://*.googleusercontent.com; font-src 'self' https: data:; object-src 'none'; base-uri 'self'; form-action 'self';">
 <link rel="manifest" href="./manifest.json">
 <title>व्याज हिशोब प्रो V11.9 (Hardened, PWA & Exact Ledger)</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha384-3zSEDfvllQohHmWU3PR2VBUQQwrnBu4Vu3kr0l/T4eqMAAItoalXEmTTMe+pSyq+" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js" integrity="sha384-80y6x+V08i81b0n218B0tN/x6+7L5j81pU2/80X8y7O7f6G6O6J6O6J6O6J6O6J6" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <style>
 :root {
   --bg: #f1f5f9; --card: #ffffff; --text: #0f172a; --muted: #64748b;
@@ -543,9 +543,9 @@ input, select, textarea { width: 100%; padding: 8px; border: 1px solid var(--bor
 </div>
 
 <!-- Firebase SDK (Spark Plan: Auth + Firestore) -->
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js" integrity="sha384-H2k1W3Z07E8R3X6t9S100/80y1+2o9j80y1+2o9j80y1+2o9j80y1+2o9j80y1+2o" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js" integrity="sha384-J2k1W3Z07E8R3X6t9S100/80y1+2o9j80y1+2o9j80y1+2o9j80y1+2o9j80y1+2o" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js" integrity="sha384-K2k1W3Z07E8R3X6t9S100/80y1+2o9j80y1+2o9j80y1+2o9j80y1+2o9j80y1+2o" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 <script>
 // ================= १. FIREBASE, PERSISTENCE व SERVICE WORKER =================
@@ -817,7 +817,6 @@ async function handlePasswordResetEmail() {
   }
 }
 
-// खरा Lock: auth.signOut() वापरून सेशन बंद करणे (reload केल्यास किंवा पुन्हा लॉगिन केल्यास योग्य रीतीने काम करते)
 async function lockAppScreen() {
   closeAllPanels();
   borrowers = [];
@@ -839,7 +838,6 @@ async function handleLogout(clearCache = false) {
   await lockAppScreen();
 }
 
-// IndexedDB persistence बंद करून साफ करणे + vyaj_v11_audit आणि जुना localStorage पुसणे
 async function clearLegacyAndLocalCache(silent = false) {
   const uid = currentUser ? currentUser.uid : '';
   const legacyKeys = [
@@ -973,13 +971,11 @@ function updateBorrowerFieldsAtomic(id, fieldsObj) {
   });
 }
 
-// नेस्टेड मॅपमधील key खरोखर हटवण्यासाठी FieldValue.delete() वापरणारा फंक्शन
 function deleteNestedMapKeyAndUpdate(id, dotPath, extraFieldsObj) {
   if (!currentUser || !id || !db) return;
   const payload = { ...(extraFieldsObj || {}), updatedAt: Date.now() };
   payload[dotPath] = firebase.firestore.FieldValue.delete();
 
-  // लोकल मेमरीमध्येही लगेच काढून टाकणे
   const b = borrowers.find(x => String(x.id) === String(id));
   if (b) {
     const parts = dotPath.split('.');
@@ -994,7 +990,7 @@ function deleteNestedMapKeyAndUpdate(id, dotPath, extraFieldsObj) {
   });
 }
 
-// ================= ७. अचूक हिशोब इंजिन (Custom Due + cashPaid वजा होणे) =================
+// ================= ७. अचूक हिशोब इंजिन =================
 function marathiToRoman(str) {
   const map = {'अ':'a','आ':'a','इ':'i','ई':'i','उ':'u','ऊ':'u','ए':'e','ऐ':'ai','ओ':'o','औ':'au','क':'k','ख':'kh','ग':'g','घ':'gh','च':'ch','छ':'chh','ज':'j','झ':'jh','ट':'t','ठ':'th','ड':'d','ढ':'dh','ण':'n','त':'t','थ':'th','द':'d','ध':'dh','न':'n','प':'p','फ':'ph','ब':'b','भ':'bh','म':'m','य':'y','र':'r','ल':'l','व':'v','श':'sh','ष':'sh','स':'s','ह':'h','ळ':'l','क्ष':'ksh','ज्ञ':'dny','ा':'a','ि':'i','ी':'i','ु':'u','ू':'u','े':'e','ै':'ai','ो':'o','ौ':'au','ं':'n','्':''};
   let out = ''; for (let ch of (str || '').toLowerCase()) out += (map[ch] !== undefined) ? map[ch] : ch;
@@ -1087,7 +1083,6 @@ function computeLedgerUpToMonth(b, targetYm) {
 
     const isCustom = !!(b.customPastDues && b.customPastDues[ym] !== undefined);
     const baseTarget = isCustom ? (Number(b.customPastDues[ym]) || 0) : getExpectedInterest(b, ym);
-    // custom असो वा नियमित महिना: त्या महिन्यात भरलेली रोख रक्कम (cashPaid) वजा होईल
     let netDue = Math.max(0, baseTarget - info.cashPaid);
 
     if (carryAdvance > 0 && netDue > 0) {
@@ -1298,7 +1293,6 @@ function payInterestInstallment(id, ym, inputId) {
   recordAudit(`${b.name}: ${formatMonthMarathi(ym)} व्याज जमा ₹${val}`);
   updateBorrowerFieldsAtomic(id, { paidMonths: updatedPaidMonths, interestHistory: updatedHistory });
 }
-
 function deleteSingleInstallment(id, ym, idx) {
   const b = borrowers.find(x => String(x.id) === String(id)); if (!b || !confirm('हा हप्ता रद्द करायचा का?')) return;
   captureRollbackSnapshot(`${formatMonthMarathi(ym)} हप्ता रद्द करण्यापूर्वी`, b);
@@ -1313,7 +1307,6 @@ function deleteSingleInstallment(id, ym, idx) {
     updateBorrowerFieldsAtomic(id, { paidMonths: updatedPaidMonths });
   }
 }
-
 function adjustPrincipal(id, mode) {
   const b = borrowers.find(x => String(x.id) === String(id)); if (!b) return;
   const raw = prompt(mode === 'ADD' ? `सध्याची मुद्दल ${fmtMoney(b.principal)}.\nकिती अतिरिक्त मुद्दल दिली?` : `सध्याची मुद्दल ${fmtMoney(b.principal)}.\nकिती मुद्दल परत मिळाली?`);
