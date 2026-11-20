@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0f172a" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://sandeepgadge78-blip.github.io; script-src 'self' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://docs.google.com https://*.googleusercontent.com https://script.google.com https://script.googleusercontent.com; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com;" />
-  <title>Hishob — व्याज व कर्ज हिशोब (V12.7)</title>
+  <title>Hishob — व्याज व कर्ज हिशोब (V12.8)</title>
 
   <link rel="manifest" href="./manifest.json" />
 
@@ -29,6 +29,7 @@
       --paid-border: #22c55e;
       --partial-bg: rgba(180, 83, 9, 0.24);
       --partial-border: #f59e0b;
+      --closed-bg: rgba(100, 116, 139, 0.2);
       --default-item-bg: rgba(30, 41, 59, 0.45);
       --meta-bg: rgba(15, 23, 42, 0.65);
     }
@@ -47,6 +48,7 @@
       --paid-border: #16a34a;
       --partial-bg: rgba(245, 158, 11, 0.18);
       --partial-border: #d97706;
+      --closed-bg: rgba(148, 163, 184, 0.22);
       --default-item-bg: #f8fafc;
       --meta-bg: #f1f5f9;
     }
@@ -84,6 +86,7 @@
     .badge.paid { color: #22c55e; border-color: #22c55e; }
     .badge.partial { color: #f59e0b; border-color: #f59e0b; }
     .badge.pending { color: #ef4444; border-color: #ef4444; }
+    .badge.closed { color: #94a3b8; border-color: #64748b; }
     .bell-btn { position: relative; display: inline-flex; align-items: center; gap: 4px; }
     .due-count-pill {
       background: var(--danger);
@@ -142,6 +145,13 @@
       padding: 10px 14px;
       margin-bottom: 14px;
     }
+    .info-banner {
+      background: rgba(14, 165, 233, 0.16);
+      border: 1px solid var(--accent);
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+    }
     .grid-3 {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -168,6 +178,12 @@
       border-color: var(--partial-border);
       border-left: 5px solid var(--partial-border);
     }
+    .borrower-item.status-closed {
+      background: var(--closed-bg);
+      border-color: #64748b;
+      border-left: 5px solid #64748b;
+      opacity: 0.88;
+    }
     .meta-box {
       margin-top: 6px;
       padding: 8px;
@@ -189,12 +205,7 @@
       background: var(--meta-bg);
       text-align: center;
     }
-    .doc-card img {
-      max-width: 100%;
-      max-height: 150px;
-      border-radius: 6px;
-      object-fit: cover;
-    }
+    .doc-card img { max-width: 100%; max-height: 150px; border-radius: 6px; object-fit: cover; }
     .muted { color: var(--muted); font-size: 0.84rem; }
     .ok { color: var(--accent-2); }
     .err { color: var(--danger); }
@@ -208,21 +219,9 @@
       border-radius: 8px;
       border: 1px solid var(--border);
     }
-    table.passbook-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.82rem;
-      margin-top: 8px;
-    }
-    table.passbook-table th, table.passbook-table td {
-      border: 1px solid var(--border);
-      padding: 6px 8px;
-      text-align: left;
-    }
-    table.passbook-table th {
-      background: var(--card-2);
-      color: var(--accent);
-    }
+    table.passbook-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-top: 8px; }
+    table.passbook-table th, table.passbook-table td { border: 1px solid var(--border); padding: 6px 8px; text-align: left; }
+    table.passbook-table th { background: var(--card-2); color: var(--accent); }
     #authScreen {
       max-width: 420px;
       margin: 48px auto;
@@ -261,14 +260,8 @@
       body * { visibility: hidden; }
       #printArea, #printArea * { visibility: visible; }
       #printArea {
-        display: block;
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        color: #000 !important;
-        background: #fff !important;
-        padding: 12px;
+        display: block; position: absolute; left: 0; top: 0; width: 100%;
+        color: #000 !important; background: #fff !important; padding: 12px;
       }
       #printArea table { width: 100%; border-collapse: collapse; font-size: 12px; }
       #printArea th, #printArea td { border: 1px solid #333; padding: 5px; text-align: left; }
@@ -279,11 +272,17 @@
 
   <header>
     <div class="brand">
-      <span>Hishob V12.7</span>
+      <span>Hishob V12.8</span>
       <span id="networkBadge" class="badge paid">Online 🟢</span>
       <span id="syncStatus" class="badge">Offline / Ready</span>
     </div>
     <div id="topActions" class="row hidden">
+      <select id="langSelect" title="भाषा निवडा">
+        <option value="mr">मराठी</option>
+        <option value="hi">हिंदी</option>
+        <option value="en">English</option>
+      </select>
+      <button id="openPnlBtn" class="sm" title="Profit & Loss Report">📈 P&L</button>
       <button id="openSecurityDashBtn" class="sm" title="Admin Security Dashboard">🛡️ Security</button>
       <button id="notifBellBtn" class="sm bell-btn" title="रिमाइंडर व थकबाकी सूचना">
         🔔 <span id="dueCounterBadge" class="due-count-pill">0</span>
@@ -318,25 +317,32 @@
   <!-- मुख्य अ‍ॅप स्क्रीन -->
   <main id="appScreen" class="container hidden">
 
+    <!-- Automatic Month-End Report अलर्ट -->
+    <div id="monthEndBanner" class="info-banner hidden"></div>
+
+    <!-- आजच्या वायद्याचा अलर्ट -->
     <div id="todayPromiseAlert" class="alert-banner hidden"></div>
 
     <!-- सर्व खाती Dashboard -->
     <section class="card">
       <div class="row" style="justify-content:space-between;">
-        <h3 style="margin:0;">📊 सर्व खाती Dashboard</h3>
-        <span id="dashActiveCount" class="badge">सक्रिय खाती: 0</span>
+        <h3 id="tDashTitle" style="margin:0;">📊 सर्व खाती Dashboard</h3>
+        <div class="row">
+          <span id="dashActiveCount" class="badge">सक्रिय खाती: 0</span>
+          <span id="dashClosedCount" class="badge closed">बंद खाती: 0</span>
+        </div>
       </div>
       <div class="dash-grid">
-        <div class="dash-box"><div class="dash-label">एकूण मुद्दल</div><div id="dashTotalPrincipal" class="dash-val">₹0</div></div>
-        <div class="dash-box"><div class="dash-label">मासिक अपेक्षित व्याज</div><div id="dashExpectedInterest" class="dash-val">₹0</div></div>
-        <div class="dash-box"><div class="dash-label">महिन्यात जमा रक्कम</div><div id="dashCollectedMonth" class="dash-val ok">₹0</div></div>
-        <div class="dash-box"><div class="dash-label">एकूण बाकी व्याज / थकबाकी</div><div id="dashTotalPending" class="dash-val err">₹0</div></div>
+        <div class="dash-box"><div id="tLblPrincipal" class="dash-label">एकूण मुद्दल</div><div id="dashTotalPrincipal" class="dash-val">₹0</div></div>
+        <div class="dash-box"><div id="tLblExpected" class="dash-label">मासिक अपेक्षित व्याज</div><div id="dashExpectedInterest" class="dash-val">₹0</div></div>
+        <div class="dash-box"><div id="tLblCollected" class="dash-label">महिन्यात जमा रक्कम</div><div id="dashCollectedMonth" class="dash-val ok">₹0</div></div>
+        <div class="dash-box"><div id="tLblPending" class="dash-label">एकूण बाकी व्याज / थकबाकी</div><div id="dashTotalPending" class="dash-val err">₹0</div></div>
       </div>
     </section>
 
     <!-- WhatsApp व सकाळचे Notification रिमाइंडर -->
     <section class="card">
-      <h3 style="margin-top:0;">📲 WhatsApp व सकाळचे Notification रिमाइंडर</h3>
+      <h3 id="tRemTitle" style="margin-top:0;">📲 WhatsApp व सकाळचे Notification रिमाइंडर</h3>
       <div class="row" style="margin-bottom:10px;">
         <input type="tel" id="selfWaNumber" placeholder="तुमचा स्वतःचा WhatsApp नंबर (उदा. 9198XXXXXXXX)" style="flex:1; min-width:220px;" />
         <button id="saveWaNumberBtn" class="primary sm">नंबर सेव्ह करा</button>
@@ -356,11 +362,12 @@
       <div id="tomorrowPromiseList"></div>
     </section>
 
-    <!-- नवीन ग्राहक जोडणे -->
-    <section class="card">
-      <h3 style="margin-top:0;">नवीन ग्राहक / कर्ज नोंद</h3>
+    <!-- नवीन ग्राहक / कर्ज नोंद -->
+    <section class="card" id="addBorrowerSection">
+      <h3 id="tAddTitle" style="margin-top:0;">नवीन ग्राहक / कर्ज नोंद</h3>
       <div class="grid-3">
         <div class="field"><label>ग्राहकाचे नाव *</label><input type="text" id="bName" placeholder="पूर्ण नाव" /></div>
+        <div class="field"><label>कर्ज खाते नाव / क्रमांक (पर्यायी)</label><input type="text" id="bLoanLabel" placeholder="उदा. कर्ज #1 / सोने कर्ज" /></div>
         <div class="field"><label>मोबाईल नंबर</label><input type="tel" id="bMobile" placeholder="10 अंकी नंबर" /></div>
         <div class="field"><label>एकूण मुद्दल (₹) *</label><input type="number" id="bPrincipal" placeholder="उदा. 50000" min="0" /></div>
         <div class="field"><label>मुद्दल दिल्याची तारीख</label><input type="date" id="bLoanDate" /></div>
@@ -377,7 +384,8 @@
         <div class="field"><label>दरमहा व्याजाची तारीख (1-31)</label><input type="number" id="bInterestDay" min="1" max="31" placeholder="उदा. 5" /></div>
         <div class="field"><label>दररोजचा विलंब दंड (₹)</label><input type="number" id="bLateFee" min="0" value="0" /></div>
         <div class="field"><label>सुरुवातीची मॅन्युअल मागील बाकी (₹)</label><input type="number" id="bCustomDue" min="0" placeholder="0" /></div>
-        <div class="field"><label>जामीनदाराचे नाव</label><input type="text" id="bGuarantor" placeholder="जामीनदार नाव" /></div>
+        <div class="field"><label>मुख्य जामीनदार</label><input type="text" id="bGuarantor" placeholder="जामीनदार १ नाव" /></div>
+        <div class="field"><label>अतिरिक्त जामीनदार (स्वल्पविरामाने)</label><input type="text" id="bExtraGuarantors" placeholder="उदा. रमेश (9822..), सुरेश" /></div>
         <div class="field">
           <label>नोकरीचा प्रकार</label>
           <select id="bJobType">
@@ -398,14 +406,14 @@
         <textarea id="bNote" rows="2" placeholder="महत्त्वाची टीप लिहा..."></textarea>
       </div>
       <div style="margin-top:10px;">
-        <button id="addBorrowerBtn" class="primary">+ ग्राहक जोडा</button>
+        <button id="addBorrowerBtn" class="primary">+ ग्राहक / कर्ज जोडा</button>
       </div>
     </section>
 
-    <!-- सक्रिय ग्राहकांची यादी, सर्च, व्हॉइस सर्च व फिल्टर्स -->
+    <!-- सक्रिय / बंद ग्राहकांची यादी, सर्च, व्हॉइस सर्च व फिल्टर्स -->
     <section class="card">
       <div class="row" style="justify-content:space-between; margin-bottom:10px;">
-        <h3 style="margin:0;">मासिक हिशोब व जमा नोंद</h3>
+        <h3 id="tLedgerTitle" style="margin:0;">मासिक हिशोब व जमा नोंद</h3>
         <div class="row">
           <label class="muted">महिना:</label>
           <input type="month" id="activeYm" />
@@ -420,7 +428,12 @@
       </div>
 
       <div class="row" style="margin-bottom:8px;">
-        <span class="muted">नोकरी:</span>
+        <span class="muted">खाते:</span>
+        <button class="sm filter-active" data-accfilter="active">Active</button>
+        <button class="sm" data-accfilter="closed">Closed</button>
+        <button class="sm" data-accfilter="all">सर्व</button>
+
+        <span class="muted" style="margin-left:8px;">नोकरी:</span>
         <button class="sm filter-active" data-jobfilter="all">सर्व</button>
         <button class="sm" data-jobfilter="govt">Government</button>
         <button class="sm" data-jobfilter="private">Private</button>
@@ -428,21 +441,31 @@
         <span class="muted" style="margin-left:8px;">स्थिती:</span>
         <button class="sm filter-active" data-statusfilter="all">सर्व</button>
         <button class="sm" data-statusfilter="paid">Paid Full (हिरवे)</button>
-        <button class="sm" data-statusfilter="partial">Partial Paid (पिवळे)</button>
+        <button class="sm" data-statusfilter="partial">Partial (पिवळे)</button>
         <button class="sm" data-statusfilter="pending">Unpaid (बाकी)</button>
       </div>
 
       <div id="borrowersList"></div>
     </section>
 
-    <!-- रिपोर्ट्स, CSV, Archive, Cloud Backup, Vault, Gmail व Webhook -->
+    <!-- रिपोर्ट्स, CSV, Archive, Scheduled Cloud Backup, Vault, Gmail व Webhook -->
     <section class="card">
-      <h3 style="margin-top:0;">📑 रिपोर्ट्स, CSV, Archive, Backup व Webhook</h3>
+      <h3 id="tReportsTitle" style="margin-top:0;">📑 रिपोर्ट्स, CSV, Archive, Scheduled Backup व Webhook</h3>
       <div class="row" style="margin-bottom:10px;">
         <button id="printMonthlyPdfBtn" class="primary sm">🖨️ महिन्याचा PDF / Print रिपोर्ट</button>
         <button id="exportMonthlyCsvBtn" class="success sm">📊 महिन्याची Excel CSV</button>
         <button id="exportAllCsvBtn" class="success sm">📑 संपूर्ण खात्यांची CSV</button>
         <button id="gmailReportBtn" class="warn sm">📧 Gmail Report</button>
+      </div>
+      <div class="row" style="margin-bottom:10px;">
+        <label class="muted">Scheduled Cloud Backup:</label>
+        <select id="scheduledBackupSelect">
+          <option value="off">बंद (Manual)</option>
+          <option value="daily">दररोज (Daily)</option>
+          <option value="weekly">दर आठवड्याला (Weekly)</option>
+          <option value="monthly">दर महिन्याला (Monthly)</option>
+        </select>
+        <span id="lastBackupBadge" class="muted"></span>
       </div>
       <div class="row" style="margin-bottom:10px;">
         <input type="file" id="importCsvFile" accept=".csv,text/csv" />
@@ -510,6 +533,17 @@
     </section>
 
   </main>
+
+  <!-- Profit & Loss Report Modal -->
+  <div id="pnlModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="row" style="justify-content:space-between; margin-bottom:10px;">
+        <h3 style="margin:0;">📈 Profit & Loss (नफा-तोटा) अहवाल</h3>
+        <button id="closePnlModalBtn" class="danger sm">बंद करा</button>
+      </div>
+      <div id="pnlContent"></div>
+    </div>
+  </div>
 
   <!-- Admin Security Dashboard Modal -->
   <div id="securityModal" class="modal-backdrop hidden">
@@ -582,6 +616,7 @@
       <input type="hidden" id="eId" />
       <div class="grid-3">
         <div class="field"><label>ग्राहकाचे नाव *</label><input type="text" id="eName" /></div>
+        <div class="field"><label>कर्ज खाते नाव / क्रमांक</label><input type="text" id="eLoanLabel" /></div>
         <div class="field"><label>मोबाईल नंबर</label><input type="tel" id="eMobile" /></div>
         <div class="field"><label>सध्याचे मुद्दल (₹)</label><input type="number" id="ePrincipal" min="0" /></div>
         <div class="field"><label>मूळ मुद्दल (Flat साठी ₹)</label><input type="number" id="eOriginalPrincipal" min="0" /></div>
@@ -598,7 +633,8 @@
         </div>
         <div class="field"><label>दरमहा व्याजाची तारीख (1-31)</label><input type="number" id="eInterestDay" min="1" max="31" /></div>
         <div class="field"><label>दररोजचा विलंब दंड (₹)</label><input type="number" id="eLateFee" min="0" /></div>
-        <div class="field"><label>जामीनदाराचे नाव</label><input type="text" id="eGuarantor" /></div>
+        <div class="field"><label>मुख्य जामीनदार</label><input type="text" id="eGuarantor" /></div>
+        <div class="field"><label>अतिरिक्त जामीनदार</label><input type="text" id="eExtraGuarantors" /></div>
         <div class="field">
           <label>नोकरीचा प्रकार</label>
           <select id="eJobType">
