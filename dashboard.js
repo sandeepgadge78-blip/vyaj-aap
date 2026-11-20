@@ -1,6 +1,6 @@
 // =========================================================================
 // Hishob Premium Fintech Dashboard V3 + Gmail-Style Hamburger Menu (☰)
-// + Month Archive (Year & Month Instant Filter + Cloud Snapshots)
+// + Exact Month Ledger (Real Firestore Data Only, Past Due Included, Independent Excel)
 // =========================================================================
 
 (function () {
@@ -11,7 +11,7 @@
   }
 
   function getBridge() { return window.HishobBridge || null; }
-  function fmt(val) { const br = getBridge(); return br ? br.fmtAmt(val) : `₹${Number(val || 0)}`; }
+  function fmt(val) { const br = getBridge(); return br ? br.fmtAmt(val) : `₹${Number(val || 0).toLocaleString('en-IN')}`; }
   function getTodayIso(offset = 0) {
     const d = new Date(); d.setDate(d.getDate() + offset);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -24,7 +24,20 @@
     return `${MARATHI_MONTHS[parseInt(m, 10) - 1] || m} ${y}`;
   }
 
-  // Toast Notification
+  function csvCell(val) {
+    return `"${String(val === undefined || val === null ? '' : val).replace(/"/g, '""')}"`;
+  }
+
+  function downloadCsvFile(filename, lines) {
+    const blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   function showToast(msg, isError = false) {
     let t = document.getElementById('v3Toast');
     if (!t) {
@@ -188,11 +201,31 @@
   `;
   document.head.appendChild(styleEl);
 
-  // २. Real Business Data Analytics Engine (कोणत्याही विशिष्ट महिन्यासाठी गणना करणारा)
+  // २. Real Business Data Engine
+  // ज्या महिन्यात कर्ज/व्यवहार सुरू झालेला नाही, त्या महिन्यात चुकीची एंट्री दिसू नये म्हणून काटेकोर तपासणी
+  function isAccountActiveInMonth(borrower, targetYm) {
+    if (borrower.isDeleted) return false;
+    const startYm = String(borrower.startYm || '').slice(0, 7);
+    const hasPayInMonth = (borrower.paymentHistory || []).some(p => String(p.date || '').slice(0, 7) === targetYm || p.ym === targetYm);
+    const hasPrinChangeInMonth = [...(borrower.extraPrincipals || []), ...(borrower.principalReductions || [])]
+      .some(x => String(x.date || '').slice(0, 7) === targetYm);
+
+    if (startYm && startYm > targetYm && !hasPayInMonth && !hasPrinChangeInMonth) {
+      return false;
+    }
+    if (borrower.accountStatus === 'closed') {
+      const closedYm = String((borrower.settlement && borrower.settlement.date) || '').slice(0, 7);
+      if (closedYm && closedYm < targetYm && !hasPayInMonth && !hasPrinChangeInMonth) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   function computeV3Data(overrideYm = null) {
     const br = getBridge();
     if (!br) return null;
-    const borrowers = (br.getBorrowers() || []).filter(b => !b.isDeleted);
+    const allBorrowers = (br.getBorrowers() || []).filter(b => !b.isDeleted);
     const activeYm = overrideYm || document.getElementById('activeYm')?.value || getTodayIso().slice(0, 7);
     const todayIso = getTodayIso(0), tomorrowIso = getTodayIso(1);
 
@@ -200,12 +233,11 @@
     let principalRecovered = 0, monthlyExpected = 0, monthlyCollected = 0, todayCollected = 0;
     let totalInterestReceived = 0, totalOutstanding = 0, totalOverdue = 0;
     let paidCnt = 0, partialCnt = 0, unpaidCnt = 0;
-    const monthlySeries = {}, recentPayments = [], dueCustomers = [], allActiveRows = [];
+    const monthlySeries = {}, recentPayments = [], dueCustomers = [], allActiveRows = [], monthLedgerRows = [];
 
-    borrowers.forEach(b => {
+    allBorrowers.forEach(b => {
       const c = br.computeLedgerUpToMonth(b, activeYm);
       const origP = Number(b.originalPrincipal || b.principal || 0);
-      totalPrincipal += origP;
 
       (b.principalReductions || []).forEach(r => { principalRecovered += Number(r.amount || 0); });
       (b.paymentHistory || []).forEach(p => {
@@ -235,10 +267,26 @@
         const row = {
           id: b.id, name: b.name, mobile: b.mobile || '', principal: c.principal,
           monthlyInterest: c.monthlyInterest, paidThisMonth: c.paidThisMonth,
-          outstanding: c.totalPayable, status: c.status, lateDays: c.lateDays, raw: b
+          pastDue: c.pastDue, outstanding: c.totalPayable, status: c.status, lateDays: c.lateDays, raw: b
         };
         allActiveRows.push(row);
         if (c.totalPayable > 0) dueCustomers.push(row);
+      }
+
+      // निवडलेल्या महिन्यासाठी काटेकोर तपासणी (कोणताही व्यवहार/कर्ज नसल्यास एंट्री दिसणार नाही)
+      if (isAccountActiveInMonth(b, activeYm)) {
+        totalPrincipal += b.accountStatus === 'closed' ? 0 : c.principal;
+        monthLedgerRows.push({
+          id: b.id,
+          name: b.name,
+          mobile: b.mobile || '',
+          principal: b.accountStatus === 'closed' ? 0 : c.principal,
+          monthlyInterest: c.monthlyInterest,
+          paidThisMonth: c.paidThisMonth,
+          pastDue: c.pastDue,
+          outstanding: c.totalPayable,
+          status: c.status
+        });
       }
     });
 
@@ -249,7 +297,7 @@
       activeYm, todayIso, tomorrowIso, activeLoans, closedLoans, totalPrincipal, remainingPrincipal,
       principalRecovered, monthlyExpected, monthlyCollected, todayCollected, totalInterestReceived,
       totalOutstanding, totalOverdue, paidCnt, partialCnt, unpaidCnt,
-      monthlySeries, recentPayments: recentPayments.slice(0, 12), dueCustomers, allActiveRows
+      monthlySeries, recentPayments: recentPayments.slice(0, 12), dueCustomers, allActiveRows, monthLedgerRows
     };
   }
 
@@ -347,7 +395,7 @@
 
       <div class="hm-body">
         <button class="hm-item active" data-hm="home"><span class="hm-item-left"><span>🏠</span><span>मुख्य Dashboard</span></span></button>
-        <button class="hm-item" data-hm="archive"><span class="hm-item-left"><span>📅</span><span>मागील महिने (Month Archive)</span></span></button>
+        <button class="hm-item" data-hm="archive"><span class="hm-item-left"><span>📅</span><span>महिना निहाय हिशोब (Month Ledger)</span></span></button>
         <button class="hm-item" data-hm="v3-dash"><span class="hm-item-left"><span>🚀</span><span>Premium Dashboard V3</span></span></button>
         <button class="hm-item" data-hm="add-cust"><span class="hm-item-left"><span>➕</span><span>नवीन ग्राहक / कर्ज जोडा</span></span></button>
         <button class="hm-item" data-hm="quick-pay"><span class="hm-item-left"><span>⚡</span><span>Quick Add Payment</span></span></button>
@@ -428,7 +476,7 @@
         try { await firebase.auth().sendPasswordResetEmail(u.email); showToast(`✅ ${u.email} वर Password Reset लिंक पाठवली.`); }
         catch (err) { showToast(`एरर: ${err.message}`, true); }
       }
-      else if (act === 'about') showToast('व्याज हिशोब वही V13.0 — Secure Loan Ledger');
+      else if (act === 'about') showToast('व्याज हिशोब वही V13.1 — Secure Loan Ledger');
       else if (act === 'logout') document.getElementById('lockBtn')?.click();
     });
   }
@@ -444,7 +492,7 @@
         <div class="td-wrap">
           <button id="threeDotBtn" class="sm td-btn" title="अधिक पर्याय (Menu)">⋮</button>
           <div id="threeDotDropdown" class="td-menu hidden">
-            <button data-td="archive">📅 मागील महिने (Month Archive)</button>
+            <button data-td="archive">📅 महिना निहाय हिशोब</button>
             <button data-td="v3-dash">🚀 Premium Dashboard V3</button>
             <button data-td="v3-pay">⚡ Quick Add Payment</button>
             <button data-td="pnl">📈 Profit & Loss Report</button>
@@ -534,7 +582,7 @@
           <button id="v3ToggleSideBtn" class="sm" title="Sidebar लहान/मोठा">☰</button>
         </div>
         <button class="v3-nav-item active" data-v3tab="overview"><span>📊</span><span class="v3-nav-lbl">Dashboard</span></button>
-        <button class="v3-nav-item" data-v3tab="archive"><span>📅</span><span class="v3-nav-lbl">Month Archive</span></button>
+        <button class="v3-nav-item" data-v3tab="archive"><span>📅</span><span class="v3-nav-lbl">महिना निहाय हिशोब</span></button>
         <button class="v3-nav-item" data-v3tab="payments"><span>⚡</span><span class="v3-nav-lbl">Quick Payment</span></button>
         <button class="v3-nav-item" data-v3tab="customers"><span>👥</span><span class="v3-nav-lbl">Due Customers</span></button>
         <button class="v3-nav-item" data-v3tab="analytics"><span>📈</span><span class="v3-nav-lbl">Analytics & Charts</span></button>
@@ -552,7 +600,7 @@
           </div>
           <div class="row">
             <button id="v3MobOverviewBtn" class="sm primary">📊 Dash</button>
-            <button id="v3MobArchiveBtn" class="sm warn">📅 Archive</button>
+            <button id="v3MobArchiveBtn" class="sm warn">📅 Months</button>
             <button id="v3MobPayBtn" class="sm success">⚡ Pay</button>
             <button id="v3MobChartsBtn" class="sm">📈 Charts</button>
             <button id="v3TopRefreshBtn" class="sm">🔄</button>
@@ -644,58 +692,7 @@
     `;
   }
 
-  // ७. Saved Cloud Archives लोड व Render करणे
-  async function loadSavedArchivesList() {
-    const listBox = document.getElementById('v3SavedArchivesBox');
-    const user = (window.firebase && firebase.auth) ? firebase.auth().currentUser : null;
-    if (!listBox || !user) return;
-    listBox.innerHTML = '<div class="muted">सेव्ह केलेले Archives शोधत आहे...</div>';
-    try {
-      const snap = await firebase.firestore().collection('users').doc(user.uid).collection('monthlyArchives').get();
-      if (snap.empty) {
-        listBox.innerHTML = '<div class="muted">अद्याप कोणताही पक्का Archive सेव्ह केलेला नाही. वरच्या बटणावरून सेव्ह करा.</div>';
-        return;
-      }
-      const docs = snap.docs.map(d => d.data()).sort((a, b) => String(b.ym).localeCompare(String(a.ym)));
-      listBox.innerHTML = docs.map(doc => `
-        <div class="meta-box row" style="justify-content:space-between;">
-          <div>
-            <strong>📦 ${esc(fmtYmMarathi(doc.ym))} (${esc(doc.ym)})</strong>
-            <div class="muted" style="font-size:0.75rem;">खाती: ${doc.count || 0} | सेव्ह तारीख: ${esc(String(doc.archivedAt || '').slice(0, 10))}</div>
-          </div>
-          <button class="primary sm" data-open-snap="${esc(doc.ym)}">👁️ Snapshot पहा</button>
-        </div>
-      `).join('');
-
-      listBox.querySelectorAll('button[data-open-snap]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const ym = btn.getAttribute('data-open-snap');
-          const found = docs.find(x => x.ym === ym);
-          const det = document.getElementById('v3ArchiveSnapshotView');
-          if (!found || !det) return;
-          const recs = found.records || [];
-          det.classList.remove('hidden');
-          det.innerHTML = `
-            <div class="row" style="justify-content:space-between; margin-bottom:8px;">
-              <strong>🔒 पक्का बंद Snapshot: ${esc(fmtYmMarathi(ym))} (${recs.length} खाती)</strong>
-              <button class="danger sm" id="closeSnapViewBtn">✕ बंद करा</button>
-            </div>
-            <table class="passbook-table">
-              <thead><tr><th>ग्राहक</th><th>मुद्दल</th><th>मासिक व्याज</th><th>जमा</th><th>थकबाकी</th></tr></thead>
-              <tbody>
-                ${recs.map(r => `<tr><td>${esc(r.name)}</td><td>${fmt(r.principal)}</td><td>${fmt(r.monthlyInterest)}</td><td class="ok">${fmt(r.collectedInMonth)}</td><td class="err">${fmt(r.totalPayable)}</td></tr>`).join('')}
-              </tbody>
-            </table>
-          `;
-          document.getElementById('closeSnapViewBtn')?.addEventListener('click', () => det.classList.add('hidden'));
-        });
-      });
-    } catch (err) {
-      listBox.innerHTML = `<div class="err">एरर: ${esc(err.message)}</div>`;
-    }
-  }
-
-  // ८. V3 Dashboard Body Render
+  // ७. V3 Dashboard Body Render
   function renderV3Body() {
     const body = document.getElementById('v3Body');
     const clock = document.getElementById('v3DateClock');
@@ -709,17 +706,20 @@
 
     if (v3Tab === 'archive') {
       const selYm = `${archiveSelectedYear}-${archiveSelectedMonth}`;
-      const archData = computeV3Data(selYm) || d;
+      const mData = computeV3Data(selYm) || d;
+      const rows = mData.monthLedgerRows || [];
+      const mPrincipal = rows.reduce((s, r) => s + r.principal, 0);
+      const mExpected = rows.reduce((s, r) => s + r.monthlyInterest, 0);
+      const mPaid = rows.reduce((s, r) => s + r.paidThisMonth, 0);
+      const mPastDue = rows.reduce((s, r) => s + r.pastDue, 0);
+      const mTotalOut = rows.reduce((s, r) => s + r.outstanding, 0);
       const years = ['2024', '2025', '2026', '2027', '2028', '2029', '2030'];
 
       body.innerHTML = `
         <div class="v3-panel">
           <div class="row" style="justify-content:space-between; margin-bottom:10px;">
-            <h3 style="margin:0;">📅 Month Archive — वर्ष व महिना निवडा</h3>
-            <div class="row">
-              <button id="v3ApplyMainYmBtn" class="primary sm">📂 मुख्य अ‍ॅपवर हा महिना उघडा</button>
-              <button id="v3SaveSnapNowBtn" class="success sm">📦 पक्का Archive सेव्ह करा</button>
-            </div>
+            <h3 style="margin:0;">📅 ${esc(fmtYmMarathi(selYm))} — खरा हिशोब</h3>
+            <button id="v3ApplyMainYmBtn" class="primary sm">📂 मुख्य स्क्रीनवर हा महिना सेट करा</button>
           </div>
 
           <div class="row" style="margin-bottom:12px;">
@@ -742,51 +742,58 @@
 
           <div class="v3-kpi-row">
             <div class="v3-wave-card">
-              <div class="v3-kpi-title">निवडलेला महिना (${esc(fmtYmMarathi(selYm))})</div>
-              <div class="v3-kpi-num">${archData.activeLoans} खाती</div>
-              <div class="v3-kpi-sub">मुद्दल: ${fmt(archData.remainingPrincipal)}</div>
+              <div class="v3-kpi-title">या महिन्यातील खाती / मुद्दल</div>
+              <div class="v3-kpi-num">${rows.length} खाती</div>
+              <div class="v3-kpi-sub">मुद्दल: ${fmt(mPrincipal)}</div>
             </div>
             <div class="v3-wave-card">
-              <div class="v3-kpi-title">अपेक्षित व्याज</div>
-              <div class="v3-kpi-num" style="color:#38bdf8;">${fmt(archData.monthlyExpected)}</div>
-              <div class="v3-kpi-sub ok">जमा: ${fmt(archData.monthlyCollected)}</div>
+              <div class="v3-kpi-title">महिन्याचे व्याज / जमा</div>
+              <div class="v3-kpi-num" style="color:#38bdf8;">${fmt(mExpected)}</div>
+              <div class="v3-kpi-sub ok">जमा: ${fmt(mPaid)}</div>
             </div>
             <div class="v3-wave-card">
-              <div class="v3-kpi-title">त्या महिन्यापर्यंत बाकी</div>
-              <div class="v3-kpi-num err">${fmt(archData.totalOutstanding)}</div>
-              <div class="v3-kpi-sub">पूर्ण: ${archData.paidCnt} | अर्धवट: ${archData.partialCnt} | बाकी: ${archData.unpaidCnt}</div>
+              <div class="v3-kpi-title">मागील व्याज बाकी + एकूण बाकी</div>
+              <div class="v3-kpi-num err">${fmt(mTotalOut)}</div>
+              <div class="v3-kpi-sub warn-text">मागील व्याज बाकी: ${fmt(mPastDue)}</div>
             </div>
           </div>
 
-          <h4 style="margin:10px 0 6px;">📋 ${esc(fmtYmMarathi(selYm))} मधील सर्व खात्यांचा हिशोब</h4>
+          <h4 style="margin:10px 0 6px;">📋 ${esc(fmtYmMarathi(selYm))} मधील नोंदी (${rows.length})</h4>
           <div style="overflow-x:auto;">
             <table class="passbook-table">
-              <thead><tr><th>क्र.</th><th>ग्राहक</th><th>मुद्दल</th><th>मासिक व्याज</th><th>जमा</th><th>एकूण बाकी</th><th>स्थिती</th></tr></thead>
+              <thead>
+                <tr>
+                  <th>क्र.</th>
+                  <th>ग्राहक</th>
+                  <th>मुद्दल</th>
+                  <th>मासिक व्याज</th>
+                  <th>जमा</th>
+                  <th>मागील बाकी</th>
+                  <th>एकूण बाकी</th>
+                </tr>
+              </thead>
               <tbody>
-                ${archData.allActiveRows.map((r, i) => `
+                ${rows.length ? rows.map((r, i) => `
                   <tr>
                     <td>${i + 1}</td>
                     <td><strong>${esc(r.name)}</strong></td>
                     <td>${fmt(r.principal)}</td>
                     <td>${fmt(r.monthlyInterest)}</td>
                     <td class="ok">${fmt(r.paidThisMonth)}</td>
-                    <td class="err">${fmt(r.outstanding)}</td>
-                    <td>${r.status === 'paid' ? '🟢 जमा' : r.status === 'partial' ? '🟡 अर्धवट' : '🔴 बाकी'}</td>
+                    <td class="warn-text">${fmt(r.pastDue)}</td>
+                    <td class="err"><strong>${fmt(r.outstanding)}</strong></td>
                   </tr>
-                `).join('') || '<tr><td colspan="7">डेटा नाही.</td></tr>'}
+                `).join('') : '<tr><td colspan="7" class="muted" style="text-align:center;">या महिन्यात कोणताही हिशोब किंवा व्यवहार नोंदवलेला नाही.</td></tr>'}
               </tbody>
             </table>
           </div>
-        </div>
 
-        <div class="v3-panel">
-          <h4 style="margin:0 0 8px;">🗄️ सेव्ह केलेले पक्के Cloud Archives (Snapshot Records)</h4>
-          <div id="v3ArchiveSnapshotView" class="meta-box hidden" style="margin-bottom:10px;"></div>
-          <div id="v3SavedArchivesBox"></div>
+          <div style="margin-top:14px;">
+            <button id="v3DownloadIndepExcelBtn" class="success" style="width:100%;">📊 ${esc(fmtYmMarathi(selYm))} (${esc(selYm)}) ची स्वतंत्र Excel डाउनलोड करा</button>
+          </div>
         </div>
       `;
 
-      // वर्ष किंवा महिना बदलताच लगेच अपडेट होणे
       document.getElementById('v3ArchYearSel')?.addEventListener('change', (e) => {
         archiveSelectedYear = e.target.value;
         renderV3Body();
@@ -796,7 +803,6 @@
         renderV3Body();
       });
 
-      // मुख्य अ‍ॅपवर निवडलेला महिना लगेच उघडणे
       document.getElementById('v3ApplyMainYmBtn')?.addEventListener('click', () => {
         const mainYmInp = document.getElementById('activeYm');
         if (mainYmInp) {
@@ -804,29 +810,17 @@
           mainYmInp.dispatchEvent(new Event('change'));
         }
         document.getElementById('v3Overlay')?.classList.add('hidden');
-        showToast(`📅 मुख्य अ‍ॅपवर ${fmtYmMarathi(selYm)} उघडले!`);
+        showToast(`📅 मुख्य स्क्रीनवर ${fmtYmMarathi(selYm)} सेट केले!`);
       });
 
-      // पक्का Cloud Archive सेव्ह करणे
-      document.getElementById('v3SaveSnapNowBtn')?.addEventListener('click', async () => {
-        const user = (window.firebase && firebase.auth) ? firebase.auth().currentUser : null;
-        if (!user) return;
-        try {
-          const summary = archData.allActiveRows.map(r => ({
-            id: r.id, name: r.name, principal: r.principal,
-            monthlyInterest: r.monthlyInterest, collectedInMonth: r.paidThisMonth, totalPayable: r.outstanding
-          }));
-          await firebase.firestore().collection('users').doc(user.uid).collection('monthlyArchives').doc(selYm).set({
-            ym: selYm, archivedAt: new Date().toISOString(), count: summary.length, records: summary
-          });
-          showToast(`📦 ${fmtYmMarathi(selYm)} चा पक्का Archive सेव्ह झाला!`);
-          loadSavedArchivesList();
-        } catch (err) {
-          showToast(`एरर: ${err.message}`, true);
-        }
+      document.getElementById('v3DownloadIndepExcelBtn')?.addEventListener('click', () => {
+        const header = ['क्र.', 'महिना', 'ग्राहक नाव', 'मोबाईल', 'मुद्दल (₹)', 'मासिक व्याज (₹)', 'जमा रक्कम (₹)', 'मागील व्याज बाकी (₹)', 'एकूण बाकी (₹)'].map(csvCell).join(',');
+        const bodyLines = rows.map((r, i) => [
+          i + 1, selYm, r.name, r.mobile || '-', r.principal, r.monthlyInterest, r.paidThisMonth, r.pastDue, r.outstanding
+        ].map(csvCell).join(','));
+        downloadCsvFile(`Hishob_${selYm}.csv`, [header, ...bodyLines]);
+        showToast(`✅ ${selYm} ची स्वतंत्र Excel फाईल डाउनलोड झाली!`);
       });
-
-      loadSavedArchivesList();
 
     } else if (v3Tab === 'overview') {
       body.innerHTML = `
