@@ -145,7 +145,7 @@ async function appendAuditLog(action, details) {
   }
 }
 
-// ६. Flat/Reducing व्याज, Partial Payment, Manual Pending Month, विलंब दंड व वायद्यानुसार बाकी गणित
+// ६. Flat/Reducing/निश्चित व्याज, Partial Payment, Manual Pending Month, विलंब दंड व वायदा गणित
 function compareYm(a, b) {
   return String(a || '').localeCompare(String(b || ''));
 }
@@ -174,12 +174,23 @@ function calculateLateFee(borrower, targetYm, isFullyPaid) {
   return { lateDays: diffDays, lateFee: diffDays * lateFeePerDay };
 }
 
-function computeLedgerUpToMonth(borrower, targetYm) {
+function getMonthlyInterestAmount(borrower) {
+  const fixedInt = Number(borrower.fixedMonthlyInterest || 0);
+  if (fixedInt > 0) return Math.round(fixedInt);
+
   const principal = Number(borrower.principal || 0);
   const originalPrincipal = Number(borrower.originalPrincipal || principal);
   const interestType = borrower.interestType === 'flat' ? 'flat' : 'reducing';
   const baseForInterest = interestType === 'flat' ? originalPrincipal : principal;
   const rate = Number(borrower.rate || 0);
+  return Math.round((baseForInterest * rate) / 100);
+}
+
+function computeLedgerUpToMonth(borrower, targetYm) {
+  const principal = Number(borrower.principal || 0);
+  const originalPrincipal = Number(borrower.originalPrincipal || principal);
+  const interestType = borrower.interestType === 'flat' ? 'flat' : 'reducing';
+  const monthlyInterest = getMonthlyInterestAmount(borrower);
   const paidMonths = borrower.paidMonths || {};
   const partialPayments = borrower.partialPayments || {};
   const customPastDues = borrower.customPastDues || {};
@@ -191,7 +202,6 @@ function computeLedgerUpToMonth(borrower, targetYm) {
 
   while (compareYm(cursor, targetYm) <= 0 && guard < 240) {
     guard++;
-    const monthlyInterest = Math.round((baseForInterest * rate) / 100);
     const isFullMarked = Boolean(paidMonths[cursor]);
     const partialAmt = Number(partialPayments[cursor] || 0);
     const paidThisMonth = isFullMarked ? monthlyInterest : Math.min(monthlyInterest, partialAmt);
@@ -228,14 +238,12 @@ function computeLedgerUpToMonth(borrower, targetYm) {
       };
     }
 
-    // मागील महिन्यातील उरलेले व्याज पुढील महिन्याच्या बाकीत जमा करा
     if (remainingThisMonth > 0) {
       runningPastDue += remainingThisMonth;
     }
     cursor = nextYm(cursor);
   }
 
-  const monthlyInterest = Math.round((baseForInterest * rate) / 100);
   const isFullMarked = Boolean(paidMonths[targetYm]);
   const partialAmt = Number(partialPayments[targetYm] || 0);
   const paidThisMonth = isFullMarked ? monthlyInterest : Math.min(monthlyInterest, partialAmt);
@@ -278,7 +286,7 @@ function getPromiseStatusHtml(borrower, totalPayable) {
   return `<div>📅 वायद्यानुसार बाकी: ${parts.join(' | ')}</div>`;
 }
 
-// ७. ग्राहक अ‍ॅक्शन्स (Full Pay, Partial Pay, Reset, Manual Pending Month, Extra/Reduce Principal)
+// ७. ग्राहक अ‍ॅक्शन्स
 function getBorrowerDoc(borrowerId) {
   return db.collection('users').doc(state.user.uid).collection('borrowers').doc(borrowerId);
 }
@@ -477,15 +485,16 @@ async function permanentDeleteBorrower(borrowerId, name) {
   await appendAuditLog('PERMANENT_DELETED', `${name} (${borrowerId}) कायमचे डिलीट केले`);
 }
 
-// ८. Passbook, Payment History व Financial Timeline Modal
+// ८. Passbook (अचूक मुद्दल शिलकीसह), Payment History व Financial Timeline Modal
 function buildBorrowerEvents(b) {
   const events = [];
   if (b.loanDate || b.createdAt) {
     events.push({
       date: b.loanDate || String(b.createdAt).slice(0, 10),
       type: 'कर्ज सुरुवात',
-      debit: Number(b.originalPrincipal || b.principal || 0),
-      credit: 0,
+      principalDebit: Number(b.originalPrincipal || b.principal || 0),
+      principalCredit: 0,
+      interestCredit: 0,
       note: `मुद्दल वितरण (${b.interestType === 'flat' ? 'Flat' : 'Reducing'} @ ${b.rate || 0}%)`
     });
   }
@@ -493,26 +502,29 @@ function buildBorrowerEvents(b) {
     events.push({
       date: String(ep.date || '').slice(0, 10),
       type: 'अतिरिक्त मुद्दल',
-      debit: Number(ep.amount || 0),
-      credit: 0,
-      note: `मुद्दल वाढले (शिल्लक ₹${ep.balanceAfter || '-'})`
+      principalDebit: Number(ep.amount || 0),
+      principalCredit: 0,
+      interestCredit: 0,
+      note: `मुद्दल वाढले`
     });
   });
   (b.principalReductions || []).forEach(pr => {
     events.push({
       date: String(pr.date || '').slice(0, 10),
       type: 'मुद्दल कपात',
-      debit: 0,
-      credit: Number(pr.amount || 0),
-      note: `मुद्दल कमी झाले (शिल्लक ₹${pr.balanceAfter || '-'})`
+      principalDebit: 0,
+      principalCredit: Number(pr.amount || 0),
+      interestCredit: 0,
+      note: `मुद्दल कमी झाले`
     });
   });
   (b.paymentHistory || []).forEach(ph => {
     events.push({
       date: String(ph.date || '').slice(0, 10),
-      type: ph.type || 'भरणा',
-      debit: 0,
-      credit: Number(ph.amount || 0),
+      type: ph.type || 'व्याज भरणा',
+      principalDebit: 0,
+      principalCredit: 0,
+      interestCredit: Number(ph.amount || 0),
       note: ph.note || `${ph.ym || ''} जमा`
     });
   });
@@ -530,23 +542,34 @@ function renderPassbookContent() {
   const events = buildBorrowerEvents(b);
 
   if (tab === 'passbook') {
-    let runningBal = 0;
+    let principalBal = 0;
     const rows = events.map(ev => {
-      runningBal += ev.debit - ev.credit;
+      // फक्त मुद्दल वाढ/कपातीवरच मुद्दल शिल्लक बदलेल; व्याज जमा झाल्याने मुद्दल कमी होणार नाही
+      principalBal = Math.max(0, principalBal + ev.principalDebit - ev.principalCredit);
       return `
         <tr>
           <td>${escapeHtml(ev.date)}</td>
           <td>${escapeHtml(ev.type)} — ${escapeHtml(ev.note)}</td>
-          <td>${ev.debit > 0 ? `₹${ev.debit}` : '-'}</td>
-          <td class="ok">${ev.credit > 0 ? `₹${ev.credit}` : '-'}</td>
-          <td><strong>₹${Math.max(0, runningBal)}</strong></td>
+          <td class="err">${ev.principalDebit > 0 ? `+₹${ev.principalDebit}` : '-'}</td>
+          <td class="ok">${ev.principalCredit > 0 ? `-₹${ev.principalCredit}` : '-'}</td>
+          <td class="ok">${ev.interestCredit > 0 ? `₹${ev.interestCredit}` : '-'}</td>
+          <td><strong>₹${principalBal}</strong></td>
         </tr>
       `;
     }).join('');
     content.innerHTML = `
       <table class="passbook-table">
-        <thead><tr><th>तारीख</th><th>तपशील</th><th>नावे (Debit)</th><th>जमा (Credit)</th><th>शिल्लक</th></tr></thead>
-        <tbody>${rows || '<tr><td colspan="5">अद्याप कोणतीही नोंद नाही.</td></tr>'}</tbody>
+        <thead>
+          <tr>
+            <th>तारीख</th>
+            <th>तपशील</th>
+            <th>मुद्दल नावे (+)</th>
+            <th>मुद्दल जमा (-)</th>
+            <th>व्याज/बाकी जमा</th>
+            <th>मुद्दल शिल्लक</th>
+          </tr>
+        </thead>
+        <tbody>${rows || '<tr><td colspan="6">अद्याप कोणतीही नोंद नाही.</td></tr>'}</tbody>
       </table>
     `;
   } else if (tab === 'timeline') {
@@ -554,8 +577,9 @@ function renderPassbookContent() {
       ? events.map(ev => `
           <div class="meta-box">
             <strong>[${escapeHtml(ev.date)}] ${escapeHtml(ev.type)}</strong> — ${escapeHtml(ev.note)}
-            ${ev.debit > 0 ? `<span class="err">(नावे ₹${ev.debit})</span>` : ''}
-            ${ev.credit > 0 ? `<span class="ok">(जमा ₹${ev.credit})</span>` : ''}
+            ${ev.principalDebit > 0 ? `<span class="err">(मुद्दल +₹${ev.principalDebit})</span>` : ''}
+            ${ev.principalCredit > 0 ? `<span class="ok">(मुद्दल -₹${ev.principalCredit})</span>` : ''}
+            ${ev.interestCredit > 0 ? `<span class="ok">(व्याज जमा ₹${ev.interestCredit})</span>` : ''}
           </div>
         `).join('')
       : '<p class="muted">Timeline साठी अद्याप नोंदी नाहीत.</p>';
@@ -651,6 +675,7 @@ function openEditModal(borrowerId) {
   document.getElementById('eLoanDate').value = b.loanDate || '';
   document.getElementById('eStartYm').value = b.startYm || currentYmDefault();
   document.getElementById('eRate').value = b.rate || 0;
+  document.getElementById('eFixedInterest').value = b.fixedMonthlyInterest || 0;
   document.getElementById('eInterestType').value = b.interestType === 'flat' ? 'flat' : 'reducing';
   document.getElementById('eInterestDay').value = b.interestDay || '';
   document.getElementById('eLateFee').value = b.lateFeePerDay || 0;
@@ -686,6 +711,7 @@ document.getElementById('saveEditBtn').addEventListener('click', async () => {
     loanDate: document.getElementById('eLoanDate').value || '',
     startYm: document.getElementById('eStartYm').value || currentYmDefault(),
     rate: Number(document.getElementById('eRate').value || 0),
+    fixedMonthlyInterest: Number(document.getElementById('eFixedInterest').value || 0),
     interestType: document.getElementById('eInterestType').value === 'flat' ? 'flat' : 'reducing',
     interestDay: Number(document.getElementById('eInterestDay').value || 0),
     lateFeePerDay: Number(document.getElementById('eLateFee').value || 0),
@@ -768,6 +794,9 @@ function renderBorrowers() {
         : calc.status === 'partial'
           ? `अर्धवट जमा (₹${calc.paidThisMonth} / ₹${calc.monthlyInterest})`
           : 'बाकी';
+      const interestModeLabel = Number(b.fixedMonthlyInterest || 0) > 0
+        ? 'निश्चित व्याज'
+        : `${b.rate || 0}% (${calc.interestType === 'flat' ? 'Flat' : 'Reducing'})`;
 
       return `
         <div class="borrower-item">
@@ -782,7 +811,7 @@ function renderBorrowers() {
               <button data-action="soft-delete" data-id="${b.id}" data-name="${escapeHtml(b.name || '')}" class="danger sm">🗑️ Delete</button>
             </div>
           </div>
-          <div><strong>2. मुद्दल व पद्धत:</strong> ₹${calc.principal} | दर ${b.rate || 0}% (${calc.interestType === 'flat' ? 'Flat' : 'Reducing'}) ${b.loanDate ? `| तारीख: ${escapeHtml(b.loanDate)}` : ''}</div>
+          <div><strong>2. मुद्दल व पद्धत:</strong> ₹${calc.principal} | ${interestModeLabel} ${b.loanDate ? `| तारीख: ${escapeHtml(b.loanDate)}` : ''}</div>
           <div><strong>3. मासिक अपेक्षित व्याज:</strong> ₹${calc.monthlyInterest} ${b.interestDay ? `| व्याजाची तारीख: दरमहा ${b.interestDay}` : ''}</div>
           <div><strong>4. चालू महिना (${activeYm}):</strong> जमा ₹${calc.paidThisMonth} | उरलेले व्याज ₹${calc.remainingThisMonth} ${calc.lateFee > 0 ? `<span class="err">| विलंब दंड (${calc.lateDays} दिवस): ₹${calc.lateFee}</span>` : ''}</div>
           <div><strong>5. मागील बाकी व एकूण देणे:</strong> मागील बाकी ₹${calc.pastDue} | एकूण थकबाकी <strong class="ok">₹${calc.totalPayable}</strong></div>
@@ -897,6 +926,7 @@ document.getElementById('addBorrowerBtn').addEventListener('click', async () => 
   const name = document.getElementById('bName').value.trim();
   const principal = Number(document.getElementById('bPrincipal').value || 0);
   const rate = Number(document.getElementById('bRate').value || 0);
+  const fixedMonthlyInterest = Number(document.getElementById('bFixedInterest').value || 0);
   const startYm = document.getElementById('bStartYm').value || currentYmDefault();
   const customDue = Number(document.getElementById('bCustomDue').value || 0);
 
@@ -913,6 +943,7 @@ document.getElementById('addBorrowerBtn').addEventListener('click', async () => 
     loanDate: document.getElementById('bLoanDate').value || '',
     startYm,
     rate,
+    fixedMonthlyInterest,
     interestType: document.getElementById('bInterestType').value === 'flat' ? 'flat' : 'reducing',
     interestDay: Number(document.getElementById('bInterestDay').value || 0),
     lateFeePerDay: Number(document.getElementById('bLateFee').value || 0),
@@ -938,7 +969,7 @@ document.getElementById('addBorrowerBtn').addEventListener('click', async () => 
   await db.collection('users').doc(state.user.uid).collection('borrowers').add(payload);
   await appendAuditLog('BORROWER_ADDED', `${name} (मुद्दल ₹${principal}, सुरू ${startYm})`);
 
-  ['bName', 'bMobile', 'bPrincipal', 'bLoanDate', 'bCustomDue', 'bInterestDay', 'bGuarantor', 'bCompanyDept', 'bRetirementDate', 'bPromise1', 'bPromise2', 'bPromise3', 'bNote'].forEach(id => {
+  ['bName', 'bMobile', 'bPrincipal', 'bLoanDate', 'bFixedInterest', 'bCustomDue', 'bInterestDay', 'bGuarantor', 'bCompanyDept', 'bRetirementDate', 'bPromise1', 'bPromise2', 'bPromise3', 'bNote'].forEach(id => {
     document.getElementById(id).value = '';
   });
   document.getElementById('bLateFee').value = '0';
@@ -985,6 +1016,7 @@ document.getElementById('importSheetBtn').addEventListener('click', async () => 
           principal,
           originalPrincipal: principal,
           rate,
+          fixedMonthlyInterest: 0,
           startYm,
           interestType: 'reducing',
           isDeleted: false,
