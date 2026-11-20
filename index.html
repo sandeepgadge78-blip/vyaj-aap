@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0f172a" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://sandeepgadge78-blip.github.io; script-src 'self' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://docs.google.com https://*.googleusercontent.com https://script.google.com https://script.googleusercontent.com; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com;" />
-  <title>Hishob — व्याज व कर्ज हिशोब (V12.8)</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://sandeepgadge78-blip.github.io; script-src 'self' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://*.googleusercontent.com https://api.qrserver.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://docs.google.com https://*.googleusercontent.com https://script.google.com https://script.googleusercontent.com; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com;" />
+  <title>Hishob — व्याज व कर्ज हिशोब (V12.9)</title>
 
   <link rel="manifest" href="./manifest.json" />
 
@@ -58,7 +58,7 @@
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
       background: var(--bg);
       color: var(--text);
-      padding-bottom: 64px;
+      padding-bottom: 72px;
       transition: background 0.2s, color 0.2s;
     }
     header {
@@ -184,6 +184,12 @@
       border-left: 5px solid #64748b;
       opacity: 0.88;
     }
+    /* अर्धवट जमा प्रोग्रेस बार */
+    .partial-prog-wrap {
+      width: 100%; height: 7px; background: rgba(245, 158, 11, 0.3);
+      border-radius: 999px; overflow: hidden; margin: 6px 0;
+    }
+    .partial-prog-fill { height: 100%; background: #22c55e; border-radius: 999px; }
     .meta-box {
       margin-top: 6px;
       padding: 8px;
@@ -272,7 +278,7 @@
 
   <header>
     <div class="brand">
-      <span>Hishob V12.8</span>
+      <span>Hishob V12.9</span>
       <span id="networkBadge" class="badge paid">Online 🟢</span>
       <span id="syncStatus" class="badge">Offline / Ready</span>
     </div>
@@ -296,7 +302,6 @@
         <option value="900000">Auto-lock: 15 min</option>
       </select>
       <button id="lockBtn" class="danger sm" title="लॉक व साइन-आउट">🔒 लॉक / लॉगआउट</button>
-      <!-- Three-Dot Menu स्लॉट -->
       <span id="threeDotMenuSlot"></span>
     </div>
   </header>
@@ -319,10 +324,7 @@
   <!-- मुख्य अ‍ॅप स्क्रीन -->
   <main id="appScreen" class="container hidden">
 
-    <!-- Automatic Month-End Report अलर्ट -->
     <div id="monthEndBanner" class="info-banner hidden"></div>
-
-    <!-- आजच्या वायद्याचा अलर्ट -->
     <div id="todayPromiseAlert" class="alert-banner hidden"></div>
 
     <!-- सर्व खाती Dashboard -->
@@ -342,12 +344,14 @@
       </div>
     </section>
 
-    <!-- WhatsApp व सकाळचे Notification रिमाइंडर -->
+    <!-- WhatsApp, UPI ID व सकाळचे Notification रिमाइंडर -->
     <section class="card">
-      <h3 id="tRemTitle" style="margin-top:0;">📲 WhatsApp व सकाळचे Notification रिमाइंडर</h3>
-      <div class="row" style="margin-bottom:10px;">
-        <input type="tel" id="selfWaNumber" placeholder="तुमचा स्वतःचा WhatsApp नंबर (उदा. 9198XXXXXXXX)" style="flex:1; min-width:220px;" />
+      <h3 id="tRemTitle" style="margin-top:0;">📲 WhatsApp, UPI QR व सकाळचे Notification रिमाइंडर</h3>
+      <div class="row" style="margin-bottom:8px;">
+        <input type="tel" id="selfWaNumber" placeholder="तुमचा स्वतःचा WhatsApp नंबर (उदा. 9198XXXXXXXX)" style="flex:1; min-width:210px;" />
         <button id="saveWaNumberBtn" class="primary sm">नंबर सेव्ह करा</button>
+        <input type="text" id="selfUpiId" placeholder="तुमचा UPI ID (उदा. name@okaxis)" style="flex:1; min-width:200px;" />
+        <button id="saveUpiBtn" class="success sm">UPI सेव्ह करा</button>
       </div>
       <div class="row" style="margin-bottom:8px;">
         <button id="waTodayPromiseBtn" class="success sm">💬 आजच्या वायद्याची यादी (WhatsApp)</button>
@@ -368,14 +372,14 @@
     <section class="card" id="addBorrowerSection">
       <h3 id="tAddTitle" style="margin-top:0;">नवीन ग्राहक / कर्ज नोंद</h3>
       <div class="grid-3">
-        <div class="field"><label>ग्राहकाचे नाव *</label><input type="text" id="bName" placeholder="पूर्ण नाव" /></div>
+        <div class="field"><label>ग्राहकाचे नाव *</label><input type="text" id="bName" placeholder="पूर्ण नाव (कंसात जामीनदार)" /></div>
         <div class="field"><label>कर्ज खाते नाव / क्रमांक (पर्यायी)</label><input type="text" id="bLoanLabel" placeholder="उदा. कर्ज #1 / सोने कर्ज" /></div>
         <div class="field"><label>मोबाईल नंबर</label><input type="tel" id="bMobile" placeholder="10 अंकी नंबर" /></div>
         <div class="field"><label>एकूण मुद्दल (₹) *</label><input type="number" id="bPrincipal" placeholder="उदा. 50000" min="0" /></div>
         <div class="field"><label>मुद्दल दिल्याची तारीख</label><input type="date" id="bLoanDate" /></div>
         <div class="field"><label>हिशोब सुरू महिना</label><input type="month" id="bStartYm" /></div>
-        <div class="field"><label>व्याज दर (% मासिक)</label><input type="number" id="bRate" step="0.1" value="2" /></div>
-        <div class="field"><label>महिन्याचे निश्चित व्याज (₹, पर्यायी)</label><input type="number" id="bFixedInterest" min="0" placeholder="रिकामे ठेवल्यास % नुसार" /></div>
+        <div class="field"><label>व्याज दर (% मासिक)</label><input type="number" id="bRate" step="0.01" value="2" /></div>
+        <div class="field"><label>महिन्याचे व्याज (₹ — ऑटो/निश्चित)</label><input type="number" id="bFixedInterest" min="0" placeholder="% नुसार आपोआप येईल" /></div>
         <div class="field">
           <label>व्याज पद्धत</label>
           <select id="bInterestType">
@@ -412,7 +416,7 @@
       </div>
     </section>
 
-    <!-- सक्रिय / बंद ग्राहकांची यादी, सर्च, व्हॉइस सर्च व फिल्टर्स -->
+    <!-- सक्रिय / बंद ग्राहकांची यादी, स्मार्ट सर्च, व्हॉइस सर्च व फिल्टर्स -->
     <section class="card">
       <div class="row" style="justify-content:space-between; margin-bottom:10px;">
         <h3 id="tLedgerTitle" style="margin:0;">मासिक हिशोब व जमा नोंद</h3>
@@ -424,7 +428,7 @@
       </div>
 
       <div class="row" style="margin-bottom:10px;">
-        <input type="text" id="searchInput" placeholder="नाव, मोबाईल, डिपार्टमेंट किंवा जामीनदार शोधा..." style="flex:1; min-width:220px;" />
+        <input type="text" id="searchInput" placeholder="मराठी किंवा इंग्रजीत शोधा (उदा. harshad, BMC, मोबाईल)..." style="flex:1; min-width:220px;" />
         <button id="voiceSearchBtn" class="primary sm" title="मराठीत बोलून शोधा">🎤 मराठी Voice Search</button>
         <span id="voiceStatusMsg" class="muted"></span>
       </div>
@@ -450,12 +454,13 @@
       <div id="borrowersList"></div>
     </section>
 
-    <!-- रिपोर्ट्स, CSV, Archive, Scheduled Cloud Backup, Vault, Gmail व Webhook -->
+    <!-- रिपोर्ट्स, CSV, Android Share, Archive, Scheduled Cloud Backup, Vault, Gmail व Webhook -->
     <section class="card">
-      <h3 id="tReportsTitle" style="margin-top:0;">📑 रिपोर्ट्स, CSV, Archive, Scheduled Backup व Webhook</h3>
+      <h3 id="tReportsTitle" style="margin-top:0;">📑 रिपोर्ट्स, CSV, Android Share, Backup व Webhook</h3>
       <div class="row" style="margin-bottom:10px;">
         <button id="printMonthlyPdfBtn" class="primary sm">🖨️ महिन्याचा PDF / Print रिपोर्ट</button>
         <button id="exportMonthlyCsvBtn" class="success sm">📊 महिन्याची Excel CSV</button>
+        <button id="shareMonthlyCsvBtn" class="primary sm">📤 Android Share (CSV)</button>
         <button id="exportAllCsvBtn" class="success sm">📑 संपूर्ण खात्यांची CSV</button>
         <button id="gmailReportBtn" class="warn sm">📧 Gmail Report</button>
       </div>
@@ -535,6 +540,20 @@
     </section>
 
   </main>
+
+  <!-- वचनचिट्ठी / UPI QR Code Modal -->
+  <div id="smartInfoModal" class="modal-backdrop hidden">
+    <div class="modal-card" style="max-width:540px;">
+      <div class="row" style="justify-content:space-between; margin-bottom:10px;">
+        <h3 id="smartInfoTitle" style="margin:0;">माहिती</h3>
+        <div class="row">
+          <button id="printSmartInfoBtn" class="primary sm">🖨️ प्रिंट / PDF</button>
+          <button id="closeSmartInfoBtn" class="danger sm">बंद करा</button>
+        </div>
+      </div>
+      <div id="smartInfoBody"></div>
+    </div>
+  </div>
 
   <!-- Profit & Loss Report Modal -->
   <div id="pnlModal" class="modal-backdrop hidden">
@@ -624,8 +643,8 @@
         <div class="field"><label>मूळ मुद्दल (Flat साठी ₹)</label><input type="number" id="eOriginalPrincipal" min="0" /></div>
         <div class="field"><label>मुद्दल दिल्याची तारीख</label><input type="date" id="eLoanDate" /></div>
         <div class="field"><label>हिशोब सुरू महिना</label><input type="month" id="eStartYm" /></div>
-        <div class="field"><label>व्याज दर (%)</label><input type="number" id="eRate" step="0.1" /></div>
-        <div class="field"><label>महिन्याचे निश्चित व्याज (₹, 0 = % नुसार)</label><input type="number" id="eFixedInterest" min="0" /></div>
+        <div class="field"><label>व्याज दर (%)</label><input type="number" id="eRate" step="0.01" /></div>
+        <div class="field"><label>महिन्याचे व्याज (₹ — ऑटो/निश्चित)</label><input type="number" id="eFixedInterest" min="0" /></div>
         <div class="field">
           <label>व्याज पद्धत</label>
           <select id="eInterestType">
