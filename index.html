@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob: 'unsafe-inline' 'unsafe-eval'; img-src 'self' https: data: blob:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://firebasestorage.googleapis.com;">
-<title>व्याज हिशोब प्रो V11.7 (Storage, Encrypted Backup & Exact Ledger)</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob: 'unsafe-inline' 'unsafe-eval'; img-src 'self' https: data: blob:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com;">
+<title>व्याज हिशोब प्रो V11.8 (Free Spark Plan, Drive Docs & Exact Ledger)</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <style>
@@ -149,7 +149,6 @@ input, select, textarea { width: 100%; padding: 8px; border: 1px solid var(--bor
 
 .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); display: none; align-items: center; justify-content: center; z-index: 9998; padding: 12px; }
 .modal-card { background: var(--card); color: var(--text); padding: 16px; border-radius: 14px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
-.doc-thumb { width: 52px; height: 52px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); }
 
 .timeline-item { border-left: 3px solid var(--accent); padding: 4px 0 4px 10px; margin-bottom: 6px; font-size: 12.5px; }
 .timeline-item.t-pay { border-left-color: #16a34a; }
@@ -172,15 +171,15 @@ input, select, textarea { width: 100%; padding: 8px; border: 1px solid var(--bor
 <!-- १. SPLASH SCREEN -->
 <div id="splashScreen">
   <div class="splash-logo">📒</div>
-  <h2 style="margin:0;">व्याज हिशोब प्रो V11.7</h2>
-  <p style="font-size:13px; opacity:0.9; margin:6px 0 0;">Storage फोटो, Encrypted बॅकअप व अचूक हिशोब</p>
+  <h2 style="margin:0;">व्याज हिशोब प्रो V11.8</h2>
+  <p style="font-size:13px; opacity:0.9; margin:6px 0 0;">मोफत Spark प्लॅन, Drive लिंक व अचूक हिशोब</p>
   <div class="splash-loader-wrap"><div class="splash-loader-bar"></div></div>
 </div>
 
 <!-- २. FIREBASE लॉगिन स्क्रीन -->
 <div id="authScreen">
   <div class="auth-card">
-    <h2>🔐 व्याज हिशोब प्रो V11.7</h2>
+    <h2>🔐 व्याज हिशोब प्रो V11.8</h2>
     <p>फक्त नोंदणीकृत मालकासाठी (Firebase Secure Login)</p>
     <div id="cdnWarningBox" style="display:none; background:#fee2e2; color:#991b1b; padding:8px; border-radius:8px; font-size:12px; margin-bottom:10px;">
       ⚠️ Firebase SDK लोड झाले नाही. इंटरनेट तपासा.
@@ -205,7 +204,7 @@ input, select, textarea { width: 100%; padding: 8px; border: 1px solid var(--bor
 <div id="drawerBackdrop" class="drawer-backdrop" onclick="closeDrawer()"></div>
 <div id="sideDrawer" class="side-drawer">
   <div class="drawer-header">
-    <h3>📒 व्याज हिशोब प्रो V11.7</h3>
+    <h3>📒 व्याज हिशोब प्रो V11.8</h3>
     <p id="drawerEmailText">📧 Connected</p>
     <p id="drawerSyncText" style="color:#bbf7d0;">🟢 Real-Time Sync Active</p>
   </div>
@@ -230,7 +229,7 @@ input, select, textarea { width: 100%; padding: 8px; border: 1px solid var(--bor
   <button class="drawer-item" style="color:#dc2626;" onclick="closeDrawer(); handleLogout(true);">🔒 लॉगआउट व Cache साफ करा</button>
 </div>
 
-<!-- ४. एडिट मोडल -->
+<!-- ४. एडिट मोडल (मोफत Google Drive / HTTPS डॉक्युमेंट लिंकसह) -->
 <div id="editModal" class="modal-overlay">
   <div class="modal-card">
     <div class="panel-header">
@@ -272,12 +271,12 @@ input, select, textarea { width: 100%; padding: 8px; border: 1px solid var(--bor
     <div class="form-group"><label>📝 टीप (Manual Tip):</label><textarea id="editManualTip" rows="2"></textarea></div>
 
     <div style="background:var(--row-bg); padding:9px; border-radius:8px; border:1px solid var(--border); margin-bottom:10px;">
-      <label style="color:var(--primary);">☁️ Firebase Storage डॉक्युमेंट्स (कमाल ५):</label>
+      <label style="color:var(--primary);">🔗 कागदपत्रे / फोटो लिंक (Google Drive / HTTPS, कमाल ५):</label>
       <div class="row-2col" style="margin-top:5px;">
-        <input type="text" id="editDocNameInput" placeholder="डॉक्युमेंटचे नाव (उदा. कोरा चेक)">
-        <input type="file" id="editDocFileInput" accept="image/jpeg,image/png,image/webp" onchange="handleStorageDocUpload(event)">
+        <input type="text" id="editDocNameInput" placeholder="डॉक्युमेंटचे नाव (उदा. चेक फोटो)">
+        <input type="url" id="editDocUrlInput" placeholder="https://drive.google.com/...">
       </div>
-      <div id="docUploadStatus" style="font-size:11.5px; color:var(--primary); margin-top:4px;"></div>
+      <button type="button" class="btn-sm bg-blue" style="margin-top:6px;" onclick="addDriveDocLink()">+ लिंक जोडा</button>
       <div id="editDocsPreview" style="margin-top:8px;"></div>
     </div>
     <div style="display:flex; gap:8px;">
@@ -308,7 +307,7 @@ input, select, textarea { width: 100%; padding: 8px; border: 1px solid var(--bor
     <div style="display:flex; align-items:center; gap:8px;">
       <button class="menu-btn" onclick="openDrawer()">☰</button>
       <div>
-        <div style="font-weight:bold; font-size:15px;">व्याज हिशोब प्रो V11.7</div>
+        <div style="font-weight:bold; font-size:15px;">व्याज हिशोब प्रो V11.8</div>
         <div id="syncStatusBadge" class="sync-badge">🟢 Real-Time Synced</div>
       </div>
     </div>
@@ -541,14 +540,13 @@ input, select, textarea { width: 100%; padding: 8px; border: 1px solid var(--bor
   <button class="bottom-btn" onclick="openDrawer()"><span>☰</span>मेनू</button>
 </div>
 
-<!-- Firebase SDK -->
+<!-- Firebase SDK (Spark Plan: Auth + Firestore) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 <script>
-// ================= १. FIREBASE, STORAGE, PERSISTENCE व PWA =================
+// ================= १. FIREBASE, PERSISTENCE व PWA =================
 const firebaseConfig = {
   apiKey: "AIzaSyDYpC1Pdm9jDtmNlT2J6BOPzk88QvBo8ds",
   authDomain: "hishob-4b548.firebaseapp.com",
@@ -558,13 +556,12 @@ const firebaseConfig = {
   appId: "1:528801714157:web:c7e43ad3b05203b87be1e4"
 };
 
-let auth = null, db = null, storage = null, firebaseReady = false;
+let auth = null, db = null, firebaseReady = false;
 try {
   if (typeof firebase !== 'undefined' && firebase.apps) {
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     auth = firebase.auth();
     db = firebase.firestore();
-    storage = typeof firebase.storage === 'function' ? firebase.storage() : null;
     firebaseReady = true;
     db.enablePersistence({ synchronizeTabs: true }).catch(err => console.log('Persistence:', err.code));
   }
@@ -581,7 +578,7 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(() => {});
 }
 
-// ================= २. सुरक्षा (XSS, Safe URL, CSV & AES-GCM Encryption) =================
+// ================= २. सुरक्षा (XSS, Safe HTTPS URL, CSV & AES-GCM Encryption) =================
 function escapeHtml(str) {
   if (str === null || str === undefined) return '';
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
@@ -591,14 +588,16 @@ function escapeCsvCell(val) {
   if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
   return '"' + s.replace(/"/g, '""') + '"';
 }
-function isSafeImageUrl(url) {
+function isSafeHttpUrl(url) {
   if (typeof url !== 'string') return false;
-  return /^https:\/\/firebasestorage\.googleapis\.com\//i.test(url.trim())
-    || /^https:\/\//i.test(url.trim())
-    || /^data:image\/(jpeg|jpg|png|webp);base64,[A-Za-z0-9+/=]+$/i.test(url.trim());
+  try {
+    const parsed = new URL(url.trim());
+    return parsed.protocol === 'https:';
+  } catch (e) {
+    return false;
+  }
 }
 
-// Web Crypto AES-GCM Encryption/Decryption
 async function deriveAesKey(passphrase, saltBytes) {
   const enc = new TextEncoder();
   const baseKey = await window.crypto.subtle.importKey('raw', enc.encode(passphrase), 'PBKDF2', false, ['deriveKey']);
@@ -620,9 +619,8 @@ async function encryptBackupJson(plainText, customPasskey) {
   const toB64 = arr => btoa(String.fromCharCode(...new Uint8Array(arr)));
   return JSON.stringify({
     app: 'VyajHishobPro',
-    version: 'V11.7',
+    version: 'V11.8',
     encrypted: true,
-    hasCustomKey: Boolean((customPasskey || '').trim()),
     salt: toB64(salt),
     iv: toB64(iv),
     data: toB64(cipherBuf)
@@ -672,7 +670,6 @@ function formatMonthMarathi(ym) { if (!ym || !ym.includes('-')) return ym || '';
 function fmtDate(iso) { if (!iso || !iso.includes('-')) return iso || ''; const [y, m, d] = iso.split('-'); return `${d}/${m}/${y}`; }
 function fmtMoney(n) { return isPrivacyMasked ? '₹****' : ('₹' + (Number(n) || 0).toLocaleString('en-IN')); }
 
-// लहान महिन्यात ३१ तारखेचा दोष टाळणारी अचूक तारीख (उदा. फेब्रुवारीत २८/२९, एप्रिलमध्ये ३०)
 function getEffectiveDueDay(dueDayRaw, ym) {
   const desired = Math.min(31, Math.max(1, parseInt(dueDayRaw, 10) || 10));
   if (!ym || !ym.includes('-')) return desired;
@@ -956,7 +953,6 @@ function matchesSmartSearch(b, q) {
   return qSkel.length > 0 && marathiToRoman(raw).includes(qSkel);
 }
 
-// V10.1 चक्रवाढ नोंदी ओळखून रोख जमा अचूक मोजणे
 function getMonthPaymentInfo(b, ym) {
   const pm = (b.paidMonths && b.paidMonths[ym]) ? b.paidMonths[ym] : null;
   if (!pm) return { cashPaid: 0, isCompounded: false, compoundedAmt: 0, payments: [] };
@@ -1000,7 +996,6 @@ function getExpectedInterest(b, ym) {
   return Number(b.interest) || 0;
 }
 
-// लहान महिन्यातील ३१ तारखेचा दोष फिक्स + दंड मोजणी
 function getDueAndPenaltyInfo(b, ym, remAmount) {
   if (remAmount <= 0) return { isUpcoming: false, lateDays: 0, penaltyAmt: 0 };
   const today = new Date(), curRealYm = getCurrentYearMonth();
@@ -1019,13 +1014,11 @@ function getDueAndPenaltyInfo(b, ym, remAmount) {
   return { isUpcoming: false, lateDays: diffDays, penaltyAmt: diffDays * dailyPen };
 }
 
-// आगाऊ रक्कम पुढच्या महिन्यात पुढे नेणे + "मागील बाकी" दोनदा वजा न होणे
 function computeLedgerUpToMonth(b, targetYm) {
   const startYm = b.startMonth || targetYm;
   const autoMonths = getPastMonthsList(startYm, targetYm);
   const customKeys = Object.keys(b.customPastDues || {}).filter(ym => ym < targetYm);
-  const pastYmSet = new Set([...autoMonths, ...customKeys]);
-  const allPastYms = Array.from(pastYmSet).sort();
+  const allPastYms = Array.from(new Set([...autoMonths, ...customKeys])).sort();
 
   let carryAdvance = 0;
   let unpaidPastList = [];
@@ -1038,7 +1031,6 @@ function computeLedgerUpToMonth(b, targetYm) {
     if (info.isCompounded) return;
 
     const isCustom = !!(b.customPastDues && b.customPastDues[ym] !== undefined);
-    // customPastDues ही आधीच शिल्लक बाकी मानली जाते, त्यामुळे त्यावर आधीचा भरलेला हप्ता वेगळा वजा करू नये
     const grossDue = isCustom ? (Number(b.customPastDues[ym]) || 0) : Math.max(0, getExpectedInterest(b, ym) - info.cashPaid);
 
     let netDue = grossDue;
@@ -1048,7 +1040,6 @@ function computeLedgerUpToMonth(b, targetYm) {
       carryAdvance -= usedAdv;
     }
 
-    // एखाद्या महिन्यात अतिरिक्त जमा असेल तर ती पुढच्या महिन्यासाठी carryAdvance मध्ये टाकणे
     if (!isCustom) {
       const exp = getExpectedInterest(b, ym);
       if (info.cashPaid > exp) {
@@ -1066,7 +1057,6 @@ function computeLedgerUpToMonth(b, targetYm) {
     }
   });
 
-  // चालू/निवडलेल्या महिन्याचा हिशोब
   const expCur = getExpectedInterest(b, targetYm);
   const curInfo = getMonthPaymentInfo(b, targetYm);
   const hasCustomCur = !!(b.customPastDues && b.customPastDues[targetYm] !== undefined);
@@ -1080,8 +1070,7 @@ function computeLedgerUpToMonth(b, targetYm) {
     }
   }
 
-  const totalCashInCurMonth = curInfo.cashPaid;
-  const remainingAdvanceForward = Math.max(0, carryAdvance + Math.max(0, curInfo.cashPaid - expCur - (remCur > 0 ? 0 : 0)));
+  const remainingAdvanceForward = Math.max(0, carryAdvance + Math.max(0, curInfo.cashPaid - expCur));
   const curDueInfo = getDueAndPenaltyInfo(b, targetYm, remCur);
   const totalPenalty = pastPenaltySum + curDueInfo.penaltyAmt;
   const totalPending = remCur + pastInterestSum + totalPenalty;
@@ -1119,65 +1108,47 @@ function getRetirementBadge(retDateStr) {
   return `<span class="tag tag-retire">📅 रिटायरमेंट: ${rd.getFullYear()} (~${Math.round(diffYrs)} वर्षे)</span>`;
 }
 
-// ================= ८. FIREBASE STORAGE डॉक्युमेंट्स व CRUD =================
+// ================= ८. DRIVE / HTTPS डॉक्युमेंट लिंक्स व CRUD =================
 function getNormalizedDocsList(b) {
   let out = [];
   if (Array.isArray(b.docsList)) {
     b.docsList.forEach(it => {
-      if (it && isSafeImageUrl(it.url)) {
-        out.push({ docName: it.docName || 'डॉक्युमेंट', url: it.url, storagePath: it.storagePath || '' });
+      if (it && isSafeHttpUrl(it.url)) {
+        out.push({ docName: it.docName || 'डॉक्युमेंट', url: it.url.trim() });
       }
     });
   }
   return out;
 }
 
-async function handleStorageDocUpload(e) {
-  const file = e.target.files[0]; if (!file) return;
-  const bId = document.getElementById('editId').value;
-  const statusEl = document.getElementById('docUploadStatus');
-
-  if (!/^image\/(jpeg|png|webp)$/i.test(file.type)) { alert('फक्त JPG, PNG किंवा WEBP फोटो निवडा.'); e.target.value = ''; return; }
-  if (file.size > 3 * 1024 * 1024) { alert('फोटो ३ MB पेक्षा लहान असावा.'); e.target.value = ''; return; }
-  if (tempEditDocs.length >= 5) { alert('एका ग्राहकासाठी कमाल ५ डॉक्युमेंट्स सेव्ह करता येतात.'); e.target.value = ''; return; }
-  if (!storage || !currentUser || !navigator.onLine) { alert('Firebase Storage अपलोडसाठी इंटरनेट व लॉगिन आवश्यक आहे.'); e.target.value = ''; return; }
-
-  const docLabel = document.getElementById('editDocNameInput').value.trim() || file.name.replace(/\.[^/.]+$/, "") || 'डॉक्युमेंट';
-  statusEl.innerText = '⏳ Storage वर फोटो अपलोड होत आहे...';
-
-  try {
-    const ext = file.type.includes('png') ? 'png' : (file.type.includes('webp') ? 'webp' : 'jpg');
-    const storagePath = `users/${currentUser.uid}/docs/${bId || 'new'}/${Date.now()}_${Math.floor(Math.random() * 10000)}.${ext}`;
-    const ref = storage.ref().child(storagePath);
-    await ref.put(file, { contentType: file.type });
-    const downloadUrl = await ref.getDownloadURL();
-
-    tempEditDocs.push({ docName: docLabel, url: downloadUrl, storagePath });
-    document.getElementById('editDocNameInput').value = '';
-    statusEl.innerText = '✅ Storage वर अपलोड झाले!';
-    renderEditDocsPreview();
-  } catch (err) {
-    console.error(err);
-    statusEl.innerText = '❌ Storage अपलोड फेल झाले (Storage Rules तपासा).';
-  } finally {
-    e.target.value = '';
+function addDriveDocLink() {
+  const nameEl = document.getElementById('editDocNameInput');
+  const urlEl = document.getElementById('editDocUrlInput');
+  const rawUrl = (urlEl.value || '').trim();
+  if (!isSafeHttpUrl(rawUrl)) {
+    alert('कृपया वैध https:// (उदा. Google Drive) लिंक टाका!');
+    return;
   }
+  if (tempEditDocs.length >= 5) {
+    alert('एका ग्राहकासाठी कमाल ५ डॉक्युमेंट लिंक्स सेव्ह करता येतात.');
+    return;
+  }
+  const docLabel = (nameEl.value || '').trim() || 'Drive डॉक्युमेंट';
+  tempEditDocs.push({ docName: docLabel, url: rawUrl });
+  nameEl.value = '';
+  urlEl.value = '';
+  renderEditDocsPreview();
 }
 
-async function removeSingleEditDoc(idx) {
-  const docItem = tempEditDocs[idx];
-  if (!docItem) return;
-  if (docItem.storagePath && storage && navigator.onLine) {
-    try { await storage.ref().child(docItem.storagePath).delete(); } catch (e) {}
-  }
+function removeSingleEditDoc(idx) {
   tempEditDocs.splice(idx, 1);
   renderEditDocsPreview();
 }
 
 function renderEditDocsPreview() {
   const el = document.getElementById('editDocsPreview');
-  if (!tempEditDocs.length) { el.innerHTML = '<small style="color:var(--muted);">कोणतेही डॉक्युमेंट नाही.</small>'; return; }
-  el.innerHTML = tempEditDocs.map((d, i) => `<div style="display:flex; align-items:center; justify-content:space-between; gap:8px; background:var(--card); padding:5px; border-radius:6px; border:1px solid var(--border); margin-bottom:5px;"><div style="display:flex; align-items:center; gap:8px;"><img src="${escapeHtml(d.url)}" class="doc-thumb" alt="${escapeHtml(d.docName)}"><b>${escapeHtml(d.docName)}</b></div><button type="button" class="btn-sm bg-red" data-doc-idx="${i}" onclick="removeSingleEditDoc(Number(this.dataset.docIdx))">✕</button></div>`).join('');
+  if (!tempEditDocs.length) { el.innerHTML = '<small style="color:var(--muted);">कोणतीही डॉक्युमेंट लिंक नाही.</small>'; return; }
+  el.innerHTML = tempEditDocs.map((d, i) => `<div style="display:flex; align-items:center; justify-content:space-between; gap:8px; background:var(--card); padding:6px 8px; border-radius:6px; border:1px solid var(--border); margin-bottom:5px; font-size:12px;"><div style="overflow:hidden; text-overflow:ellipsis;"><b>📄 ${escapeHtml(d.docName)}</b><br><small style="color:var(--muted);">${escapeHtml(d.url)}</small></div><button type="button" class="btn-sm bg-red" data-doc-idx="${i}" onclick="removeSingleEditDoc(Number(this.dataset.docIdx))">✕</button></div>`).join('');
 }
 
 function toggleCustomDueBox(id) { const s = String(id); if (openCustomDueIds.has(s)) openCustomDueIds.delete(s); else openCustomDueIds.add(s); renderList(); }
@@ -1234,7 +1205,7 @@ function openEditModal(id) {
   document.getElementById('editInterest').value = b.interest || 0; document.getElementById('editStartMonth').value = b.startMonth || activeYm;
   document.getElementById('editGuarantor').value = b.guarantor || ''; document.getElementById('editDueDay').value = b.dueDay || 10;
   document.getElementById('editPenalty').value = b.dailyPenalty || 0; document.getElementById('editManualTip').value = b.manualTip || '';
-  document.getElementById('docUploadStatus').innerText = '';
+  document.getElementById('editDocNameInput').value = ''; document.getElementById('editDocUrlInput').value = '';
   tempEditDocs = JSON.parse(JSON.stringify(getNormalizedDocsList(b))); renderEditDocsPreview();
   document.getElementById('editModal').style.display = 'flex';
 }
@@ -1335,8 +1306,10 @@ function showInfoModal(title, html) { document.getElementById('infoModalTitle').
 function openDocsGallery(id) {
   const b = borrowers.find(x => String(x.id) === String(id)); if (!b) return;
   const docs = getNormalizedDocsList(b);
-  const html = docs.length ? docs.map(d => `<div style="margin-bottom:12px;"><b>📄 ${escapeHtml(d.docName)}</b><img src="${escapeHtml(d.url)}" alt="${escapeHtml(d.docName)}" style="width:100%; border-radius:8px; margin-top:5px;"></div>`).join('') : '<p style="color:var(--muted);">डॉक्युमेंट नाही. एडिट (✏️) मधून जोडा.</p>';
-  showInfoModal(`🖼️ ${b.name} - डॉक्युमेंट्स`, html);
+  const html = docs.length
+    ? docs.map(d => `<div class="pay-row"><div><b>📄 ${escapeHtml(d.docName)}</b><br><small style="color:var(--muted); word-break:break-all;">${escapeHtml(d.url)}</small></div><a href="${escapeHtml(d.url)}" target="_blank" rel="noopener noreferrer" class="btn-sm bg-blue">🔗 उघडा</a></div>`).join('')
+    : '<p style="color:var(--muted);">डॉक्युमेंट लिंक नाही. एडिट (✏️) मधून Google Drive लिंक जोडा.</p>';
+  showInfoModal(`🔗 ${b.name} - डॉक्युमेंट्स`, html);
 }
 function openLegalNote(id) {
   const b = borrowers.find(x => String(x.id) === String(id)); if (!b) return;
@@ -1466,7 +1439,6 @@ async function dispatchReportToGmail() {
   exportMonthlySafeCsv(); window.location.href = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}`;
 }
 
-// कडक JSON Import Validation + ID Collision Protection
 function sanitizeImportedBorrowerItem(item, idx, baseTs) {
   if (!item || typeof item !== 'object') return null;
   const cleanName = typeof item.name === 'string' ? item.name.trim().slice(0, 120) : '';
@@ -1497,8 +1469,8 @@ function sanitizeImportedBorrowerItem(item, idx, baseTs) {
   const safeDocs = [];
   if (Array.isArray(item.docsList)) {
     item.docsList.slice(0, 5).forEach(d => {
-      if (d && typeof d.url === 'string' && isSafeImageUrl(d.url)) {
-        safeDocs.push({ docName: String(d.docName || 'डॉक्युमेंट').slice(0, 80), url: d.url, storagePath: String(d.storagePath || '') });
+      if (d && typeof d.url === 'string' && isSafeHttpUrl(d.url)) {
+        safeDocs.push({ docName: String(d.docName || 'डॉक्युमेंट').slice(0, 80), url: d.url.trim() });
       }
     });
   }
@@ -1532,7 +1504,7 @@ function sanitizeImportedBorrowerItem(item, idx, baseTs) {
 async function exportEncryptedJsonBackup() {
   const active = borrowers.filter(b => !b.isDeleted);
   const customKey = document.getElementById('backupPasskeyInput') ? document.getElementById('backupPasskeyInput').value : '';
-  const plainJson = JSON.stringify({ app: 'VyajHishobPro', version: 'V11.7', exportedAt: new Date().toISOString(), borrowers: active });
+  const plainJson = JSON.stringify({ app: 'VyajHishobPro', version: 'V11.8', exportedAt: new Date().toISOString(), borrowers: active });
   const encryptedPkg = await encryptBackupJson(plainJson, customKey);
   triggerFileDownload(encryptedPkg, `Vyaj_Encrypted_Backup_${activeYm}.json`, "application/json");
   recordAudit('Encrypted JSON बॅकअप घेतला');
@@ -1644,7 +1616,7 @@ function parseCsvTextAndImport(text) {
 function importSafeCsvFile(e) { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = ev => parseCsvTextAndImport(ev.target.result); r.readAsText(f); e.target.value = ''; }
 async function importFromGoogleSheet() {
   const url = document.getElementById('gsheetUrlInput').value.trim();
-  if (!url.startsWith('https://')) { alert('फक्त सुरक्षित HTTPS Google Sheet लिंक वापरा!'); return; }
+  if (!isSafeHttpUrl(url)) { alert('फक्त सुरक्षित HTTPS Google Sheet लिंक वापरा!'); return; }
   try { const res = await fetch(url); parseCsvTextAndImport(await res.text()); } catch (e) { alert('लिंक वाचता आली नाही.'); }
 }
 async function importSafePdfFile(e) {
@@ -1671,11 +1643,6 @@ function restoreBorrower(id) { const b = borrowers.find(x => String(x.id) === St
 async function permanentDeleteBorrower(id) {
   if (!confirm('कायमचे डिलीट करायचे का?')) return;
   const b = borrowers.find(x => String(x.id) === String(id));
-  if (b && storage && navigator.onLine) {
-    for (const doc of getNormalizedDocsList(b)) {
-      if (doc.storagePath) { try { await storage.ref().child(doc.storagePath).delete(); } catch (e) {} }
-    }
-  }
   recordAudit(`खाते कायमचे डिलीट केले: ${(b && b.name) || id}`);
   if (currentUser && db) await getUserBorrowersRef().doc(String(id)).delete();
   setTimeout(renderRecycleBin, 200);
@@ -1862,7 +1829,7 @@ function renderList() {
               <button type="button" class="btn-sm bg-blue" data-action="adj-prin" data-mode="REDUCE" data-id="${safeId}">▼ वजा</button>
               <button type="button" class="btn-sm bg-purple" data-action="qr" data-id="${safeId}">📲 QR</button>
               <button type="button" class="btn-sm bg-orange" data-action="legal" data-id="${safeId}">📄 वचनचिट्ठी</button>
-              <button type="button" class="btn-sm bg-purple" data-action="docs" data-id="${safeId}">🖼️ (${docCount})</button>
+              <button type="button" class="btn-sm bg-purple" data-action="docs" data-id="${safeId}">🔗 (${docCount})</button>
               <button type="button" class="btn-sm bg-teal" data-action="timeline" data-id="${safeId}">📜 Timeline</button>
               <button type="button" class="btn-sm bg-wa" data-action="wa-cust" data-id="${safeId}">💬 ग्राहक WA</button>
               <button type="button" class="btn-sm bg-blue" data-action="edit" data-id="${safeId}">✏️</button>
