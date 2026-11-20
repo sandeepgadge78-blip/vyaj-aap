@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0f172a" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://sandeepgadge78-blip.github.io; script-src 'self' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://docs.google.com https://*.googleusercontent.com; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com;" />
-  <title>Hishob — व्याज व कर्ज हिशोब (V12.1)</title>
+  <title>Hishob — व्याज व कर्ज हिशोब (V12.2)</title>
 
   <link rel="manifest" href="./manifest.json" />
 
@@ -57,6 +57,9 @@
       border: 1px solid var(--border);
       color: var(--accent);
     }
+    .badge.paid { color: #4ade80; border-color: #22c55e; }
+    .badge.partial { color: #fbbf24; border-color: #f59e0b; }
+    .badge.pending { color: #f87171; border-color: #ef4444; }
     .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
     button, input, select, textarea {
       background: var(--card-2);
@@ -109,6 +112,7 @@
     .muted { color: var(--muted); font-size: 0.84rem; }
     .ok { color: var(--accent-2); }
     .err { color: var(--danger); }
+    .warn-text { color: var(--warn); }
     .audit-box {
       max-height: 220px;
       overflow-y: auto;
@@ -117,6 +121,21 @@
       padding: 10px;
       border-radius: 8px;
       border: 1px solid var(--border);
+    }
+    table.passbook-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      margin-top: 8px;
+    }
+    table.passbook-table th, table.passbook-table td {
+      border: 1px solid var(--border);
+      padding: 6px 8px;
+      text-align: left;
+    }
+    table.passbook-table th {
+      background: var(--card-2);
+      color: var(--accent);
     }
     #authScreen {
       max-width: 420px;
@@ -139,7 +158,7 @@
     }
     .modal-card {
       width: 100%;
-      max-width: 760px;
+      max-width: 820px;
       max-height: 92vh;
       overflow-y: auto;
       background: var(--card);
@@ -147,6 +166,8 @@
       border-radius: 12px;
       padding: 16px;
     }
+    .tab-bar { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0; }
+    .tab-btn.active { background: #0284c7; border-color: #0ea5e9; color: #fff; }
     .hidden { display: none !important; }
   </style>
 </head>
@@ -154,7 +175,7 @@
 
   <header>
     <div class="brand">
-      <span>Hishob V12.1</span>
+      <span>Hishob V12.2</span>
       <span id="syncStatus" class="badge">Offline / Ready</span>
     </div>
     <div id="topActions" class="row hidden">
@@ -242,7 +263,28 @@
       <div id="borrowersList"></div>
     </section>
 
-    <!-- Recycle Bin (डिलीट केलेले ग्राहक) -->
+    <!-- EMI Simulator -->
+    <section class="card">
+      <h3 style="margin-top:0;">🧮 EMI Simulator</h3>
+      <div class="grid-3">
+        <div class="field"><label>कर्ज रक्कम / मुद्दल (₹)</label><input type="number" id="emiPrincipal" value="100000" min="1" /></div>
+        <div class="field"><label>मासिक व्याज दर (%)</label><input type="number" id="emiMonthlyRate" value="2" step="0.1" min="0" /></div>
+        <div class="field"><label>कालावधी (महिने)</label><input type="number" id="emiMonths" value="12" min="1" /></div>
+        <div class="field">
+          <label>पद्धत</label>
+          <select id="emiType">
+            <option value="reducing">Reducing Balance EMI</option>
+            <option value="flat">Flat Interest EMI</option>
+          </select>
+        </div>
+      </div>
+      <div class="row" style="margin-top:10px;">
+        <button id="calcEmiBtn" class="primary">EMI मोजा</button>
+      </div>
+      <div id="emiResult" class="meta-box" style="margin-top:10px;">रक्कम, दर आणि महिने टाकून 'EMI मोजा' दाबा.</div>
+    </section>
+
+    <!-- Recycle Bin -->
     <section class="card">
       <div class="row" style="justify-content:space-between;">
         <h3 style="margin:0;">🗑️ Recycle Bin (डिलीट केलेले ग्राहक)</h3>
@@ -323,6 +365,23 @@
       <div class="row" style="margin-top:12px;">
         <button id="saveEditBtn" class="success">बदल सेव्ह करा</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Passbook / Payment History / Financial Timeline Modal -->
+  <div id="passbookModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="row" style="justify-content:space-between;">
+        <h3 id="pbTitle" style="margin:0;">ग्राहक Passbook व Timeline</h3>
+        <button id="closePassbookBtn" class="danger sm">बंद करा</button>
+      </div>
+      <div class="tab-bar">
+        <button class="tab-btn active sm" data-pbtab="passbook">📖 Passbook</button>
+        <button class="tab-btn sm" data-pbtab="timeline">🕒 Financial Timeline</button>
+        <button class="tab-btn sm" data-pbtab="payments">💰 Payment History</button>
+        <button class="tab-btn sm" data-pbtab="principals">📊 मुद्दल नोंदी</button>
+      </div>
+      <div id="pbContent"></div>
     </div>
   </div>
 
