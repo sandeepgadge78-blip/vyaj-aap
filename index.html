@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0f172a" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://sandeepgadge78-blip.github.io; script-src 'self' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://docs.google.com https://*.googleusercontent.com; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com;" />
-  <title>Hishob — व्याज व कर्ज हिशोब (V12.4)</title>
+  <title>Hishob — व्याज व कर्ज हिशोब (V12.5)</title>
 
   <link rel="manifest" href="./manifest.json" />
 
@@ -84,6 +84,22 @@
     .badge.paid { color: #22c55e; border-color: #22c55e; }
     .badge.partial { color: #f59e0b; border-color: #f59e0b; }
     .badge.pending { color: #ef4444; border-color: #ef4444; }
+    .bell-btn {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .due-count-pill {
+      background: var(--danger);
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 999px;
+      min-width: 18px;
+      text-align: center;
+    }
     .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
     button, input, select, textarea {
       background: var(--card-2);
@@ -147,13 +163,11 @@
       line-height: 1.55;
       transition: background 0.2s, border-color 0.2s;
     }
-    /* पूर्ण व्याज जमा -> हिरवा रंग */
     .borrower-item.status-paid {
       background: var(--paid-bg);
       border-color: var(--paid-border);
       border-left: 5px solid var(--paid-border);
     }
-    /* अर्धवट व्याज जमा -> पिवळा रंग */
     .borrower-item.status-partial {
       background: var(--partial-bg);
       border-color: var(--partial-border);
@@ -233,10 +247,13 @@
 
   <header>
     <div class="brand">
-      <span>Hishob V12.4</span>
+      <span>Hishob V12.5</span>
       <span id="syncStatus" class="badge">Offline / Ready</span>
     </div>
     <div id="topActions" class="row hidden">
+      <button id="notifBellBtn" class="sm bell-btn" title="रिमाइंडर व थकबाकी सूचना">
+        🔔 <span id="dueCounterBadge" class="due-count-pill">0</span>
+      </button>
       <span id="userEmailBadge" class="muted"></span>
       <button id="toggleHideAmtBtn" class="sm" title="रकमा लपवा/दाखवा">👁️ रकमा लपवा</button>
       <button id="toggleThemeBtn" class="sm" title="Dark / Light Mode">☀️ Light</button>
@@ -292,6 +309,22 @@
           <div id="dashTotalPending" class="dash-val err">₹0</div>
         </div>
       </div>
+    </section>
+
+    <!-- स्वतःचे WhatsApp व सकाळचे मोबाईल Notification रिमाइंडर -->
+    <section class="card">
+      <h3 style="margin-top:0;">📲 WhatsApp व सकाळचे Notification रिमाइंडर</h3>
+      <div class="row" style="margin-bottom:10px;">
+        <input type="tel" id="selfWaNumber" placeholder="तुमचा स्वतःचा WhatsApp नंबर (उदा. 9198XXXXXXXX)" style="flex:1; min-width:220px;" />
+        <button id="saveWaNumberBtn" class="primary sm">नंबर सेव्ह करा</button>
+      </div>
+      <div class="row" style="margin-bottom:8px;">
+        <button id="waTodayPromiseBtn" class="success sm">💬 आजच्या वायद्याची यादी (WhatsApp)</button>
+        <button id="waPendingListBtn" class="warn sm">💬 बाकी / अर्धवट यादी (WhatsApp)</button>
+        <button id="enableNotifBtn" class="primary sm">🔔 सकाळचे Notification चालू करा</button>
+        <button id="testNotifBtn" class="sm">🧪 Test Notification</button>
+      </div>
+      <div id="notifStatusMsg" class="muted"></div>
     </section>
 
     <!-- उद्याच्या वायद्याची यादी -->
@@ -434,6 +467,17 @@
     </section>
 
   </main>
+
+  <!-- Notification Bell Modal -->
+  <div id="notifModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="row" style="justify-content:space-between; margin-bottom:10px;">
+        <h3 style="margin:0;">🔔 आजचे रिमाइंडर व थकबाकी यादी</h3>
+        <button id="closeNotifModalBtn" class="danger sm">बंद करा</button>
+      </div>
+      <div id="notifModalContent"></div>
+    </div>
+  </div>
 
   <!-- संपूर्ण माहिती Edit Modal -->
   <div id="editModal" class="modal-backdrop hidden">
