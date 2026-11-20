@@ -1,6 +1,6 @@
 // =========================================================================
 // Hishob Premium Fintech Dashboard V3 + Gmail-Style Hamburger Menu (☰)
-// + Exact Month Ledger (Real Firestore Data Only, Past Due Included, Independent Excel)
+// + Exact Month Ledger with Explicit "🔍 हिशोब पहा" Button & Independent Excel
 // =========================================================================
 
 (function () {
@@ -202,7 +202,6 @@
   document.head.appendChild(styleEl);
 
   // २. Real Business Data Engine
-  // ज्या महिन्यात कर्ज/व्यवहार सुरू झालेला नाही, त्या महिन्यात चुकीची एंट्री दिसू नये म्हणून काटेकोर तपासणी
   function isAccountActiveInMonth(borrower, targetYm) {
     if (borrower.isDeleted) return false;
     const startYm = String(borrower.startYm || '').slice(0, 7);
@@ -273,7 +272,6 @@
         if (c.totalPayable > 0) dueCustomers.push(row);
       }
 
-      // निवडलेल्या महिन्यासाठी काटेकोर तपासणी (कोणताही व्यवहार/कर्ज नसल्यास एंट्री दिसणार नाही)
       if (isAccountActiveInMonth(b, activeYm)) {
         totalPrincipal += b.accountStatus === 'closed' ? 0 : c.principal;
         monthLedgerRows.push({
@@ -476,7 +474,7 @@
         try { await firebase.auth().sendPasswordResetEmail(u.email); showToast(`✅ ${u.email} वर Password Reset लिंक पाठवली.`); }
         catch (err) { showToast(`एरर: ${err.message}`, true); }
       }
-      else if (act === 'about') showToast('व्याज हिशोब वही V13.1 — Secure Loan Ledger');
+      else if (act === 'about') showToast('व्याज हिशोब वही V13.2 — Secure Loan Ledger');
       else if (act === 'logout') document.getElementById('lockBtn')?.click();
     });
   }
@@ -569,6 +567,7 @@
   let isSavingPay = false;
   let archiveSelectedYear = getTodayIso().slice(0, 4);
   let archiveSelectedMonth = getTodayIso().slice(5, 7);
+  let hasClickedShowMonthLedger = false;
 
   function ensureV3Overlay() {
     if (document.getElementById('v3Overlay')) return;
@@ -643,6 +642,7 @@
     const curYm = document.getElementById('activeYm')?.value || getTodayIso().slice(0, 7);
     archiveSelectedYear = curYm.slice(0, 4);
     archiveSelectedMonth = curYm.slice(5, 7);
+    hasClickedShowMonthLedger = true;
     document.getElementById('v3Overlay').classList.remove('hidden');
     switchV3Tab(tab);
   }
@@ -718,18 +718,18 @@
       body.innerHTML = `
         <div class="v3-panel">
           <div class="row" style="justify-content:space-between; margin-bottom:10px;">
-            <h3 style="margin:0;">📅 ${esc(fmtYmMarathi(selYm))} — खरा हिशोब</h3>
-            <button id="v3ApplyMainYmBtn" class="primary sm">📂 मुख्य स्क्रीनवर हा महिना सेट करा</button>
+            <h3 style="margin:0;">📅 महिना निहाय खरा हिशोब</h3>
+            <button id="v3ApplyMainYmBtn" class="sm">📂 मुख्य स्क्रीनवर सेट करा</button>
           </div>
 
-          <div class="row" style="margin-bottom:12px;">
-            <div style="flex:1; min-width:130px;">
+          <div class="row" style="margin-bottom:12px; align-items:flex-end;">
+            <div style="flex:1; min-width:115px;">
               <label class="muted" style="font-size:0.75rem; display:block; margin-bottom:4px;">वर्ष निवडा (Year):</label>
               <select id="v3ArchYearSel" style="width:100%;">
                 ${years.map(y => `<option value="${y}" ${y === archiveSelectedYear ? 'selected' : ''}>${y}</option>`).join('')}
               </select>
             </div>
-            <div style="flex:1.4; min-width:160px;">
+            <div style="flex:1.3; min-width:145px;">
               <label class="muted" style="font-size:0.75rem; display:block; margin-bottom:4px;">महिना निवडा (Month):</label>
               <select id="v3ArchMonthSel" style="width:100%;">
                 ${MARATHI_MONTHS.map((mName, idx) => {
@@ -738,69 +738,89 @@
                 }).join('')}
               </select>
             </div>
-          </div>
-
-          <div class="v3-kpi-row">
-            <div class="v3-wave-card">
-              <div class="v3-kpi-title">या महिन्यातील खाती / मुद्दल</div>
-              <div class="v3-kpi-num">${rows.length} खाती</div>
-              <div class="v3-kpi-sub">मुद्दल: ${fmt(mPrincipal)}</div>
-            </div>
-            <div class="v3-wave-card">
-              <div class="v3-kpi-title">महिन्याचे व्याज / जमा</div>
-              <div class="v3-kpi-num" style="color:#38bdf8;">${fmt(mExpected)}</div>
-              <div class="v3-kpi-sub ok">जमा: ${fmt(mPaid)}</div>
-            </div>
-            <div class="v3-wave-card">
-              <div class="v3-kpi-title">मागील व्याज बाकी + एकूण बाकी</div>
-              <div class="v3-kpi-num err">${fmt(mTotalOut)}</div>
-              <div class="v3-kpi-sub warn-text">मागील व्याज बाकी: ${fmt(mPastDue)}</div>
+            <div style="flex:1; min-width:140px;">
+              <button id="v3ShowMonthLedgerBtn" class="primary" style="width:100%; padding:9px 12px;">🔍 हिशोब पहा</button>
             </div>
           </div>
 
-          <h4 style="margin:10px 0 6px;">📋 ${esc(fmtYmMarathi(selYm))} मधील नोंदी (${rows.length})</h4>
-          <div style="overflow-x:auto;">
-            <table class="passbook-table">
-              <thead>
-                <tr>
-                  <th>क्र.</th>
-                  <th>ग्राहक</th>
-                  <th>मुद्दल</th>
-                  <th>मासिक व्याज</th>
-                  <th>जमा</th>
-                  <th>मागील बाकी</th>
-                  <th>एकूण बाकी</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${rows.length ? rows.map((r, i) => `
+          ${hasClickedShowMonthLedger ? `
+            <div style="margin-bottom:10px; padding:8px 10px; border-radius:10px; background:var(--card-2); border:1px solid var(--border); font-weight:700; color:#38bdf8;">
+              📌 निवडलेला महिना: ${esc(fmtYmMarathi(selYm))} (${esc(selYm)})
+            </div>
+
+            <div class="v3-kpi-row">
+              <div class="v3-wave-card">
+                <div class="v3-kpi-title">या महिन्यातील खाती / मुद्दल</div>
+                <div class="v3-kpi-num">${rows.length} खाती</div>
+                <div class="v3-kpi-sub">मुद्दल: ${fmt(mPrincipal)}</div>
+              </div>
+              <div class="v3-wave-card">
+                <div class="v3-kpi-title">महिन्याचे व्याज / जमा</div>
+                <div class="v3-kpi-num" style="color:#38bdf8;">${fmt(mExpected)}</div>
+                <div class="v3-kpi-sub ok">जमा: ${fmt(mPaid)}</div>
+              </div>
+              <div class="v3-wave-card">
+                <div class="v3-kpi-title">मागील व्याज बाकी + एकूण बाकी</div>
+                <div class="v3-kpi-num err">${fmt(mTotalOut)}</div>
+                <div class="v3-kpi-sub warn-text">मागील व्याज बाकी: ${fmt(mPastDue)}</div>
+              </div>
+            </div>
+
+            <h4 style="margin:10px 0 6px;">📋 ${esc(fmtYmMarathi(selYm))} मधील नोंदी (${rows.length})</h4>
+            <div style="overflow-x:auto;">
+              <table class="passbook-table">
+                <thead>
                   <tr>
-                    <td>${i + 1}</td>
-                    <td><strong>${esc(r.name)}</strong></td>
-                    <td>${fmt(r.principal)}</td>
-                    <td>${fmt(r.monthlyInterest)}</td>
-                    <td class="ok">${fmt(r.paidThisMonth)}</td>
-                    <td class="warn-text">${fmt(r.pastDue)}</td>
-                    <td class="err"><strong>${fmt(r.outstanding)}</strong></td>
+                    <th>क्र.</th>
+                    <th>ग्राहक</th>
+                    <th>मुद्दल</th>
+                    <th>मासिक व्याज</th>
+                    <th>जमा</th>
+                    <th>मागील बाकी</th>
+                    <th>एकूण बाकी</th>
                   </tr>
-                `).join('') : '<tr><td colspan="7" class="muted" style="text-align:center;">या महिन्यात कोणताही हिशोब किंवा व्यवहार नोंदवलेला नाही.</td></tr>'}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  ${rows.length ? rows.map((r, i) => `
+                    <tr>
+                      <td>${i + 1}</td>
+                      <td><strong>${esc(r.name)}</strong></td>
+                      <td>${fmt(r.principal)}</td>
+                      <td>${fmt(r.monthlyInterest)}</td>
+                      <td class="ok">${fmt(r.paidThisMonth)}</td>
+                      <td class="warn-text">${fmt(r.pastDue)}</td>
+                      <td class="err"><strong>${fmt(r.outstanding)}</strong></td>
+                    </tr>
+                  `).join('') : '<tr><td colspan="7" class="muted" style="text-align:center;">या महिन्यात कोणताही हिशोब किंवा व्यवहार नोंदवलेला नाही.</td></tr>'}
+                </tbody>
+              </table>
+            </div>
 
-          <div style="margin-top:14px;">
-            <button id="v3DownloadIndepExcelBtn" class="success" style="width:100%;">📊 ${esc(fmtYmMarathi(selYm))} (${esc(selYm)}) ची स्वतंत्र Excel डाउनलोड करा</button>
-          </div>
+            <div style="margin-top:14px;">
+              <button id="v3DownloadIndepExcelBtn" class="success" style="width:100%;">📊 ${esc(fmtYmMarathi(selYm))} (${esc(selYm)}) ची स्वतंत्र Excel डाउनलोड करा</button>
+            </div>
+          ` : `
+            <div class="meta-box" style="text-align:center; padding:16px;">
+              वर <strong>वर्ष</strong> आणि <strong>महिना</strong> निवडून <strong>🔍 हिशोब पहा</strong> या बटणावर क्लिक करा.
+            </div>
+          `}
         </div>
       `;
 
       document.getElementById('v3ArchYearSel')?.addEventListener('change', (e) => {
         archiveSelectedYear = e.target.value;
+        hasClickedShowMonthLedger = false;
         renderV3Body();
       });
       document.getElementById('v3ArchMonthSel')?.addEventListener('change', (e) => {
         archiveSelectedMonth = e.target.value;
+        hasClickedShowMonthLedger = false;
         renderV3Body();
+      });
+      document.getElementById('v3ShowMonthLedgerBtn')?.addEventListener('click', () => {
+        hasClickedShowMonthLedger = true;
+        renderV3Body();
+        showToast(`📅 ${fmtYmMarathi(selYm)} चा हिशोब उघडला!`);
       });
 
       document.getElementById('v3ApplyMainYmBtn')?.addEventListener('click', () => {
