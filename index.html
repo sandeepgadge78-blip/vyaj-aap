@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0f172a" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://sandeepgadge78-blip.github.io; script-src 'self' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://docs.google.com https://*.googleusercontent.com https://script.google.com https://script.googleusercontent.com; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com;" />
-  <title>Hishob — व्याज व कर्ज हिशोब (V12.6)</title>
+  <title>Hishob — व्याज व कर्ज हिशोब (V12.7)</title>
 
   <link rel="manifest" href="./manifest.json" />
 
@@ -72,7 +72,7 @@
       align-items: center;
       justify-content: space-between;
     }
-    .brand { font-weight: 700; font-size: 1.05rem; display: flex; align-items: center; gap: 8px; }
+    .brand { font-weight: 700; font-size: 1.05rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .badge {
       font-size: 0.75rem;
       padding: 3px 8px;
@@ -123,7 +123,7 @@
     }
     .dash-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
       gap: 10px;
       margin-top: 8px;
     }
@@ -256,7 +256,6 @@
     .tab-btn.active { background: #0284c7; border-color: #0ea5e9; color: #fff; }
     .hidden { display: none !important; }
 
-    /* Print / PDF साठी स्वच्छ स्टाईल */
     #printArea { display: none; }
     @media print {
       body * { visibility: hidden; }
@@ -280,10 +279,12 @@
 
   <header>
     <div class="brand">
-      <span>Hishob V12.6</span>
+      <span>Hishob V12.7</span>
+      <span id="networkBadge" class="badge paid">Online 🟢</span>
       <span id="syncStatus" class="badge">Offline / Ready</span>
     </div>
     <div id="topActions" class="row hidden">
+      <button id="openSecurityDashBtn" class="sm" title="Admin Security Dashboard">🛡️ Security</button>
       <button id="notifBellBtn" class="sm bell-btn" title="रिमाइंडर व थकबाकी सूचना">
         🔔 <span id="dueCounterBadge" class="due-count-pill">0</span>
       </button>
@@ -299,7 +300,6 @@
     </div>
   </header>
 
-  <!-- प्रिंट / PDF साठी लपलेला विभाग -->
   <div id="printArea"></div>
 
   <!-- लॉगिन स्क्रीन -->
@@ -318,7 +318,6 @@
   <!-- मुख्य अ‍ॅप स्क्रीन -->
   <main id="appScreen" class="container hidden">
 
-    <!-- आजच्या वायद्याचा अलर्ट -->
     <div id="todayPromiseAlert" class="alert-banner hidden"></div>
 
     <!-- सर्व खाती Dashboard -->
@@ -439,16 +438,12 @@
     <!-- रिपोर्ट्स, CSV, Archive, Cloud Backup, Vault, Gmail व Webhook -->
     <section class="card">
       <h3 style="margin-top:0;">📑 रिपोर्ट्स, CSV, Archive, Backup व Webhook</h3>
-
-      <!-- PDF / Print / CSV / Gmail -->
       <div class="row" style="margin-bottom:10px;">
         <button id="printMonthlyPdfBtn" class="primary sm">🖨️ महिन्याचा PDF / Print रिपोर्ट</button>
         <button id="exportMonthlyCsvBtn" class="success sm">📊 महिन्याची Excel CSV</button>
         <button id="exportAllCsvBtn" class="success sm">📑 संपूर्ण खात्यांची CSV</button>
         <button id="gmailReportBtn" class="warn sm">📧 Gmail Report</button>
       </div>
-
-      <!-- CSV Import व Google Sheet Import -->
       <div class="row" style="margin-bottom:10px;">
         <input type="file" id="importCsvFile" accept=".csv,text/csv" />
         <button id="importCsvBtn" class="primary sm">📥 CSV Import</button>
@@ -457,15 +452,11 @@
         <input type="text" id="sheetUrlInput" placeholder="Google Sheet CSV / Export URL किंवा Sheet ID" style="flex:1; min-width:220px;" />
         <button id="importSheetBtn" class="primary sm">Google Sheet Import</button>
       </div>
-
-      <!-- Google Apps Script Webhook -->
       <div class="row" style="margin-bottom:10px;">
         <input type="url" id="webhookUrlInput" placeholder="Google Apps Script Webhook URL" style="flex:1; min-width:220px;" />
         <button id="saveWebhookBtn" class="sm">URL सेव्ह करा</button>
         <button id="sendWebhookBtn" class="primary sm">🚀 Webhook वर पाठवा</button>
       </div>
-
-      <!-- Encrypted Backup + SHA-256 + Emergency Local Vault -->
       <div class="row" style="margin-bottom:10px;">
         <input type="password" id="backupPasskey" placeholder="मजबूत Passkey (किमान 6 अक्षरे)" />
         <button id="exportEncBtn" class="success sm">🔐 Encrypted Backup (+SHA-256)</button>
@@ -478,10 +469,8 @@
         <button id="saveCloudBackupBtn" class="primary sm">☁️ Cloud Backup सेव्ह</button>
         <button id="saveMonthlyArchiveBtn" class="primary sm">📦 महिन्याचा Archive सेव्ह</button>
       </div>
-
       <div id="ioMsg" class="muted" style="margin-top:8px;"></div>
       <div id="shaDigestBox" class="meta-box hidden"></div>
-      <div id="archiveCloudList" class="meta-box hidden" style="margin-top:8px;"></div>
     </section>
 
     <!-- EMI Simulator -->
@@ -522,6 +511,39 @@
 
   </main>
 
+  <!-- Admin Security Dashboard Modal -->
+  <div id="securityModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="row" style="justify-content:space-between; margin-bottom:10px;">
+        <h3 style="margin:0;">🛡️ Admin Security Dashboard & Diagnostics</h3>
+        <button id="closeSecurityModalBtn" class="danger sm">बंद करा</button>
+      </div>
+      <div class="dash-grid">
+        <div class="dash-box"><div class="dash-label">File Scan Counter</div><div id="secScanCount" class="dash-val">0</div></div>
+        <div class="dash-box"><div class="dash-label">Quarantine Counter</div><div id="secQuarantineCount" class="dash-val warn-text">0</div></div>
+        <div class="dash-box"><div class="dash-label">Blocked Threats</div><div id="secBlockedCount" class="dash-val err">0</div></div>
+        <div class="dash-box"><div class="dash-label">Network / Sync</div><div id="secNetSync" class="dash-val ok" style="font-size:0.95rem;">Online</div></div>
+      </div>
+      <div class="row" style="margin-top:12px;">
+        <button id="runDiagnosticsBtn" class="primary sm">🔍 Security Diagnostics चालवा</button>
+      </div>
+      <div id="diagnosticsResult" class="meta-box" style="margin-top:8px;">तपासणीसाठी 'Security Diagnostics चालवा' दाबा.</div>
+      <h4 style="margin-bottom:6px;">🚨 Threat Log</h4>
+      <div id="threatLogBox" class="audit-box">कोणताही धोका आढळला नाही.</div>
+    </div>
+  </div>
+
+  <!-- Version History & Conflict Rollback Modal -->
+  <div id="versionModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="row" style="justify-content:space-between; margin-bottom:10px;">
+        <h3 id="versionModalTitle" style="margin:0;">🕒 Version History व Conflict Rollback</h3>
+        <button id="closeVersionModalBtn" class="danger sm">बंद करा</button>
+      </div>
+      <div id="versionModalContent"></div>
+    </div>
+  </div>
+
   <!-- Notification Bell Modal -->
   <div id="notifModal" class="modal-backdrop hidden">
     <div class="modal-card">
@@ -542,7 +564,7 @@
       </div>
       <div class="row" style="margin-bottom:10px;">
         <input type="text" id="docNameInput" placeholder="डॉक्युमेंटचे नाव (उदा. करारपत्र, चेक)" style="flex:1; min-width:180px;" />
-        <input type="file" id="docFileInput" accept="image/*" />
+        <input type="file" id="docFileInput" accept="image/jpeg,image/png,image/webp" />
         <button id="uploadDocBtn" class="success sm">⬆️ Upload करा</button>
       </div>
       <div id="docUploadMsg" class="muted"></div>
