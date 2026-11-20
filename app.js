@@ -1345,3 +1345,10 @@ auth.onAuthStateChanged(async (user) => {
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(() => {}); });
 }
+
+// १९. Advanced Dashboard V2 (dashboard.js) साठी सुरक्षित डेटा ब्रिज
+window.HishobBridge = {
+  getBorrowers: () => state.borrowers,
+  computeLedgerUpToMonth,
+  fmtAmt
+};
