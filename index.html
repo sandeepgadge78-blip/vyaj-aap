@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0f172a" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://sandeepgadge78-blip.github.io; script-src 'self' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://docs.google.com https://*.googleusercontent.com; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com;" />
-  <title>Hishob — व्याज व कर्ज हिशोब (V12.0)</title>
+  <title>Hishob — व्याज व कर्ज हिशोब (V12.1)</title>
 
   <link rel="manifest" href="./manifest.json" />
 
@@ -58,13 +58,14 @@
       color: var(--accent);
     }
     .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-    button, input, select {
+    button, input, select, textarea {
       background: var(--card-2);
       color: var(--text);
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 8px 12px;
-      font-size: 0.9rem;
+      padding: 8px 10px;
+      font-size: 0.88rem;
+      font-family: inherit;
     }
     button { cursor: pointer; font-weight: 600; transition: 0.15s; }
     button:hover { border-color: var(--accent); }
@@ -72,7 +73,8 @@
     button.success { background: #15803d; border-color: #22c55e; color: #fff; }
     button.danger { background: #991b1b; border-color: #ef4444; color: #fff; }
     button.warn { background: #92400e; border-color: #f59e0b; color: #fff; }
-    .container { max-width: 980px; margin: 16px auto; padding: 0 14px; }
+    button.sm { padding: 5px 9px; font-size: 0.8rem; }
+    .container { max-width: 1020px; margin: 16px auto; padding: 0 14px; }
     .card {
       background: var(--card);
       border: 1px solid var(--border);
@@ -82,19 +84,31 @@
     }
     .grid-3 {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 10px;
     }
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    .field label { font-size: 0.78rem; color: var(--muted); }
     .borrower-item {
       border: 1px solid var(--border);
       border-radius: 10px;
       padding: 12px;
       margin-top: 10px;
       background: rgba(30, 41, 59, 0.45);
-      line-height: 1.5;
+      line-height: 1.55;
     }
-    .muted { color: var(--muted); font-size: 0.85rem; }
+    .meta-box {
+      margin-top: 6px;
+      padding: 8px;
+      border-radius: 8px;
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid #1e293b;
+      font-size: 0.82rem;
+      color: #cbd5e1;
+    }
+    .muted { color: var(--muted); font-size: 0.84rem; }
     .ok { color: var(--accent-2); }
+    .err { color: var(--danger); }
     .audit-box {
       max-height: 220px;
       overflow-y: auto;
@@ -112,6 +126,27 @@
       border-radius: 14px;
       padding: 20px;
     }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.82);
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+      overflow-y: auto;
+    }
+    .modal-card {
+      width: 100%;
+      max-width: 760px;
+      max-height: 92vh;
+      overflow-y: auto;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
     .hidden { display: none !important; }
   </style>
 </head>
@@ -119,7 +154,7 @@
 
   <header>
     <div class="brand">
-      <span>Hishob V12.0</span>
+      <span>Hishob V12.1</span>
       <span id="syncStatus" class="badge">Offline / Ready</span>
     </div>
     <div id="topActions" class="row hidden">
@@ -133,6 +168,7 @@
     </div>
   </header>
 
+  <!-- लॉगिन स्क्रीन -->
   <div id="authScreen">
     <h2 style="margin-top:0;">व्याज हिशोब लॉगिन</h2>
     <p class="muted">केवळ अधिकृत खात्यासाठी सुरक्षित प्रवेश.</p>
@@ -145,27 +181,60 @@
     </div>
   </div>
 
+  <!-- मुख्य अ‍ॅप स्क्रीन -->
   <main id="appScreen" class="container hidden">
 
+    <!-- नवीन ग्राहक जोडणे -->
     <section class="card">
       <h3 style="margin-top:0;">नवीन ग्राहक / कर्ज नोंद</h3>
       <div class="grid-3">
-        <input type="text" id="bName" placeholder="ग्राहकाचे नाव" />
-        <input type="number" id="bPrincipal" placeholder="मुद्दल रक्कम (₹)" min="0" />
-        <input type="number" id="bRate" placeholder="मासिक व्याज दर (%)" step="0.1" value="2" />
-        <input type="month" id="bStartYm" />
-        <input type="number" id="bCustomDue" placeholder="सुरुवातीची मॅन्युअल मागील बाकी (₹)" min="0" />
+        <div class="field"><label>ग्राहकाचे नाव *</label><input type="text" id="bName" placeholder="पूर्ण नाव" /></div>
+        <div class="field"><label>मोबाईल नंबर</label><input type="tel" id="bMobile" placeholder="10 अंकी नंबर" /></div>
+        <div class="field"><label>एकूण मुद्दल (₹) *</label><input type="number" id="bPrincipal" placeholder="उदा. 50000" min="0" /></div>
+        <div class="field"><label>मुद्दल दिल्याची तारीख</label><input type="date" id="bLoanDate" /></div>
+        <div class="field"><label>हिशोब सुरू महिना</label><input type="month" id="bStartYm" /></div>
+        <div class="field"><label>व्याज दर (% मासिक)</label><input type="number" id="bRate" step="0.1" value="2" /></div>
+        <div class="field">
+          <label>व्याज पद्धत</label>
+          <select id="bInterestType">
+            <option value="reducing">Reducing Balance (उरलेल्या मुद्दलावर)</option>
+            <option value="flat">Flat Interest (मूळ मुद्दलावर)</option>
+          </select>
+        </div>
+        <div class="field"><label>दरमहा व्याजाची तारीख (1-31)</label><input type="number" id="bInterestDay" min="1" max="31" placeholder="उदा. 5" /></div>
+        <div class="field"><label>दररोजचा विलंब दंड (₹)</label><input type="number" id="bLateFee" min="0" value="0" /></div>
+        <div class="field"><label>सुरुवातीची मॅन्युअल मागील बाकी (₹)</label><input type="number" id="bCustomDue" min="0" placeholder="0" /></div>
+        <div class="field"><label>जामीनदाराचे नाव</label><input type="text" id="bGuarantor" placeholder="जामीनदार नाव" /></div>
+        <div class="field">
+          <label>नोकरीचा प्रकार</label>
+          <select id="bJobType">
+            <option value="">निवडा</option>
+            <option value="govt">सरकारी नोकरी</option>
+            <option value="private">खाजगी नोकरी</option>
+            <option value="business">व्यवसाय / इतर</option>
+          </select>
+        </div>
+        <div class="field"><label>कंपनी / डिपार्टमेंट</label><input type="text" id="bCompanyDept" placeholder="उदा. BMC / Police / TCS" /></div>
+        <div class="field"><label>Retirement Date</label><input type="date" id="bRetirementDate" /></div>
+        <div class="field"><label>वायदा तारीख १</label><input type="date" id="bPromise1" /></div>
+        <div class="field"><label>वायदा तारीख २</label><input type="date" id="bPromise2" /></div>
+        <div class="field"><label>वायदा तारीख ३</label><input type="date" id="bPromise3" /></div>
+      </div>
+      <div class="field" style="margin-top:10px;">
+        <label>ग्राहकाच्या खात्याला टीप (Note)</label>
+        <textarea id="bNote" rows="2" placeholder="महत्त्वाची टीप लिहा..."></textarea>
       </div>
       <div style="margin-top:10px;">
         <button id="addBorrowerBtn" class="primary">+ ग्राहक जोडा</button>
       </div>
     </section>
 
+    <!-- सक्रिय ग्राहकांची यादी -->
     <section class="card">
       <div class="row" style="justify-content:space-between;">
         <h3 style="margin:0;">मासिक हिशोब व जमा नोंद</h3>
         <div class="row">
-          <input type="text" id="searchInput" placeholder="नाव शोधा..." style="width:160px;" />
+          <input type="text" id="searchInput" placeholder="नाव किंवा मोबाईल शोधा..." style="width:190px;" />
           <label class="muted">महिना:</label>
           <input type="month" id="activeYm" />
         </div>
@@ -173,6 +242,16 @@
       <div id="borrowersList"></div>
     </section>
 
+    <!-- Recycle Bin (डिलीट केलेले ग्राहक) -->
+    <section class="card">
+      <div class="row" style="justify-content:space-between;">
+        <h3 style="margin:0;">🗑️ Recycle Bin (डिलीट केलेले ग्राहक)</h3>
+        <span id="recycleCountBadge" class="badge">0</span>
+      </div>
+      <div id="recycleBinList" style="margin-top:8px;"></div>
+    </section>
+
+    <!-- Google Sheet Import व Encrypted Backup -->
     <section class="card">
       <h3 style="margin-top:0;">Google Sheet Import व Encrypted Backup</h3>
       <div class="row" style="margin-bottom:10px;">
@@ -188,12 +267,64 @@
       <div id="ioMsg" class="muted" style="margin-top:8px;"></div>
     </section>
 
+    <!-- Audit Log -->
     <section class="card">
       <h3 style="margin-top:0;">Audit Log (केवळ नवीन नोंद)</h3>
       <div id="auditList" class="audit-box"></div>
     </section>
 
   </main>
+
+  <!-- संपूर्ण माहिती Edit Modal -->
+  <div id="editModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="row" style="justify-content:space-between; margin-bottom:10px;">
+        <h3 style="margin:0;">ग्राहकाची संपूर्ण माहिती Edit करा</h3>
+        <button id="closeEditModalBtn" class="danger sm">बंद करा</button>
+      </div>
+      <input type="hidden" id="eId" />
+      <div class="grid-3">
+        <div class="field"><label>ग्राहकाचे नाव *</label><input type="text" id="eName" /></div>
+        <div class="field"><label>मोबाईल नंबर</label><input type="tel" id="eMobile" /></div>
+        <div class="field"><label>सध्याचे मुद्दल (₹)</label><input type="number" id="ePrincipal" min="0" /></div>
+        <div class="field"><label>मूळ मुद्दल (Flat साठी ₹)</label><input type="number" id="eOriginalPrincipal" min="0" /></div>
+        <div class="field"><label>मुद्दल दिल्याची तारीख</label><input type="date" id="eLoanDate" /></div>
+        <div class="field"><label>हिशोब सुरू महिना</label><input type="month" id="eStartYm" /></div>
+        <div class="field"><label>व्याज दर (%)</label><input type="number" id="eRate" step="0.1" /></div>
+        <div class="field">
+          <label>व्याज पद्धत</label>
+          <select id="eInterestType">
+            <option value="reducing">Reducing Balance</option>
+            <option value="flat">Flat Interest</option>
+          </select>
+        </div>
+        <div class="field"><label>दरमहा व्याजाची तारीख (1-31)</label><input type="number" id="eInterestDay" min="1" max="31" /></div>
+        <div class="field"><label>दररोजचा विलंब दंड (₹)</label><input type="number" id="eLateFee" min="0" /></div>
+        <div class="field"><label>जामीनदाराचे नाव</label><input type="text" id="eGuarantor" /></div>
+        <div class="field">
+          <label>नोकरीचा प्रकार</label>
+          <select id="eJobType">
+            <option value="">निवडा</option>
+            <option value="govt">सरकारी नोकरी</option>
+            <option value="private">खाजगी नोकरी</option>
+            <option value="business">व्यवसाय / इतर</option>
+          </select>
+        </div>
+        <div class="field"><label>कंपनी / डिपार्टमेंट</label><input type="text" id="eCompanyDept" /></div>
+        <div class="field"><label>Retirement Date</label><input type="date" id="eRetirementDate" /></div>
+        <div class="field"><label>वायदा तारीख १</label><input type="date" id="ePromise1" /></div>
+        <div class="field"><label>वायदा तारीख २</label><input type="date" id="ePromise2" /></div>
+        <div class="field"><label>वायदा तारीख ३</label><input type="date" id="ePromise3" /></div>
+      </div>
+      <div class="field" style="margin-top:10px;">
+        <label>खात्याची टीप</label>
+        <textarea id="eNote" rows="2"></textarea>
+      </div>
+      <div class="row" style="margin-top:12px;">
+        <button id="saveEditBtn" class="success">बदल सेव्ह करा</button>
+      </div>
+    </div>
+  </div>
 
   <script src="./app.js"></script>
 </body>
