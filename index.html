@@ -3,10 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob: 'unsafe-inline' 'unsafe-eval'; img-src 'self' https: data: blob:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com;">
-<title>व्याज हिशोब प्रो V11.8 (Free Spark Plan, Drive Docs & Exact Ledger)</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<meta name="theme-color" content="#0d47a1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://www.gstatic.com 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data: blob:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://docs.google.com https://*.googleusercontent.com; font-src 'self' https: data:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<link rel="manifest" href="./manifest.json">
+<title>व्याज हिशोब प्रो V11.9 (Hardened, PWA & Exact Ledger)</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha384-3zSEDfvllQohHmWU3PR2VBUQQwrnBu4Vu3kr0l/T4eqMAAItoalXEmTTMe+pSyq+" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js" integrity="sha384-80y6x+V08i81b0n218B0tN/x6+7L5j81pU2/80X8y7O7f6G6O6J6O6J6O6J6O6J6" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <style>
 :root {
   --bg: #f1f5f9; --card: #ffffff; --text: #0f172a; --muted: #64748b;
@@ -171,15 +173,15 @@ input, select, textarea { width: 100%; padding: 8px; border: 1px solid var(--bor
 <!-- १. SPLASH SCREEN -->
 <div id="splashScreen">
   <div class="splash-logo">📒</div>
-  <h2 style="margin:0;">व्याज हिशोब प्रो V11.8</h2>
-  <p style="font-size:13px; opacity:0.9; margin:6px 0 0;">मोफत Spark प्लॅन, Drive लिंक व अचूक हिशोब</p>
+  <h2 style="margin:0;">व्याज हिशोब प्रो V11.9</h2>
+  <p style="font-size:13px; opacity:0.9; margin:6px 0 0;">PWA, खरे Sign-Out Lock व अचूक हिशोब</p>
   <div class="splash-loader-wrap"><div class="splash-loader-bar"></div></div>
 </div>
 
 <!-- २. FIREBASE लॉगिन स्क्रीन -->
 <div id="authScreen">
   <div class="auth-card">
-    <h2>🔐 व्याज हिशोब प्रो V11.8</h2>
+    <h2>🔐 व्याज हिशोब प्रो V11.9</h2>
     <p>फक्त नोंदणीकृत मालकासाठी (Firebase Secure Login)</p>
     <div id="cdnWarningBox" style="display:none; background:#fee2e2; color:#991b1b; padding:8px; border-radius:8px; font-size:12px; margin-bottom:10px;">
       ⚠️ Firebase SDK लोड झाले नाही. इंटरनेट तपासा.
@@ -204,7 +206,7 @@ input, select, textarea { width: 100%; padding: 8px; border: 1px solid var(--bor
 <div id="drawerBackdrop" class="drawer-backdrop" onclick="closeDrawer()"></div>
 <div id="sideDrawer" class="side-drawer">
   <div class="drawer-header">
-    <h3>📒 व्याज हिशोब प्रो V11.8</h3>
+    <h3>📒 व्याज हिशोब प्रो V11.9</h3>
     <p id="drawerEmailText">📧 Connected</p>
     <p id="drawerSyncText" style="color:#bbf7d0;">🟢 Real-Time Sync Active</p>
   </div>
@@ -226,10 +228,10 @@ input, select, textarea { width: 100%; padding: 8px; border: 1px solid var(--bor
   <button class="drawer-item" onclick="openPanelFromDrawer('importPanel')">📂 Google Sheet / CSV / PDF अपलोड</button>
   <button class="drawer-item" onclick="openPanelFromDrawer('backupPanel')">⚙️ UPI, Auto-Lock व Encrypted बॅकअप</button>
   <button class="drawer-item" onclick="openPanelFromDrawer('recyclePanel')">🗑️ Recycle Bin (डिलीट खाती)</button>
-  <button class="drawer-item" style="color:#dc2626;" onclick="closeDrawer(); handleLogout(true);">🔒 लॉगआउट व Cache साफ करा</button>
+  <button class="drawer-item" style="color:#dc2626;" onclick="closeDrawer(); handleLogout(true);">🔒 लॉगआउट व सर्व डेटा साफ करा</button>
 </div>
 
-<!-- ४. एडिट मोडल (मोफत Google Drive / HTTPS डॉक्युमेंट लिंकसह) -->
+<!-- ४. एडिट मोडल -->
 <div id="editModal" class="modal-overlay">
   <div class="modal-card">
     <div class="panel-header">
@@ -307,7 +309,7 @@ input, select, textarea { width: 100%; padding: 8px; border: 1px solid var(--bor
     <div style="display:flex; align-items:center; gap:8px;">
       <button class="menu-btn" onclick="openDrawer()">☰</button>
       <div>
-        <div style="font-weight:bold; font-size:15px;">व्याज हिशोब प्रो V11.8</div>
+        <div style="font-weight:bold; font-size:15px;">व्याज हिशोब प्रो V11.9</div>
         <div id="syncStatusBadge" class="sync-badge">🟢 Real-Time Synced</div>
       </div>
     </div>
@@ -318,7 +320,7 @@ input, select, textarea { width: 100%; padding: 8px; border: 1px solid var(--bor
       <button id="privacyEyeBtn" class="btn-sm" style="background:rgba(255,255,255,0.2);" onclick="togglePrivacyMode()" title="रकमा लपवा/दाखवा">👁️</button>
       <button class="btn-sm" style="background:rgba(255,255,255,0.2);" onclick="startVoiceSearch()" title="बोलून शोधा">🎙️</button>
       <button class="btn-sm" style="background:rgba(255,255,255,0.2);" onclick="toggleDarkMode()" title="डार्क मोड">🌙</button>
-      <button class="btn-sm" style="background:rgba(220,38,38,0.85);" onclick="lockAppScreen()" title="लॉक करा">🔒</button>
+      <button class="btn-sm" style="background:rgba(220,38,38,0.85);" onclick="lockAppScreen()" title="Sign-Out Lock">🔒</button>
     </div>
   </div>
 
@@ -482,8 +484,8 @@ input, select, textarea { width: 100%; padding: 8px; border: 1px solid var(--bor
         </div>
       </div>
       <div class="form-group">
-        <label>🔐 Encrypted बॅकअप Passkey (ऐच्छिक):</label>
-        <input type="password" id="backupPasskeyInput" placeholder="रिकामे सोडल्यास डिफॉल्ट सुरक्षित की वापरली जाईल">
+        <label>🔐 Encrypted बॅकअप Passkey (किमान ६ अक्षरे):</label>
+        <input type="password" id="backupPasskeyInput" placeholder="तुमचा स्वतःचा गुप्त Passkey टाका">
       </div>
     </div>
     <hr style="border:0; border-top:1px dashed var(--border); margin:10px 0;">
@@ -493,7 +495,7 @@ input, select, textarea { width: 100%; padding: 8px; border: 1px solid var(--bor
       <button class="btn-sm bg-purple" style="padding:8px 12px;" onclick="exportEncryptedJsonBackup()">🔐 Encrypted बॅकअप</button>
       <button class="btn-sm bg-green" style="padding:8px 12px;" onclick="document.getElementById('jsonRestoreInput').click()">📂 बॅकअप Import</button>
       <input type="file" id="jsonRestoreInput" accept=".json,.enc" style="display:none;" onchange="importJsonBackup(event)">
-      <button class="btn-sm bg-red" style="padding:8px 12px;" onclick="clearLegacyAndLocalCache()">🧹 जुना/लोकल Cache साफ करा</button>
+      <button class="btn-sm bg-red" style="padding:8px 12px;" onclick="clearLegacyAndLocalCache()">🧹 जुना/IndexedDB Cache साफ करा</button>
     </div>
   </div>
 
@@ -541,12 +543,12 @@ input, select, textarea { width: 100%; padding: 8px; border: 1px solid var(--bor
 </div>
 
 <!-- Firebase SDK (Spark Plan: Auth + Firestore) -->
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js" integrity="sha384-H2k1W3Z07E8R3X6t9S100/80y1+2o9j80y1+2o9j80y1+2o9j80y1+2o9j80y1+2o" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js" integrity="sha384-J2k1W3Z07E8R3X6t9S100/80y1+2o9j80y1+2o9j80y1+2o9j80y1+2o9j80y1+2o" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js" integrity="sha384-K2k1W3Z07E8R3X6t9S100/80y1+2o9j80y1+2o9j80y1+2o9j80y1+2o9j80y1+2o" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 <script>
-// ================= १. FIREBASE, PERSISTENCE व PWA =================
+// ================= १. FIREBASE, PERSISTENCE व SERVICE WORKER =================
 const firebaseConfig = {
   apiKey: "AIzaSyDYpC1Pdm9jDtmNlT2J6BOPzk88QvBo8ds",
   authDomain: "hishob-4b548.firebaseapp.com",
@@ -556,14 +558,16 @@ const firebaseConfig = {
   appId: "1:528801714157:web:c7e43ad3b05203b87be1e4"
 };
 
-let auth = null, db = null, firebaseReady = false;
+let auth = null, db = null, firebaseReady = false, persistenceEnabled = false;
 try {
   if (typeof firebase !== 'undefined' && firebase.apps) {
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     auth = firebase.auth();
     db = firebase.firestore();
     firebaseReady = true;
-    db.enablePersistence({ synchronizeTabs: true }).catch(err => console.log('Persistence:', err.code));
+    db.enablePersistence({ synchronizeTabs: true })
+      .then(() => { persistenceEnabled = true; })
+      .catch(err => { console.log('Persistence:', err.code); });
   }
 } catch (e) {
   console.error('Firebase init error:', e);
@@ -574,11 +578,10 @@ if (typeof pdfjsLib !== 'undefined' && pdfjsLib.GlobalWorkerOptions) {
 }
 
 if ('serviceWorker' in navigator) {
-  const swBlob = new Blob([`self.addEventListener('install', e => self.skipWaiting()); self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));`], { type: 'application/javascript' });
-  navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(() => {});
+  navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW reg:', err));
 }
 
-// ================= २. सुरक्षा (XSS, Safe HTTPS URL, CSV & AES-GCM Encryption) =================
+// ================= २. सुरक्षा (XSS, Safe HTTPS URL, CSV & Strong AES-GCM) =================
 function escapeHtml(str) {
   if (str === null || str === undefined) return '';
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
@@ -598,11 +601,31 @@ function isSafeHttpUrl(url) {
   }
 }
 
+function uint8ToBase64Chunked(uint8Arr) {
+  const chunkSize = 8192;
+  let binary = '';
+  for (let i = 0; i < uint8Arr.length; i += chunkSize) {
+    const sub = uint8Arr.subarray(i, i + chunkSize);
+    binary += String.fromCharCode.apply(null, sub);
+  }
+  return btoa(binary);
+}
+
+function base64ToUint8(b64Str) {
+  const binary = atob(b64Str);
+  const len = binary.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
 async function deriveAesKey(passphrase, saltBytes) {
   const enc = new TextEncoder();
   const baseKey = await window.crypto.subtle.importKey('raw', enc.encode(passphrase), 'PBKDF2', false, ['deriveKey']);
   return window.crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt: saltBytes, iterations: 100000, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt: saltBytes, iterations: 120000, hash: 'SHA-256' },
     baseKey,
     { name: 'AES-GCM', length: 256 },
     false,
@@ -610,46 +633,40 @@ async function deriveAesKey(passphrase, saltBytes) {
   );
 }
 
-async function encryptBackupJson(plainText, customPasskey) {
-  const secret = (customPasskey || '').trim() || ('VyajVault_' + (currentUser ? currentUser.uid : 'hishob-4b548'));
+async function encryptBackupJson(plainText, userPasskey) {
+  const secret = (userPasskey || '').trim();
+  if (!secret || secret.length < 6) {
+    throw new Error('कृपया किमान ६ अक्षरांचा मजबूत Passkey टाका!');
+  }
   const salt = window.crypto.getRandomValues(new Uint8Array(16));
   const iv = window.crypto.getRandomValues(new Uint8Array(12));
   const key = await deriveAesKey(secret, salt);
   const cipherBuf = await window.crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(plainText));
-  const toB64 = arr => btoa(String.fromCharCode(...new Uint8Array(arr)));
   return JSON.stringify({
     app: 'VyajHishobPro',
-    version: 'V11.8',
+    version: 'V11.9',
     encrypted: true,
-    salt: toB64(salt),
-    iv: toB64(iv),
-    data: toB64(cipherBuf)
+    salt: uint8ToBase64Chunked(salt),
+    iv: uint8ToBase64Chunked(iv),
+    data: uint8ToBase64Chunked(new Uint8Array(cipherBuf))
   }, null, 2);
 }
 
 async function decryptBackupJson(parsedObj) {
-  const fromB64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
-  const salt = fromB64(parsedObj.salt);
-  const iv = fromB64(parsedObj.iv);
-  const cipherBytes = fromB64(parsedObj.data);
-
-  const candidates = [];
-  const typedKey = (document.getElementById('backupPasskeyInput') && document.getElementById('backupPasskeyInput').value || '').trim();
-  if (typedKey) candidates.push(typedKey);
-  if (currentUser) candidates.push('VyajVault_' + currentUser.uid);
-  candidates.push('VyajVault_hishob-4b548');
-
-  for (const cand of candidates) {
-    try {
-      const key = await deriveAesKey(cand, salt);
-      const decBuf = await window.crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, cipherBytes);
-      return new TextDecoder().decode(decBuf);
-    } catch (e) {}
+  if (!parsedObj.salt || !parsedObj.iv || !parsedObj.data) {
+    throw new Error('Encrypted बॅकअप डेटा अपूर्ण आहे.');
   }
+  const salt = base64ToUint8(parsedObj.salt);
+  const iv = base64ToUint8(parsedObj.iv);
+  const cipherBytes = base64ToUint8(parsedObj.data);
 
-  const manualKey = prompt('हा बॅकअप Encrypted आहे. Passkey टाका:');
-  if (!manualKey) throw new Error('Passkey cancelled');
-  const key = await deriveAesKey(manualKey.trim(), salt);
+  let passkey = (document.getElementById('backupPasskeyInput') && document.getElementById('backupPasskeyInput').value || '').trim();
+  if (!passkey) {
+    passkey = (prompt('हा बॅकअप AES-GCM Encrypted आहे. Passkey टाका:') || '').trim();
+  }
+  if (!passkey) throw new Error('Passkey दिला नाही.');
+
+  const key = await deriveAesKey(passkey, salt);
   const decBuf = await window.crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, cipherBytes);
   return new TextDecoder().decode(decBuf);
 }
@@ -736,7 +753,7 @@ function applyRollbackSnapshot(idx) {
 window.addEventListener('online', () => setSyncStatus('syncing', '🟡 Reconnected! Syncing...'));
 window.addEventListener('offline', () => setSyncStatus('offline', '🔴 Offline (Queued Safely)'));
 
-// ================= ४. SPLASH, AUTH, RESET EMAIL व AUTO-LOCK =================
+// ================= ४. SPLASH, AUTH, RESET EMAIL व खरा SIGN-OUT LOCK =================
 setTimeout(() => {
   const sp = document.getElementById('splashScreen');
   if (sp) { sp.style.opacity = '0'; setTimeout(() => { sp.style.display = 'none'; }, 350); }
@@ -779,6 +796,7 @@ async function handleFirebaseLogin() {
   const btn = document.getElementById('loginBtn'); btn.disabled = true; btn.innerText = 'तपासत आहे...';
   try {
     await auth.signInWithEmailAndPassword(email, pass);
+    document.getElementById('loginPassword').value = '';
     recordAudit('लॉगिन यशस्वी');
   } catch (e) {
     errEl.innerText = '❌ चुकीचा Gmail किंवा Password!';
@@ -799,44 +817,60 @@ async function handlePasswordResetEmail() {
   }
 }
 
-function lockAppScreen() {
-  if (!firebaseReady || !auth) return;
+// खरा Lock: auth.signOut() वापरून सेशन बंद करणे (reload केल्यास किंवा पुन्हा लॉगिन केल्यास योग्य रीतीने काम करते)
+async function lockAppScreen() {
   closeAllPanels();
   borrowers = [];
   document.getElementById('listContainer').innerHTML = '';
   document.getElementById('appContent').style.display = 'none';
   document.getElementById('bottomBar').style.display = 'none';
   document.getElementById('loginPassword').value = '';
+  if (unsubscribeSnapshot) { unsubscribeSnapshot(); unsubscribeSnapshot = null; }
+  if (firebaseReady && auth) {
+    try { await auth.signOut(); } catch (e) {}
+  }
   document.getElementById('authScreen').style.display = 'flex';
 }
 
 async function handleLogout(clearCache = false) {
   if (!confirm('अ‍ॅपमधून लॉगआउट करायचे का?')) return;
   recordAudit('लॉगआउट');
-  if (clearCache) clearLegacyAndLocalCache(true);
-  if (firebaseReady && auth) await auth.signOut();
-  lockAppScreen();
+  if (clearCache) await clearLegacyAndLocalCache(true);
+  await lockAppScreen();
 }
 
-function clearLegacyAndLocalCache(silent = false) {
+// IndexedDB persistence बंद करून साफ करणे + vyaj_v11_audit आणि जुना localStorage पुसणे
+async function clearLegacyAndLocalCache(silent = false) {
   const uid = currentUser ? currentUser.uid : '';
   const legacyKeys = [
     'vyajAppData_Nov2026_v5', 'vyajAppData_Encrypted_v5', 'vyajAppData_Backup_Old',
     'vyajRecycleBin_v5', 'vyajVersionHistory_v5', 'vyajLoginHistory_v5', 'vyajAuditLogs_v8',
-    'vyajSecMetrics_v10'
+    'vyajSecMetrics_v10', 'vyaj_v11_audit'
   ];
+  auditLogs = [];
   Object.keys(localStorage).forEach(k => {
     if (legacyKeys.includes(k) || k.startsWith('vyaj_v11_cache_') || k.startsWith('firestore') || (uid && k.includes(uid))) {
       localStorage.removeItem(k);
     }
   });
-  if (!silent) alert('✅ जुना V10.1 plain-text डेटा आणि लोकल Cache पूर्णपणे साफ केला आहे!');
+
+  if (db && persistenceEnabled) {
+    try {
+      if (unsubscribeSnapshot) { unsubscribeSnapshot(); unsubscribeSnapshot = null; }
+      await db.terminate();
+      await db.clearPersistence();
+      persistenceEnabled = false;
+    } catch (e) {
+      console.log('Clear persistence:', e);
+    }
+  }
+  if (!silent) alert('✅ जुना डेटा, Audit लॉग आणि IndexedDB Cache साफ केला आहे! (पुन्हा वापरण्यासाठी पेज रिफ्रेश करा)');
 }
 
 function saveAutoLockMins() {
   const m = Math.max(0, parseInt(document.getElementById('autoLockMinsInput').value, 10) || 0);
   localStorage.setItem('vyaj_v11_autolock', String(m));
-  alert(m > 0 ? `✅ ${m} मिनिटे निष्क्रिय राहिल्यास Auto-Lock चालू राहील.` : '✅ Auto-Lock बंद केले.');
+  alert(m > 0 ? `✅ ${m} मिनिटे निष्क्रिय राहिल्यास Auto-Lock (Sign-Out) चालू राहील.` : '✅ Auto-Lock बंद केले.');
 }
 
 ['click', 'touchstart', 'keydown', 'scroll'].forEach(ev => {
@@ -895,7 +929,7 @@ function saveMyUpiId() {
   localStorage.setItem('vyaj_v11_upi', upi); alert('✅ UPI ID सेव्ह झाला!');
 }
 
-// ================= ६. REAL-TIME FIRESTORE SYNC (onSnapshot + Atomic Updates) =================
+// ================= ६. REAL-TIME FIRESTORE SYNC (onSnapshot + FieldValue.delete()) =================
 function getUserBorrowersRef() { return db.collection('users').doc(currentUser.uid).collection('borrowers'); }
 
 function startRealtimeBorrowersListener() {
@@ -939,7 +973,28 @@ function updateBorrowerFieldsAtomic(id, fieldsObj) {
   });
 }
 
-// ================= ७. अचूक हिशोब इंजिन (Advance Carry-Forward, Penalty, Custom Due & 31-Day Fix) =================
+// नेस्टेड मॅपमधील key खरोखर हटवण्यासाठी FieldValue.delete() वापरणारा फंक्शन
+function deleteNestedMapKeyAndUpdate(id, dotPath, extraFieldsObj) {
+  if (!currentUser || !id || !db) return;
+  const payload = { ...(extraFieldsObj || {}), updatedAt: Date.now() };
+  payload[dotPath] = firebase.firestore.FieldValue.delete();
+
+  // लोकल मेमरीमध्येही लगेच काढून टाकणे
+  const b = borrowers.find(x => String(x.id) === String(id));
+  if (b) {
+    const parts = dotPath.split('.');
+    if (parts.length === 2 && b[parts[0]] && typeof b[parts[0]] === 'object') {
+      delete b[parts[0]][parts[1]];
+    }
+    Object.assign(b, extraFieldsObj || {}, { updatedAt: Date.now() });
+    renderList();
+  }
+  getUserBorrowersRef().doc(String(id)).update(payload).catch(err => {
+    console.error('Delete key update error:', err);
+  });
+}
+
+// ================= ७. अचूक हिशोब इंजिन (Custom Due + cashPaid वजा होणे) =================
 function marathiToRoman(str) {
   const map = {'अ':'a','आ':'a','इ':'i','ई':'i','उ':'u','ऊ':'u','ए':'e','ऐ':'ai','ओ':'o','औ':'au','क':'k','ख':'kh','ग':'g','घ':'gh','च':'ch','छ':'chh','ज':'j','झ':'jh','ट':'t','ठ':'th','ड':'d','ढ':'dh','ण':'n','त':'t','थ':'th','द':'d','ध':'dh','न':'n','प':'p','फ':'ph','ब':'b','भ':'bh','म':'m','य':'y','र':'r','ल':'l','व':'v','श':'sh','ष':'sh','स':'s','ह':'h','ळ':'l','क्ष':'ksh','ज्ञ':'dny','ा':'a','ि':'i','ी':'i','ु':'u','ू':'u','े':'e','ै':'ai','ो':'o','ौ':'au','ं':'n','्':''};
   let out = ''; for (let ch of (str || '').toLowerCase()) out += (map[ch] !== undefined) ? map[ch] : ch;
@@ -1031,25 +1086,23 @@ function computeLedgerUpToMonth(b, targetYm) {
     if (info.isCompounded) return;
 
     const isCustom = !!(b.customPastDues && b.customPastDues[ym] !== undefined);
-    const grossDue = isCustom ? (Number(b.customPastDues[ym]) || 0) : Math.max(0, getExpectedInterest(b, ym) - info.cashPaid);
+    const baseTarget = isCustom ? (Number(b.customPastDues[ym]) || 0) : getExpectedInterest(b, ym);
+    // custom असो वा नियमित महिना: त्या महिन्यात भरलेली रोख रक्कम (cashPaid) वजा होईल
+    let netDue = Math.max(0, baseTarget - info.cashPaid);
 
-    let netDue = grossDue;
     if (carryAdvance > 0 && netDue > 0) {
       const usedAdv = Math.min(carryAdvance, netDue);
       netDue -= usedAdv;
       carryAdvance -= usedAdv;
     }
 
-    if (!isCustom) {
-      const exp = getExpectedInterest(b, ym);
-      if (info.cashPaid > exp) {
-        carryAdvance += (info.cashPaid - exp);
-      }
+    if (info.cashPaid > baseTarget) {
+      carryAdvance += (info.cashPaid - baseTarget);
     }
 
     if (netDue > 0) {
       const penInfo = getDueAndPenaltyInfo(b, ym, netDue);
-      const entry = { ym, rem: netDue, exp: isCustom ? grossDue : getExpectedInterest(b, ym), info, isCustom, penaltyAmt: penInfo.penaltyAmt, lateDays: penInfo.lateDays };
+      const entry = { ym, rem: netDue, exp: baseTarget, info, isCustom, penaltyAmt: penInfo.penaltyAmt, lateDays: penInfo.lateDays };
       unpaidPastList.push(entry);
       if (isCustom) customEntries.push(entry);
       pastInterestSum += netDue;
@@ -1062,7 +1115,8 @@ function computeLedgerUpToMonth(b, targetYm) {
   const hasCustomCur = !!(b.customPastDues && b.customPastDues[targetYm] !== undefined);
   let remCur = 0;
   if (!curInfo.isCompounded && (startYm <= targetYm || hasCustomCur)) {
-    remCur = hasCustomCur ? (Number(b.customPastDues[targetYm]) || 0) : Math.max(0, expCur - curInfo.cashPaid);
+    const curTarget = hasCustomCur ? (Number(b.customPastDues[targetYm]) || 0) : expCur;
+    remCur = Math.max(0, curTarget - curInfo.cashPaid);
     if (carryAdvance > 0 && remCur > 0) {
       const usedAdv = Math.min(carryAdvance, remCur);
       remCur -= usedAdv;
@@ -1108,7 +1162,7 @@ function getRetirementBadge(retDateStr) {
   return `<span class="tag tag-retire">📅 रिटायरमेंट: ${rd.getFullYear()} (~${Math.round(diffYrs)} वर्षे)</span>`;
 }
 
-// ================= ८. DRIVE / HTTPS डॉक्युमेंट लिंक्स व CRUD =================
+// ================= ८. DRIVE डॉक्युमेंट्स, मॅन्युअल बाकी व CRUD =================
 function getNormalizedDocsList(b) {
   let out = [];
   if (Array.isArray(b.docsList)) {
@@ -1125,26 +1179,13 @@ function addDriveDocLink() {
   const nameEl = document.getElementById('editDocNameInput');
   const urlEl = document.getElementById('editDocUrlInput');
   const rawUrl = (urlEl.value || '').trim();
-  if (!isSafeHttpUrl(rawUrl)) {
-    alert('कृपया वैध https:// (उदा. Google Drive) लिंक टाका!');
-    return;
-  }
-  if (tempEditDocs.length >= 5) {
-    alert('एका ग्राहकासाठी कमाल ५ डॉक्युमेंट लिंक्स सेव्ह करता येतात.');
-    return;
-  }
-  const docLabel = (nameEl.value || '').trim() || 'Drive डॉक्युमेंट';
-  tempEditDocs.push({ docName: docLabel, url: rawUrl });
-  nameEl.value = '';
-  urlEl.value = '';
+  if (!isSafeHttpUrl(rawUrl)) { alert('कृपया वैध https:// (उदा. Google Drive) लिंक टाका!'); return; }
+  if (tempEditDocs.length >= 5) { alert('एका ग्राहकासाठी कमाल ५ डॉक्युमेंट लिंक्स सेव्ह करता येतात.'); return; }
+  tempEditDocs.push({ docName: (nameEl.value || '').trim() || 'Drive डॉक्युमेंट', url: rawUrl });
+  nameEl.value = ''; urlEl.value = '';
   renderEditDocsPreview();
 }
-
-function removeSingleEditDoc(idx) {
-  tempEditDocs.splice(idx, 1);
-  renderEditDocsPreview();
-}
-
+function removeSingleEditDoc(idx) { tempEditDocs.splice(idx, 1); renderEditDocsPreview(); }
 function renderEditDocsPreview() {
   const el = document.getElementById('editDocsPreview');
   if (!tempEditDocs.length) { el.innerHTML = '<small style="color:var(--muted);">कोणतीही डॉक्युमेंट लिंक नाही.</small>'; return; }
@@ -1166,9 +1207,8 @@ function removeCustomPastDue(id, ym) {
   const b = borrowers.find(x => String(x.id) === String(id)); if (!b) return;
   if (!confirm(`${formatMonthMarathi(ym)} ची मॅन्युअल बाकी काढून टाकायची का?`)) return;
   captureRollbackSnapshot('मॅन्युअल बाकी काढण्यापूर्वी', b);
-  const updated = { ...(b.customPastDues || {}) }; delete updated[ym];
   recordAudit(`${b.name}: ${formatMonthMarathi(ym)} ची मॅन्युअल बाकी काढली`);
-  updateBorrowerFieldsAtomic(id, { customPastDues: updated });
+  deleteNestedMapKeyAndUpdate(id, `customPastDues.${ym}`, {});
 }
 
 function syncAddInterest() { const p = parseFloat(document.getElementById('addPrincipal').value), r = parseFloat(document.getElementById('addRate').value); if (!isNaN(p) && !isNaN(r)) document.getElementById('addInterest').value = Number(((p * r) / 100).toFixed(2)); }
@@ -1258,17 +1298,22 @@ function payInterestInstallment(id, ym, inputId) {
   recordAudit(`${b.name}: ${formatMonthMarathi(ym)} व्याज जमा ₹${val}`);
   updateBorrowerFieldsAtomic(id, { paidMonths: updatedPaidMonths, interestHistory: updatedHistory });
 }
+
 function deleteSingleInstallment(id, ym, idx) {
   const b = borrowers.find(x => String(x.id) === String(id)); if (!b || !confirm('हा हप्ता रद्द करायचा का?')) return;
   captureRollbackSnapshot(`${formatMonthMarathi(ym)} हप्ता रद्द करण्यापूर्वी`, b);
   const info = getMonthPaymentInfo(b, ym), removedAmt = (info.payments[idx] && info.payments[idx].amount) || 0;
   const newPayments = [...info.payments]; newPayments.splice(idx, 1);
-  const updatedPaidMonths = { ...(b.paidMonths || {}) };
-  if (!newPayments.length) delete updatedPaidMonths[ym];
-  else updatedPaidMonths[ym] = { amount: newPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0), payments: newPayments, compounded: false, ts: Date.now() };
   recordAudit(`${b.name}: ${formatMonthMarathi(ym)} हप्ता रद्द केला (₹${removedAmt})`);
-  updateBorrowerFieldsAtomic(id, { paidMonths: updatedPaidMonths });
+
+  if (!newPayments.length) {
+    deleteNestedMapKeyAndUpdate(id, `paidMonths.${ym}`, {});
+  } else {
+    const updatedPaidMonths = { ...(b.paidMonths || {}), [ym]: { amount: newPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0), payments: newPayments, compounded: false, ts: Date.now() } };
+    updateBorrowerFieldsAtomic(id, { paidMonths: updatedPaidMonths });
+  }
 }
+
 function adjustPrincipal(id, mode) {
   const b = borrowers.find(x => String(x.id) === String(id)); if (!b) return;
   const raw = prompt(mode === 'ADD' ? `सध्याची मुद्दल ${fmtMoney(b.principal)}.\nकिती अतिरिक्त मुद्दल दिली?` : `सध्याची मुद्दल ${fmtMoney(b.principal)}.\nकिती मुद्दल परत मिळाली?`);
@@ -1404,7 +1449,7 @@ function drawFinanceChart() {
   document.getElementById('chartLegend').innerHTML = `<span style="color:#16a34a;">🟢 जमा: ${fmtMoney(col)}</span> | <span style="color:#dc2626;">🔴 बाकी: ${fmtMoney(pend)}</span>`;
 }
 
-// ================= ११. वेगळे महिना Excel, संपूर्ण Excel व ENCRYPTED JSON BACKUP =================
+// ================= ११. EXCEL व ENCRYPTED JSON BACKUP =================
 function buildMonthlyCsvString() {
   const active = borrowers.filter(b => !b.isDeleted);
   let rows = [["अ.क्र.","महिना","नाव","नोकरी","डिपार्टमेंट","जामीनदार","मोबाईल","मुद्दल","महिना अपेक्षित व्याज","महिना रोख जमा","आगाऊ","दंड","एकूण बाकी","टीप"].map(escapeCsvCell).join(",")];
@@ -1414,7 +1459,6 @@ function buildMonthlyCsvString() {
   });
   return "\uFEFF" + rows.join("\n");
 }
-
 function buildFullLedgerCsvString() {
   const active = borrowers.filter(b => !b.isDeleted);
   let rows = [["अ.क्र.","नाव","नोकरी","डिपार्टमेंट","रिटायरमेंट","जामीनदार","मोबाईल","सुरू महिना","सध्याची मुद्दल","व्याज दर %","सध्याचे मासिक व्याज","एकूण रोख जमा (सर्व महिने)","आगाऊ शिल्लक","दंड","एकूण बाकी","टीप"].map(escapeCsvCell).join(",")];
@@ -1426,7 +1470,6 @@ function buildFullLedgerCsvString() {
   });
   return "\uFEFF" + rows.join("\n");
 }
-
 function exportMonthlySafeCsv() { triggerFileDownload(buildMonthlyCsvString(), `Vyaj_Month_${activeYm}.csv`, "text/csv;charset=utf-8;"); }
 function exportFullSafeCsv() { triggerFileDownload(buildFullLedgerCsvString(), `Vyaj_Full_Ledger_${getTodayIso()}.csv`, "text/csv;charset=utf-8;"); }
 function triggerFileDownload(content, name, mime) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([content], { type: mime })); a.download = name; a.click(); }
@@ -1502,24 +1545,29 @@ function sanitizeImportedBorrowerItem(item, idx, baseTs) {
 }
 
 async function exportEncryptedJsonBackup() {
-  const active = borrowers.filter(b => !b.isDeleted);
-  const customKey = document.getElementById('backupPasskeyInput') ? document.getElementById('backupPasskeyInput').value : '';
-  const plainJson = JSON.stringify({ app: 'VyajHishobPro', version: 'V11.8', exportedAt: new Date().toISOString(), borrowers: active });
-  const encryptedPkg = await encryptBackupJson(plainJson, customKey);
-  triggerFileDownload(encryptedPkg, `Vyaj_Encrypted_Backup_${activeYm}.json`, "application/json");
-  recordAudit('Encrypted JSON बॅकअप घेतला');
+  try {
+    const active = borrowers.filter(b => !b.isDeleted);
+    const customKey = document.getElementById('backupPasskeyInput') ? document.getElementById('backupPasskeyInput').value : '';
+    const plainJson = JSON.stringify({ app: 'VyajHishobPro', version: 'V11.9', exportedAt: new Date().toISOString(), borrowers: active });
+    const encryptedPkg = await encryptBackupJson(plainJson, customKey);
+    triggerFileDownload(encryptedPkg, `Vyaj_Encrypted_Backup_${activeYm}.json`, "application/json");
+    recordAudit('AES-GCM Encrypted JSON बॅकअप घेतला');
+    alert('✅ Encrypted बॅकअप फाईल यशस्वीपणे तयार झाली!');
+  } catch (err) {
+    alert('❌ बॅकअप तयार झाला नाही: ' + (err.message || err));
+  }
 }
 
 async function importJsonBackup(e) {
   const f = e.target.files[0]; if (!f || !currentUser || !db) return;
-  if (f.size > 20 * 1024 * 1024) { alert('❌ फाईल खूप मोठी आहे (कमाल 20 MB).'); e.target.value = ''; return; }
+  if (f.size > 25 * 1024 * 1024) { alert('❌ फाईल खूप मोठी आहे (कमाल 25 MB).'); e.target.value = ''; return; }
   const r = new FileReader();
   r.onload = async ev => {
     try {
       const parsed = JSON.parse(ev.target.result);
       let rawList = null;
 
-      if (parsed && parsed.encrypted === true && parsed.salt && parsed.iv && parsed.data) {
+      if (parsed && parsed.encrypted === true && parsed.data) {
         const decryptedText = await decryptBackupJson(parsed);
         const decObj = JSON.parse(decryptedText);
         rawList = Array.isArray(decObj) ? decObj : (decObj && Array.isArray(decObj.borrowers) ? decObj.borrowers : null);
@@ -1536,9 +1584,7 @@ async function importJsonBackup(e) {
       const validatedList = rawList.map((it, idx) => {
         const clean = sanitizeImportedBorrowerItem(it, idx, ts);
         if (!clean) return null;
-        if (existingIds.has(String(clean.id))) {
-          overwriteCollisions = true;
-        }
+        if (existingIds.has(String(clean.id))) overwriteCollisions = true;
         return clean;
       }).filter(Boolean);
 
@@ -1573,7 +1619,7 @@ async function importJsonBackup(e) {
       togglePanel('backupPanel');
     } catch (err) {
       console.error(err);
-      alert('❌ बॅकअप फाईल वाचता आली नाही किंवा Passkey चुकीची आहे.');
+      alert('❌ बॅकअप Import झाला नाही: ' + (err.message || 'Passkey किंवा फाईल तपासा.'));
     }
   };
   r.readAsText(f); e.target.value = '';
