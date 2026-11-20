@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0d47a1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://www.gstatic.com 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data: blob:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://docs.google.com https://*.googleusercontent.com; font-src 'self' https: data:; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob: 'unsafe-inline' 'unsafe-eval'; worker-src 'self' blob: https://cdnjs.cloudflare.com; img-src 'self' https: data: blob:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://docs.google.com https://*.googleusercontent.com; object-src 'none'; base-uri 'self'; form-action 'self';">
 <link rel="manifest" href="./manifest.json">
-<title>व्याज हिशोब प्रो V11.9 (Hardened, PWA & Exact Ledger)</title>
+<title>व्याज हिशोब प्रो V12.0 (Complete, Hardened & Exact Ledger)</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <style>
@@ -173,15 +173,15 @@ input, select, textarea { width: 100%; padding: 8px; border: 1px solid var(--bor
 <!-- १. SPLASH SCREEN -->
 <div id="splashScreen">
   <div class="splash-logo">📒</div>
-  <h2 style="margin:0;">व्याज हिशोब प्रो V11.9</h2>
-  <p style="font-size:13px; opacity:0.9; margin:6px 0 0;">PWA, खरे Sign-Out Lock व अचूक हिशोब</p>
+  <h2 style="margin:0;">व्याज हिशोब प्रो V12.0</h2>
+  <p style="font-size:13px; opacity:0.9; margin:6px 0 0;">सर्व फीचर्स सुरक्षित व अचूक हिशोब प्रणाली</p>
   <div class="splash-loader-wrap"><div class="splash-loader-bar"></div></div>
 </div>
 
 <!-- २. FIREBASE लॉगिन स्क्रीन -->
 <div id="authScreen">
   <div class="auth-card">
-    <h2>🔐 व्याज हिशोब प्रो V11.9</h2>
+    <h2>🔐 व्याज हिशोब प्रो V12.0</h2>
     <p>फक्त नोंदणीकृत मालकासाठी (Firebase Secure Login)</p>
     <div id="cdnWarningBox" style="display:none; background:#fee2e2; color:#991b1b; padding:8px; border-radius:8px; font-size:12px; margin-bottom:10px;">
       ⚠️ Firebase SDK लोड झाले नाही. इंटरनेट तपासा.
@@ -206,7 +206,7 @@ input, select, textarea { width: 100%; padding: 8px; border: 1px solid var(--bor
 <div id="drawerBackdrop" class="drawer-backdrop" onclick="closeDrawer()"></div>
 <div id="sideDrawer" class="side-drawer">
   <div class="drawer-header">
-    <h3>📒 व्याज हिशोब प्रो V11.9</h3>
+    <h3>📒 व्याज हिशोब प्रो V12.0</h3>
     <p id="drawerEmailText">📧 Connected</p>
     <p id="drawerSyncText" style="color:#bbf7d0;">🟢 Real-Time Sync Active</p>
   </div>
@@ -309,7 +309,7 @@ input, select, textarea { width: 100%; padding: 8px; border: 1px solid var(--bor
     <div style="display:flex; align-items:center; gap:8px;">
       <button class="menu-btn" onclick="openDrawer()">☰</button>
       <div>
-        <div style="font-weight:bold; font-size:15px;">व्याज हिशोब प्रो V11.9</div>
+        <div style="font-weight:bold; font-size:15px;">व्याज हिशोब प्रो V12.0</div>
         <div id="syncStatusBadge" class="sync-badge">🟢 Real-Time Synced</div>
       </div>
     </div>
@@ -430,7 +430,7 @@ input, select, textarea { width: 100%; padding: 8px; border: 1px solid var(--bor
     <div class="panel-header"><h3>📋 Audit Log व Rollback हिस्ट्री</h3><button class="btn-sm bg-gray" onclick="togglePanel('auditPanel')">✕</button></div>
     <div class="row-2col">
       <div>
-        <h4 style="margin:0 0 6px; color:var(--primary);">🕒 हालचालींची नोंद (Audit Log):</h4>
+        <h4 style="margin:0 0 6px; color:var(--primary);">🕒 हालचालींची नोंद (Cloud + Local):</h4>
         <div id="auditLogList" style="background:var(--row-bg); padding:8px; border-radius:8px; border:1px solid var(--border); max-height:200px; overflow-y:auto;"></div>
       </div>
       <div>
@@ -615,9 +615,7 @@ function base64ToUint8(b64Str) {
   const binary = atob(b64Str);
   const len = binary.length;
   const bytes = new Uint8Array(len);
-  for (let i = 0; i < len; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
+  for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
   return bytes;
 }
 
@@ -635,16 +633,14 @@ async function deriveAesKey(passphrase, saltBytes) {
 
 async function encryptBackupJson(plainText, userPasskey) {
   const secret = (userPasskey || '').trim();
-  if (!secret || secret.length < 6) {
-    throw new Error('कृपया किमान ६ अक्षरांचा मजबूत Passkey टाका!');
-  }
+  if (!secret || secret.length < 6) throw new Error('कृपया किमान ६ अक्षरांचा मजबूत Passkey टाका!');
   const salt = window.crypto.getRandomValues(new Uint8Array(16));
   const iv = window.crypto.getRandomValues(new Uint8Array(12));
   const key = await deriveAesKey(secret, salt);
   const cipherBuf = await window.crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(plainText));
   return JSON.stringify({
     app: 'VyajHishobPro',
-    version: 'V11.9',
+    version: 'V12.0',
     encrypted: true,
     salt: uint8ToBase64Chunked(salt),
     iv: uint8ToBase64Chunked(iv),
@@ -653,31 +649,26 @@ async function encryptBackupJson(plainText, userPasskey) {
 }
 
 async function decryptBackupJson(parsedObj) {
-  if (!parsedObj.salt || !parsedObj.iv || !parsedObj.data) {
-    throw new Error('Encrypted बॅकअप डेटा अपूर्ण आहे.');
-  }
+  if (!parsedObj.salt || !parsedObj.iv || !parsedObj.data) throw new Error('Encrypted बॅकअप डेटा अपूर्ण आहे.');
   const salt = base64ToUint8(parsedObj.salt);
   const iv = base64ToUint8(parsedObj.iv);
   const cipherBytes = base64ToUint8(parsedObj.data);
-
   let passkey = (document.getElementById('backupPasskeyInput') && document.getElementById('backupPasskeyInput').value || '').trim();
-  if (!passkey) {
-    passkey = (prompt('हा बॅकअप AES-GCM Encrypted आहे. Passkey टाका:') || '').trim();
-  }
+  if (!passkey) passkey = (prompt('हा बॅकअप AES-GCM Encrypted आहे. Passkey टाका:') || '').trim();
   if (!passkey) throw new Error('Passkey दिला नाही.');
-
   const key = await deriveAesKey(passkey, salt);
   const decBuf = await window.crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, cipherBytes);
   return new TextDecoder().decode(decBuf);
 }
 
-// ================= ३. ग्लोबल व्हेरिएबल्स, AUDIT LOG व ROLLBACK =================
+// ================= ३. ग्लोबल व्हेरिएबल्स, AUDIT LOG (Firestore + Local) व ROLLBACK =================
 const marathiMonths = ["जानेवारी","फेब्रुवारी","मार्च","एप्रिल","मे","जून","जुलै","ऑगस्ट","सप्टेंबर","ऑक्टोबर","नोव्हेंबर","डिसेंबर"];
 let currentUser = null, borrowers = [], activeYm = getCurrentYearMonth();
 let currentFilter = 'ALL', expandedIds = new Set(), openCustomDueIds = new Set();
 let isAllExpanded = false, isPrivacyMasked = false;
-let searchTimer = null, tempEditDocs = [], unsubscribeSnapshot = null, initialPopupChecked = false, lastActivityTs = Date.now();
-let auditLogs = JSON.parse(localStorage.getItem('vyaj_v11_audit') || '[]');
+let searchTimer = null, tempEditDocs = [], unsubscribeSnapshot = null, unsubscribeAudit = null, initialPopupChecked = false, lastActivityTs = Date.now();
+let localAuditLogs = JSON.parse(localStorage.getItem('vyaj_v11_audit') || '[]');
+let cloudAuditLogs = [];
 let rollbackSnaps = [];
 
 function getCurrentYearMonth() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; }
@@ -691,8 +682,7 @@ function getEffectiveDueDay(dueDayRaw, ym) {
   const desired = Math.min(31, Math.max(1, parseInt(dueDayRaw, 10) || 10));
   if (!ym || !ym.includes('-')) return desired;
   const [y, m] = ym.split('-').map(Number);
-  const maxDaysInMonth = new Date(y, m, 0).getDate();
-  return Math.min(desired, maxDaysInMonth);
+  return Math.min(desired, new Date(y, m, 0).getDate());
 }
 
 function setSyncStatus(type, text) {
@@ -702,13 +692,27 @@ function setSyncStatus(type, text) {
 }
 
 function recordAudit(actionText) {
-  const item = { time: new Date().toLocaleString('mr-IN'), by: (currentUser && currentUser.email) || 'User', action: String(actionText || '') };
-  auditLogs.unshift(item);
-  auditLogs = auditLogs.slice(0, 60);
-  try { localStorage.setItem('vyaj_v11_audit', JSON.stringify(auditLogs)); } catch (e) {}
-  if (currentUser && db && navigator.onLine) {
-    db.collection('users').doc(currentUser.uid).collection('auditLogs').add({ ...item, ts: Date.now() }).catch(() => {});
+  const nowTs = Date.now();
+  const item = { time: new Date(nowTs).toLocaleString('mr-IN'), by: (currentUser && currentUser.email) || 'User', action: String(actionText || ''), ts: nowTs };
+  localAuditLogs.unshift(item);
+  localAuditLogs = localAuditLogs.slice(0, 60);
+  try { localStorage.setItem('vyaj_v11_audit', JSON.stringify(localAuditLogs)); } catch (e) {}
+  if (currentUser && db) {
+    db.collection('users').doc(currentUser.uid).collection('auditLogs').add(item).catch(() => {});
   }
+}
+
+function startAuditListener() {
+  if (unsubscribeAudit) { unsubscribeAudit(); unsubscribeAudit = null; }
+  if (!currentUser || !db) return;
+  unsubscribeAudit = db.collection('users').doc(currentUser.uid).collection('auditLogs')
+    .orderBy('ts', 'desc').limit(50)
+    .onSnapshot(snap => {
+      const list = [];
+      snap.forEach(doc => list.push(doc.data()));
+      cloudAuditLogs = list;
+      if (document.getElementById('auditPanel').style.display === 'block') renderAuditAndRollbackPanel();
+    }, err => console.log('Audit listener:', err));
 }
 
 function captureRollbackSnapshot(label, targetBorrower) {
@@ -727,15 +731,16 @@ function captureRollbackSnapshot(label, targetBorrower) {
 function renderAuditAndRollbackPanel() {
   const aEl = document.getElementById('auditLogList');
   const rEl = document.getElementById('rollbackList');
+  const mergedLogs = cloudAuditLogs.length ? cloudAuditLogs : localAuditLogs;
   if (aEl) {
-    aEl.innerHTML = auditLogs.length
-      ? auditLogs.map(x => `<div class="log-row"><b>🕒 ${escapeHtml(x.time)}</b><br>${escapeHtml(x.action)} <small style="color:var(--muted);">(${escapeHtml(x.by)})</small></div>`).join('')
-      : '<span style="color:var(--muted);">अद्याप कोणतीही Audit नोंद नाही.</span>';
+    aEl.innerHTML = mergedLogs.length
+      ? mergedLogs.map(x => `<div class="log-row"><b>🕒 ${escapeHtml(x.time)}</b><br>${escapeHtml(x.action)} <small style="color:var(--muted);">(${escapeHtml(x.by)})</small></div>`).join('')
+      : '<span style="color:var(--muted);">कोणतीही Audit नोंद नाही.</span>';
   }
   if (rEl) {
     rEl.innerHTML = rollbackSnaps.length
       ? rollbackSnaps.map((s, idx) => `<div class="log-row" style="display:flex; justify-content:space-between; align-items:center; gap:6px;"><div><b>${escapeHtml(s.borrowerName)}</b> — ${escapeHtml(s.label)}<br><small style="color:var(--muted);">${escapeHtml(s.time)}</small></div><button type="button" class="btn-sm bg-blue" data-snap-idx="${idx}" onclick="applyRollbackSnapshot(Number(this.dataset.snapIdx))">रोलबॅक</button></div>`).join('')
-      : '<span style="color:var(--muted);">सध्या कोणताही Rollback Snapshot नाही.</span>';
+      : '<span style="color:var(--muted);">कोणताही Rollback Snapshot नाही.</span>';
   }
 }
 
@@ -766,6 +771,7 @@ setTimeout(() => {
 if (firebaseReady && auth) {
   auth.onAuthStateChanged(user => {
     if (unsubscribeSnapshot) { unsubscribeSnapshot(); unsubscribeSnapshot = null; }
+    if (unsubscribeAudit) { unsubscribeAudit(); unsubscribeAudit = null; }
     if (user) {
       currentUser = user;
       lastActivityTs = Date.now();
@@ -778,6 +784,7 @@ if (firebaseReady && auth) {
       document.getElementById('autoLockMinsInput').value = localStorage.getItem('vyaj_v11_autolock') || '5';
       syncWaInputs();
       startRealtimeBorrowersListener();
+      startAuditListener();
     } else {
       currentUser = null; borrowers = []; initialPopupChecked = false;
       document.getElementById('listContainer').innerHTML = '';
@@ -825,6 +832,7 @@ async function lockAppScreen() {
   document.getElementById('bottomBar').style.display = 'none';
   document.getElementById('loginPassword').value = '';
   if (unsubscribeSnapshot) { unsubscribeSnapshot(); unsubscribeSnapshot = null; }
+  if (unsubscribeAudit) { unsubscribeAudit(); unsubscribeAudit = null; }
   if (firebaseReady && auth) {
     try { await auth.signOut(); } catch (e) {}
   }
@@ -834,7 +842,10 @@ async function lockAppScreen() {
 async function handleLogout(clearCache = false) {
   if (!confirm('अ‍ॅपमधून लॉगआउट करायचे का?')) return;
   recordAudit('लॉगआउट');
-  if (clearCache) await clearLegacyAndLocalCache(true);
+  if (clearCache) {
+    await clearLegacyAndLocalCache(true);
+    return;
+  }
   await lockAppScreen();
 }
 
@@ -845,7 +856,7 @@ async function clearLegacyAndLocalCache(silent = false) {
     'vyajRecycleBin_v5', 'vyajVersionHistory_v5', 'vyajLoginHistory_v5', 'vyajAuditLogs_v8',
     'vyajSecMetrics_v10', 'vyaj_v11_audit'
   ];
-  auditLogs = [];
+  localAuditLogs = [];
   Object.keys(localStorage).forEach(k => {
     if (legacyKeys.includes(k) || k.startsWith('vyaj_v11_cache_') || k.startsWith('firestore') || (uid && k.includes(uid))) {
       localStorage.removeItem(k);
@@ -855,6 +866,7 @@ async function clearLegacyAndLocalCache(silent = false) {
   if (db && persistenceEnabled) {
     try {
       if (unsubscribeSnapshot) { unsubscribeSnapshot(); unsubscribeSnapshot = null; }
+      if (unsubscribeAudit) { unsubscribeAudit(); unsubscribeAudit = null; }
       await db.terminate();
       await db.clearPersistence();
       persistenceEnabled = false;
@@ -862,7 +874,11 @@ async function clearLegacyAndLocalCache(silent = false) {
       console.log('Clear persistence:', e);
     }
   }
-  if (!silent) alert('✅ जुना डेटा, Audit लॉग आणि IndexedDB Cache साफ केला आहे! (पुन्हा वापरण्यासाठी पेज रिफ्रेश करा)');
+  if (firebaseReady && auth) {
+    try { await auth.signOut(); } catch (e) {}
+  }
+  if (!silent) alert('✅ जुना डेटा, Audit लॉग आणि IndexedDB Cache साफ केला आहे!');
+  window.location.reload();
 }
 
 function saveAutoLockMins() {
@@ -927,7 +943,7 @@ function saveMyUpiId() {
   localStorage.setItem('vyaj_v11_upi', upi); alert('✅ UPI ID सेव्ह झाला!');
 }
 
-// ================= ६. REAL-TIME FIRESTORE SYNC (onSnapshot + FieldValue.delete()) =================
+// ================= ६. REAL-TIME FIRESTORE SYNC =================
 function getUserBorrowersRef() { return db.collection('users').doc(currentUser.uid).collection('borrowers'); }
 
 function startRealtimeBorrowersListener() {
@@ -1091,9 +1107,7 @@ function computeLedgerUpToMonth(b, targetYm) {
       carryAdvance -= usedAdv;
     }
 
-    if (info.cashPaid > baseTarget) {
-      carryAdvance += (info.cashPaid - baseTarget);
-    }
+    if (info.cashPaid > baseTarget) carryAdvance += (info.cashPaid - baseTarget);
 
     if (netDue > 0) {
       const penInfo = getDueAndPenaltyInfo(b, ym, netDue);
@@ -1125,14 +1139,9 @@ function computeLedgerUpToMonth(b, targetYm) {
   const totalPending = remCur + pastInterestSum + totalPenalty;
 
   return {
-    expCur,
-    curInfo,
-    remCur,
-    carryAdvance: remainingAdvanceForward,
-    curDueInfo,
+    expCur, curInfo, remCur, carryAdvance: remainingAdvanceForward, curDueInfo,
     past: { unpaidList: unpaidPastList, customEntries, sum: pastInterestSum, penaltySum: pastPenaltySum },
-    totalPenalty,
-    totalPending
+    totalPenalty, totalPending
   };
 }
 
@@ -1161,24 +1170,17 @@ function getRetirementBadge(retDateStr) {
 function getNormalizedDocsList(b) {
   let out = [];
   if (Array.isArray(b.docsList)) {
-    b.docsList.forEach(it => {
-      if (it && isSafeHttpUrl(it.url)) {
-        out.push({ docName: it.docName || 'डॉक्युमेंट', url: it.url.trim() });
-      }
-    });
+    b.docsList.forEach(it => { if (it && isSafeHttpUrl(it.url)) out.push({ docName: it.docName || 'डॉक्युमेंट', url: it.url.trim() }); });
   }
   return out;
 }
-
 function addDriveDocLink() {
-  const nameEl = document.getElementById('editDocNameInput');
-  const urlEl = document.getElementById('editDocUrlInput');
+  const nameEl = document.getElementById('editDocNameInput'), urlEl = document.getElementById('editDocUrlInput');
   const rawUrl = (urlEl.value || '').trim();
   if (!isSafeHttpUrl(rawUrl)) { alert('कृपया वैध https:// (उदा. Google Drive) लिंक टाका!'); return; }
   if (tempEditDocs.length >= 5) { alert('एका ग्राहकासाठी कमाल ५ डॉक्युमेंट लिंक्स सेव्ह करता येतात.'); return; }
   tempEditDocs.push({ docName: (nameEl.value || '').trim() || 'Drive डॉक्युमेंट', url: rawUrl });
-  nameEl.value = ''; urlEl.value = '';
-  renderEditDocsPreview();
+  nameEl.value = ''; urlEl.value = ''; renderEditDocsPreview();
 }
 function removeSingleEditDoc(idx) { tempEditDocs.splice(idx, 1); renderEditDocsPreview(); }
 function renderEditDocsPreview() {
@@ -1299,13 +1301,8 @@ function deleteSingleInstallment(id, ym, idx) {
   const info = getMonthPaymentInfo(b, ym), removedAmt = (info.payments[idx] && info.payments[idx].amount) || 0;
   const newPayments = [...info.payments]; newPayments.splice(idx, 1);
   recordAudit(`${b.name}: ${formatMonthMarathi(ym)} हप्ता रद्द केला (₹${removedAmt})`);
-
-  if (!newPayments.length) {
-    deleteNestedMapKeyAndUpdate(id, `paidMonths.${ym}`, {});
-  } else {
-    const updatedPaidMonths = { ...(b.paidMonths || {}), [ym]: { amount: newPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0), payments: newPayments, compounded: false, ts: Date.now() } };
-    updateBorrowerFieldsAtomic(id, { paidMonths: updatedPaidMonths });
-  }
+  if (!newPayments.length) deleteNestedMapKeyAndUpdate(id, `paidMonths.${ym}`, {});
+  else updateBorrowerFieldsAtomic(id, { paidMonths: { ...(b.paidMonths || {}), [ym]: { amount: newPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0), payments: newPayments, compounded: false, ts: Date.now() } } });
 }
 function adjustPrincipal(id, mode) {
   const b = borrowers.find(x => String(x.id) === String(id)); if (!b) return;
@@ -1505,22 +1502,16 @@ function sanitizeImportedBorrowerItem(item, idx, baseTs) {
   const safeDocs = [];
   if (Array.isArray(item.docsList)) {
     item.docsList.slice(0, 5).forEach(d => {
-      if (d && typeof d.url === 'string' && isSafeHttpUrl(d.url)) {
-        safeDocs.push({ docName: String(d.docName || 'डॉक्युमेंट').slice(0, 80), url: d.url.trim() });
-      }
+      if (d && typeof d.url === 'string' && isSafeHttpUrl(d.url)) safeDocs.push({ docName: String(d.docName || 'डॉक्युमेंट').slice(0, 80), url: d.url.trim() });
     });
   }
 
   return {
-    id: rawId,
-    name: cleanName,
-    phone: typeof item.phone === 'string' ? item.phone.trim().slice(0, 20) : '',
+    id: rawId, name: cleanName, phone: typeof item.phone === 'string' ? item.phone.trim().slice(0, 20) : '',
     jobType: ['GOVERNMENT', 'PRIVATE', ''].includes(item.jobType) ? item.jobType : '',
     jobDept: typeof item.jobDept === 'string' ? item.jobDept.trim().slice(0, 80) : '',
     retirementDate: (typeof item.retirementDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(item.retirementDate)) ? item.retirementDate : '',
-    principal: cleanPrincipal,
-    rate: cleanRate,
-    interest: cleanInterest,
+    principal: cleanPrincipal, rate: cleanRate, interest: cleanInterest,
     startMonth: (typeof item.startMonth === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(item.startMonth)) ? item.startMonth : activeYm,
     guarantor: typeof item.guarantor === 'string' ? item.guarantor.trim().slice(0, 80) : '',
     dueDay: Math.min(31, Math.max(1, parseInt(item.dueDay, 10) || 10)),
@@ -1530,10 +1521,7 @@ function sanitizeImportedBorrowerItem(item, idx, baseTs) {
     docsList: safeDocs,
     principalEntries: Array.isArray(item.principalEntries) && item.principalEntries.length ? item.principalEntries.slice(0, 100) : [{ date: activeYm + '-01', amount: cleanPrincipal, type: 'GIVEN', note: 'सुरुवातीचे मुद्दल', ts: baseTs }],
     interestHistory: (item.interestHistory && typeof item.interestHistory === 'object') ? item.interestHistory : { [activeYm]: cleanInterest },
-    paidMonths: safePaidMonths,
-    customPastDues: safeCustomDues,
-    isDeleted: false,
-    updatedAt: baseTs
+    paidMonths: safePaidMonths, customPastDues: safeCustomDues, isDeleted: false, updatedAt: baseTs
   };
 }
 
@@ -1541,7 +1529,7 @@ async function exportEncryptedJsonBackup() {
   try {
     const active = borrowers.filter(b => !b.isDeleted);
     const customKey = document.getElementById('backupPasskeyInput') ? document.getElementById('backupPasskeyInput').value : '';
-    const plainJson = JSON.stringify({ app: 'VyajHishobPro', version: 'V11.9', exportedAt: new Date().toISOString(), borrowers: active });
+    const plainJson = JSON.stringify({ app: 'VyajHishobPro', version: 'V12.0', exportedAt: new Date().toISOString(), borrowers: active });
     const encryptedPkg = await encryptBackupJson(plainJson, customKey);
     triggerFileDownload(encryptedPkg, `Vyaj_Encrypted_Backup_${activeYm}.json`, "application/json");
     recordAudit('AES-GCM Encrypted JSON बॅकअप घेतला');
@@ -1559,7 +1547,6 @@ async function importJsonBackup(e) {
     try {
       const parsed = JSON.parse(ev.target.result);
       let rawList = null;
-
       if (parsed && parsed.encrypted === true && parsed.data) {
         const decryptedText = await decryptBackupJson(parsed);
         const decObj = JSON.parse(decryptedText);
@@ -1567,40 +1554,24 @@ async function importJsonBackup(e) {
       } else {
         rawList = Array.isArray(parsed) ? parsed : (parsed && Array.isArray(parsed.borrowers) ? parsed.borrowers : null);
       }
-
       if (!rawList || rawList.length === 0) { alert('❌ बॅकअप फाईलमध्ये वैध खात्यांची यादी नाही.'); return; }
 
-      const ts = Date.now();
-      const existingIds = new Set(borrowers.map(x => String(x.id)));
+      const ts = Date.now(), existingIds = new Set(borrowers.map(x => String(x.id)));
       let overwriteCollisions = false;
-
       const validatedList = rawList.map((it, idx) => {
         const clean = sanitizeImportedBorrowerItem(it, idx, ts);
         if (!clean) return null;
         if (existingIds.has(String(clean.id))) overwriteCollisions = true;
         return clean;
       }).filter(Boolean);
-
-      if (validatedList.length === 0) { alert('❌ सर्व रेकॉर्ड्स अमान्य आढळले; Import रद्द केला आहे.'); return; }
+      if (!validatedList.length) { alert('❌ सर्व रेकॉर्ड्स अमान्य आढळले; Import रद्द केला आहे.'); return; }
 
       let allowOverwriteExisting = false;
       if (overwriteCollisions) {
-        allowOverwriteExisting = confirm(
-          `⚠️ बॅकअपमधील काही खात्यांचा ID सध्याच्या खात्यांशी जुळतो आहे.\n\n` +
-          `• [OK] दाबल्यास जुने ID असलेली खाती बॅकअपनुसार अपडेट होतील.\n` +
-          `• [Cancel] दाबल्यास विद्यमान खाती बदलणार नाहीत; जुळणारी खाती स्वतंत्र नवीन ID ने जोडली जातील.`
-        );
-      } else if (!confirm(`${validatedList.length} वैध खाती क्लाउडवर Import करायची का?`)) {
-        return;
-      }
+        allowOverwriteExisting = confirm('⚠️ बॅकअपमधील काही खात्यांचा ID सध्याच्या खात्यांशी जुळतो आहे.\n• [OK] दाबल्यास जुने ID असलेली खाती अपडेट होतील.\n• [Cancel] दाबल्यास विद्यमान खाती सुरक्षित राहून जुळणारी खाती नवीन ID ने जोडली जातील.');
+      } else if (!confirm(`${validatedList.length} वैध खाती क्लाउडवर Import करायची का?`)) return;
 
-      const finalToWrite = validatedList.map((item, idx) => {
-        if (existingIds.has(String(item.id)) && !allowOverwriteExisting) {
-          return { ...item, id: `b_imp_${ts}_${idx}` };
-        }
-        return item;
-      });
-
+      const finalToWrite = validatedList.map((item, idx) => (existingIds.has(String(item.id)) && !allowOverwriteExisting) ? { ...item, id: `b_imp_${ts}_${idx}` } : item);
       setSyncStatus('syncing', '🟡 Importing...');
       for (let i = 0; i < finalToWrite.length; i += 400) {
         const batch = db.batch();
