@@ -22,7 +22,7 @@ async function ensurePersistenceEnabled() {
 }
 ensurePersistenceEnabled();
 
-// २. अ‍ॅप स्टेट, फिल्टर्स, गोपनीयता व Auto-lock टायमर
+// २. अ‍ॅप स्टेट, फिल्टर्स, गोपनीयता, रिमाइंडर व Auto-lock टायमर
 const state = {
   user: null,
   borrowers: [],
@@ -36,7 +36,10 @@ const state = {
   jobFilter: 'all',
   statusFilter: 'all',
   hideAmounts: false,
-  expandAllDetails: false
+  expandAllDetails: false,
+  selfWaNumber: localStorage.getItem('hishob_self_wa') || '',
+  todayPromisesCache: [],
+  pendingPartialCache: []
 };
 
 const currentYmDefault = () => {
@@ -53,7 +56,6 @@ const getLocalDateIso = (offsetDays = 0) => {
   return `${y}-${m}-${day}`;
 };
 
-// रकमा Hide/Show साठी हेल्पर
 function fmtAmt(val) {
   if (state.hideAmounts) return '₹••••';
   return `₹${Number(val || 0)}`;
@@ -61,6 +63,7 @@ function fmtAmt(val) {
 
 document.getElementById('bStartYm').value = currentYmDefault();
 document.getElementById('activeYm').value = currentYmDefault();
+document.getElementById('selfWaNumber').value = state.selfWaNumber;
 
 function resetAutoLockTimer() {
   if (state.autoLockTimer) {
@@ -82,24 +85,168 @@ document.getElementById('autoLockSelect').addEventListener('change', (e) => {
   resetAutoLockTimer();
 });
 
-// रकमा Hide / Show टॉगल
+// रकमा Hide / Show, Dark/Light Mode, Expand All
 document.getElementById('toggleHideAmtBtn').addEventListener('click', (e) => {
   state.hideAmounts = !state.hideAmounts;
   e.target.textContent = state.hideAmounts ? '👁️ रकमा दाखवा' : '👁️ रकमा लपवा';
   renderBorrowers();
 });
 
-// Dark / Light Mode टॉगल
 document.getElementById('toggleThemeBtn').addEventListener('click', (e) => {
   const isLight = document.body.classList.toggle('light-mode');
   e.target.textContent = isLight ? '🌙 Dark' : '☀️ Light';
 });
 
-// सर्व ग्राहकांचे तपशील एकत्र उघडणे / बंद करणे
 document.getElementById('toggleExpandAllBtn').addEventListener('click', (e) => {
   state.expandAllDetails = !state.expandAllDetails;
   e.target.textContent = state.expandAllDetails ? '📁 सर्व तपशील बंद करा' : '📂 सर्व तपशील उघडा';
   renderBorrowers();
+});
+
+// स्वतःचा WhatsApp नंबर सेव्ह करणे
+document.getElementById('saveWaNumberBtn').addEventListener('click', async () => {
+  const num = document.getElementById('selfWaNumber').value.replace(/\D/g, '');
+  const msgEl = document.getElementById('notifStatusMsg');
+  if (num.length < 10) {
+    msgEl.textContent = 'कृपया योग्य १० अंकी किंवा 91 सहित WhatsApp नंबर टाका.';
+    return;
+  }
+  const formatted = num.length === 10 ? `91${num}` : num;
+  state.selfWaNumber = formatted;
+  document.getElementById('selfWaNumber').value = formatted;
+  localStorage.setItem('hishob_self_wa', formatted);
+  if (state.user) {
+    try {
+      await db.collection('users').doc(state.user.uid).set({ selfWaNumber: formatted }, { merge: true });
+    } catch (_) {}
+  }
+  msgEl.textContent = `स्वतःचा WhatsApp नंबर (${formatted}) सेव्ह झाला.`;
+});
+
+function openSelfWhatsApp(messageText) {
+  const num = (state.selfWaNumber || document.getElementById('selfWaNumber').value || '').replace(/\D/g, '');
+  if (num.length < 10) {
+    alert('कृपया आधी तुमचा स्वतःचा WhatsApp नंबर सेव्ह करा.');
+    return;
+  }
+  const target = num.length === 10 ? `91${num}` : num;
+  const url = `https://wa.me/${target}?text=${encodeURIComponent(messageText)}`;
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+// आजच्या वायद्याची यादी WhatsApp वर
+document.getElementById('waTodayPromiseBtn').addEventListener('click', () => {
+  const todayStr = getLocalDateIso(0);
+  if (!state.todayPromisesCache.length) {
+    alert(`आज (${todayStr}) कोणत्याही ग्राहकाचा बाकी वायदा नाही.`);
+    return;
+  }
+  const lines = state.todayPromisesCache.map((x, idx) =>
+    `${idx + 1}. ${x.name} (${x.mobile || '-'}) — बाकी ₹${x.amount}`
+  );
+  const text = `🔔 *Hishob — आजच्या वायद्याची यादी (${todayStr})*\n\n${lines.join('\n')}`;
+  openSelfWhatsApp(text);
+});
+
+// बाकी / अर्धवट खात्यांची यादी WhatsApp वर
+document.getElementById('waPendingListBtn').addEventListener('click', () => {
+  const activeYm = document.getElementById('activeYm').value || currentYmDefault();
+  if (!state.pendingPartialCache.length) {
+    alert(`${activeYm} साठी कोणतेही बाकी किंवा अर्धवट खाते नाही.`);
+    return;
+  }
+  const lines = state.pendingPartialCache.map((x, idx) =>
+    `${idx + 1}. ${x.name} (${x.status === 'partial' ? 'अर्धवट' : 'बाकी'}) — ₹${x.totalPayable} | ${x.mobile || '-'}`
+  );
+  const text = `📋 *Hishob — बाकी / अर्धवट खात्यांची यादी (${activeYm})*\n\n${lines.join('\n')}`;
+  openSelfWhatsApp(text);
+});
+
+// सकाळचे मोबाईल Notification (Web Notification API)
+function showBrowserNotification(title, body) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  try {
+    new Notification(title, { body });
+  } catch (_) {}
+}
+
+document.getElementById('enableNotifBtn').addEventListener('click', async () => {
+  const msgEl = document.getElementById('notifStatusMsg');
+  if (!('Notification' in window)) {
+    msgEl.textContent = 'तुमच्या ब्राउझरमध्ये Notification सुविधा उपलब्ध नाही.';
+    return;
+  }
+  const perm = await Notification.requestPermission();
+  if (perm === 'granted') {
+    msgEl.textContent = '✅ मोबाईल Notification चालू झाले आहे! आजच्या वायद्यांसाठी सकाळी रिमाइंडर दिसेल.';
+    triggerDailyMorningNotification(true);
+  } else {
+    msgEl.textContent = 'Notification परवानगी नाकारली आहे.';
+  }
+});
+
+document.getElementById('testNotifBtn').addEventListener('click', () => {
+  if (!('Notification' in window)) {
+    alert('तुमच्या ब्राउझरमध्ये Notification उपलब्ध नाही.');
+    return;
+  }
+  if (Notification.permission !== 'granted') {
+    alert('कृपया आधी "🔔 सकाळचे Notification चालू करा" बटण दाबा.');
+    return;
+  }
+  const count = state.todayPromisesCache.length;
+  const body = count > 0
+    ? `आज ${count} ग्राहकांचे वायदे आहेत आणि ${state.pendingPartialCache.length} खाती बाकी/अर्धवट आहेत.`
+    : `आज कोणताही वायदा नाही. एकूण ${state.pendingPartialCache.length} खाती बाकी/अर्धवट आहेत.`;
+  showBrowserNotification('Hishob — रिमाइंडर अलर्ट', body);
+});
+
+function triggerDailyMorningNotification(force = false) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const todayStr = getLocalDateIso(0);
+  const lastSent = localStorage.getItem('hishob_last_notif_date');
+  if (!force && lastSent === todayStr) return;
+
+  if (state.todayPromisesCache.length > 0 || state.pendingPartialCache.length > 0) {
+    const promiseNames = state.todayPromisesCache.map(x => x.name).slice(0, 3).join(', ');
+    const body = state.todayPromisesCache.length > 0
+      ? `आजचे वायदे (${state.todayPromisesCache.length}): ${promiseNames} | एकूण बाकी खाती: ${state.pendingPartialCache.length}`
+      : `चालू महिन्याची बाकी/अर्धवट खाती: ${state.pendingPartialCache.length}`;
+    showBrowserNotification(`🔔 Hishob सकाळचा रिमाइंडर (${todayStr})`, body);
+    localStorage.setItem('hishob_last_notif_date', todayStr);
+  }
+}
+
+// Notification Bell Modal
+document.getElementById('notifBellBtn').addEventListener('click', () => {
+  const box = document.getElementById('notifModalContent');
+  const todayHtml = state.todayPromisesCache.length
+    ? state.todayPromisesCache.map(x => `
+        <div class="meta-box">
+          <strong>${escapeHtml(x.name)}</strong> (${escapeHtml(x.mobile || '-')}) — <strong class="err">${fmtAmt(x.amount)}</strong>
+        </div>
+      `).join('')
+    : '<p class="muted">आज कोणत्याही ग्राहकाचा वायदा नाही.</p>';
+
+  const pendingHtml = state.pendingPartialCache.length
+    ? state.pendingPartialCache.map(x => `
+        <div class="meta-box">
+          <strong>${escapeHtml(x.name)}</strong> (${x.status === 'partial' ? 'अर्धवट' : 'बाकी'}) — <strong class="warn-text">${fmtAmt(x.totalPayable)}</strong>
+        </div>
+      `).join('')
+    : '<p class="muted">सर्व खात्यांचे व्याज जमा आहे.</p>';
+
+  box.innerHTML = `
+    <h4>📅 आजचे वायदे (${state.todayPromisesCache.length})</h4>
+    ${todayHtml}
+    <h4 style="margin-top:12px;">⏳ बाकी / अर्धवट खाती (${state.pendingPartialCache.length})</h4>
+    ${pendingHtml}
+  `;
+  document.getElementById('notifModal').classList.remove('hidden');
+});
+
+document.getElementById('closeNotifModalBtn').addEventListener('click', () => {
+  document.getElementById('notifModal').classList.add('hidden');
 });
 
 // मराठी Voice Search
@@ -827,7 +974,7 @@ function jobLabel(jobType) {
   return '-';
 }
 
-// १२. Dashboard, आजचा अलर्ट, उद्याच्या वायद्याची यादी व ग्राहक यादी Render
+// १२. Dashboard, आजचा अलर्ट, उद्याच्या वायद्याची यादी, Due Counter व ग्राहक यादी Render
 function renderBorrowers() {
   const container = document.getElementById('borrowersList');
   const recycleContainer = document.getElementById('recycleBinList');
@@ -839,7 +986,6 @@ function renderBorrowers() {
   const deletedList = state.borrowers.filter(b => b.isDeleted);
   recycleCountBadge.textContent = String(deletedList.length);
 
-  // Dashboard आणि आज/उद्याच्या वायद्यांची गणना
   const todayStr = getLocalDateIso(0);
   const tomorrowStr = getLocalDateIso(1);
   let totalPrincipal = 0;
@@ -848,6 +994,7 @@ function renderBorrowers() {
   let totalPending = 0;
   const todayPromises = [];
   const tomorrowPromises = [];
+  const pendingOrPartial = [];
 
   const enriched = activeList.map(b => {
     const calc = computeLedgerUpToMonth(b, activeYm);
@@ -855,6 +1002,10 @@ function renderBorrowers() {
     totalExpectedInterest += calc.monthlyInterest;
     totalCollectedMonth += calc.collectedInMonth;
     totalPending += calc.totalPayable;
+
+    if (calc.status !== 'paid' && calc.totalPayable > 0) {
+      pendingOrPartial.push({ name: b.name, mobile: b.mobile, status: calc.status, totalPayable: calc.totalPayable });
+    }
 
     const pDates = [b.promiseDate1, b.promiseDate2, b.promiseDate3].filter(Boolean);
     if (pDates.includes(todayStr) && calc.totalPayable > 0) {
@@ -865,6 +1016,16 @@ function renderBorrowers() {
     }
     return { b, calc };
   });
+
+  state.todayPromisesCache = todayPromises;
+  state.pendingPartialCache = pendingOrPartial;
+
+  // Notification Bell Due Counter अपडेट
+  const dueCounter = todayPromises.length + pendingOrPartial.length;
+  document.getElementById('dueCounterBadge').textContent = String(dueCounter);
+
+  // सकाळचे Notification आपोआप तपासा (दिवसातून एकदा)
+  triggerDailyMorningNotification(false);
 
   // Dashboard अपडेट
   document.getElementById('dashActiveCount').textContent = `सक्रिय खाती: ${activeList.length}`;
@@ -899,7 +1060,7 @@ function renderBorrowers() {
     tmrCard.classList.add('hidden');
   }
 
-  // सर्च (नाव, मोबाईल, डिपार्टमेंट, जामीनदार) + नोकरी + स्थिती फिल्टर
+  // सर्च + फिल्टर
   const filtered = enriched.filter(({ b, calc }) => {
     if (state.jobFilter !== 'all' && b.jobType !== state.jobFilter) return false;
     if (state.statusFilter !== 'all' && calc.status !== state.statusFilter) return false;
@@ -921,13 +1082,13 @@ function renderBorrowers() {
         ? 'निश्चित व्याज'
         : `${b.rate || 0}% (${calc.interestType === 'flat' ? 'Flat' : 'Reducing'})`;
 
-      // रंगानुसार क्लास: पूर्ण जमा -> status-paid (हिरवा), अर्धवट -> status-partial (पिवळा), बाकी -> सामान्य
       const cardColorClass = calc.status === 'paid'
         ? 'status-paid'
         : calc.status === 'partial'
           ? 'status-partial'
           : '';
       const detailsHiddenClass = state.expandAllDetails ? '' : 'hidden';
+      const cleanMobile = String(b.mobile || '').replace(/\D/g, '');
 
       return `
         <div class="borrower-item ${cardColorClass}">
@@ -937,6 +1098,7 @@ function renderBorrowers() {
               <span class="badge ${calc.status}">${statusText}</span>
             </div>
             <div class="row">
+              ${cleanMobile ? `<button data-action="call-borrower" data-mobile="${escapeHtml(cleanMobile)}" class="success sm">📞 Call</button>` : ''}
               <button data-action="toggle-card-details" data-id="${b.id}" class="sm">तपशील</button>
               <button data-action="passbook" data-id="${b.id}" class="primary sm">📖 Passbook</button>
               <button data-action="full-edit" data-id="${b.id}" class="sm">✏️ Edit</button>
@@ -957,7 +1119,7 @@ function renderBorrowers() {
             </div>
 
             <div style="margin-top:8px;" class="row">
-              <button data-action="quick-mobile" data-id="${b.id}" data-val="${escapeHtml(b.mobile || '')}" class="sm">📱 मोबाईल Edit</button>
+              <button data-action="quick-mobile" data-id="${b.id}" data-val="${escapeHtml(b.mobile || '')}" class="sm">📱 मोबाईल Add/Edit</button>
               <button data-action="quick-guarantor" data-id="${b.id}" data-val="${escapeHtml(b.guarantor || '')}" class="sm">🤝 जामीनदार Edit</button>
               <button data-action="quick-day" data-id="${b.id}" data-val="${b.interestDay || ''}" class="sm">📅 व्याज तारीख Edit</button>
               <button data-action="add-manual-month" data-id="${b.id}" class="warn sm">+ Manual Pending Month</button>
@@ -1014,7 +1176,11 @@ document.getElementById('borrowersList').addEventListener('click', (e) => {
   const id = btn.getAttribute('data-id');
   const ym = btn.getAttribute('data-ym');
 
-  if (action === 'toggle-card-details') {
+  if (action === 'call-borrower') {
+    const mob = btn.getAttribute('data-mobile');
+    if (mob) window.location.href = `tel:${mob}`;
+  }
+  else if (action === 'toggle-card-details') {
     const el = document.getElementById(`cardDetails_${id}`);
     if (el) el.classList.toggle('hidden');
   }
@@ -1327,6 +1493,15 @@ auth.onAuthStateChanged(async (user) => {
   resetAutoLockTimer();
 
   const userRoot = db.collection('users').doc(user.uid);
+
+  // सेव्ह केलेला स्वतःचा WhatsApp नंबर Firestore मधून आणा
+  userRoot.get().then(docSnap => {
+    if (docSnap.exists && docSnap.data().selfWaNumber) {
+      state.selfWaNumber = docSnap.data().selfWaNumber;
+      document.getElementById('selfWaNumber').value = state.selfWaNumber;
+      localStorage.setItem('hishob_self_wa', state.selfWaNumber);
+    }
+  }).catch(() => {});
 
   state.unsubscribeBorrowers = userRoot.collection('borrowers').onSnapshot(
     (snap) => {
