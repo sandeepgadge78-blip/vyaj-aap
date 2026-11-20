@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#0f172a" />
+  <meta name="theme-color" content="#070c16" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://sandeepgadge78-blip.github.io; script-src 'self' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://*.googleusercontent.com https://api.qrserver.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://docs.google.com https://*.googleusercontent.com https://script.google.com https://script.googleusercontent.com; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com;" />
-  <title>Hishob — व्याज व कर्ज हिशोब (V12.9)</title>
+  <title>व्याज हिशोब वही (V13.0)</title>
 
   <link rel="manifest" href="./manifest.json" />
 
@@ -15,23 +15,23 @@
 
   <style>
     :root {
-      --bg: #0b1120;
-      --card: #111827;
-      --card-2: #1e293b;
+      --bg: #060a12;
+      --card: #0d1422;
+      --card-2: #152036;
       --text: #f8fafc;
       --muted: #94a3b8;
       --accent: #38bdf8;
       --accent-2: #22c55e;
       --danger: #ef4444;
       --warn: #f59e0b;
-      --border: #334155;
-      --paid-bg: rgba(21, 128, 61, 0.22);
+      --border: #24324d;
+      --paid-bg: rgba(21, 128, 61, 0.16);
       --paid-border: #22c55e;
-      --partial-bg: rgba(180, 83, 9, 0.24);
+      --partial-bg: rgba(180, 83, 9, 0.18);
       --partial-border: #f59e0b;
-      --closed-bg: rgba(100, 116, 139, 0.2);
-      --default-item-bg: rgba(30, 41, 59, 0.45);
-      --meta-bg: rgba(15, 23, 42, 0.65);
+      --closed-bg: rgba(100, 116, 139, 0.18);
+      --default-item-bg: #0d1422;
+      --meta-bg: #111b2e;
     }
     body.light-mode {
       --bg: #f1f5f9;
@@ -44,13 +44,13 @@
       --danger: #dc2626;
       --warn: #d97706;
       --border: #cbd5e1;
-      --paid-bg: rgba(34, 197, 94, 0.16);
+      --paid-bg: rgba(34, 197, 94, 0.14);
       --paid-border: #16a34a;
-      --partial-bg: rgba(245, 158, 11, 0.18);
+      --partial-bg: rgba(245, 158, 11, 0.16);
       --partial-border: #d97706;
-      --closed-bg: rgba(148, 163, 184, 0.22);
-      --default-item-bg: #f8fafc;
-      --meta-bg: #f1f5f9;
+      --closed-bg: rgba(148, 163, 184, 0.2);
+      --default-item-bg: #ffffff;
+      --meta-bg: #f8fafc;
     }
     * { box-sizing: border-box; }
     body {
@@ -58,55 +58,32 @@
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
       background: var(--bg);
       color: var(--text);
-      padding-bottom: 72px;
+      padding-bottom: 76px;
       transition: background 0.2s, color 0.2s;
     }
     header {
-      position: sticky;
-      top: 0;
-      z-index: 20;
-      background: var(--card);
-      border-bottom: 1px solid var(--border);
-      padding: 12px 16px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-      justify-content: space-between;
+      position: sticky; top: 0; z-index: 20;
+      background: var(--card); border-bottom: 1px solid var(--border);
+      padding: 10px 14px; display: flex; gap: 8px; align-items: center; justify-content: space-between;
     }
-    .brand { font-weight: 700; font-size: 1.05rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .brand { font-weight: 700; font-size: 1.02rem; display: flex; align-items: center; gap: 8px; }
     .badge {
-      font-size: 0.75rem;
-      padding: 3px 8px;
-      border-radius: 999px;
-      background: var(--card-2);
-      border: 1px solid var(--border);
-      color: var(--accent);
+      font-size: 0.72rem; padding: 3px 8px; border-radius: 999px;
+      background: var(--card-2); border: 1px solid var(--border); color: var(--accent);
     }
-    .badge.paid { color: #22c55e; border-color: #22c55e; }
-    .badge.partial { color: #f59e0b; border-color: #f59e0b; }
-    .badge.pending { color: #ef4444; border-color: #ef4444; }
+    .badge.paid { color: #22c55e; border-color: #22c55e; background: rgba(34,197,94,0.14); }
+    .badge.partial { color: #f59e0b; border-color: #f59e0b; background: rgba(245,158,11,0.14); }
+    .badge.pending { color: #ef4444; border-color: #ef4444; background: rgba(239,68,68,0.14); }
     .badge.closed { color: #94a3b8; border-color: #64748b; }
-    .bell-btn { position: relative; display: inline-flex; align-items: center; gap: 4px; }
+    .bell-btn { position: relative; display: inline-flex; align-items: center; gap: 3px; }
     .due-count-pill {
-      background: var(--danger);
-      color: #fff;
-      font-size: 0.72rem;
-      font-weight: 700;
-      padding: 1px 6px;
-      border-radius: 999px;
-      min-width: 18px;
-      text-align: center;
+      background: var(--danger); color: #fff; font-size: 0.68rem; font-weight: 700;
+      padding: 1px 5px; border-radius: 999px; min-width: 16px; text-align: center;
     }
     .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
     button, input, select, textarea {
-      background: var(--card-2);
-      color: var(--text);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 8px 10px;
-      font-size: 0.88rem;
-      font-family: inherit;
+      background: var(--card-2); color: var(--text); border: 1px solid var(--border);
+      border-radius: 8px; padding: 8px 10px; font-size: 0.88rem; font-family: inherit;
     }
     button { cursor: pointer; font-weight: 600; transition: 0.15s; }
     button:hover { border-color: var(--accent); }
@@ -114,149 +91,106 @@
     button.success { background: #15803d; border-color: #22c55e; color: #fff; }
     button.danger { background: #991b1b; border-color: #ef4444; color: #fff; }
     button.warn { background: #92400e; border-color: #f59e0b; color: #fff; }
-    button.sm { padding: 5px 9px; font-size: 0.8rem; }
-    button.filter-active { background: #0284c7; border-color: #0ea5e9; color: #fff; }
-    .container { max-width: 1060px; margin: 16px auto; padding: 0 14px; }
+    button.sm { padding: 5px 8px; font-size: 0.78rem; }
+    .container { max-width: 1020px; margin: 12px auto; padding: 0 12px; }
     .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 14px;
-      margin-bottom: 14px;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 14px; padding: 14px; margin-bottom: 12px;
     }
-    .dash-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 10px;
-      margin-top: 8px;
+
+    /* नमुन्याप्रमाणे मोठे महिना कार्ड व २x२ डॅशबोर्ड */
+    .month-hero-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+      padding: 16px 14px; text-align: center; margin-bottom: 12px;
     }
-    .dash-box {
-      background: var(--card-2);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 12px;
+    .month-hero-sub { font-size: 0.78rem; color: var(--muted); margin-bottom: 4px; }
+    .month-hero-title {
+      font-size: 1.75rem; font-weight: 800; color: #38bdf8;
+      margin: 2px 0 8px; cursor: pointer; display: inline-block;
     }
-    .dash-label { font-size: 0.78rem; color: var(--muted); }
-    .dash-val { font-size: 1.25rem; font-weight: 700; margin-top: 4px; }
-    .alert-banner {
-      background: rgba(239, 68, 68, 0.16);
-      border: 1px solid var(--danger);
-      border-radius: 10px;
-      padding: 10px 14px;
-      margin-bottom: 14px;
+    .month-hero-links {
+      display: flex; justify-content: center; align-items: center; gap: 8px;
+      font-size: 0.84rem; color: var(--muted); flex-wrap: wrap;
     }
-    .info-banner {
-      background: rgba(14, 165, 233, 0.16);
-      border: 1px solid var(--accent);
-      border-radius: 10px;
-      padding: 10px 14px;
-      margin-bottom: 14px;
+    .month-hero-links a, .month-hero-links button {
+      background: none; border: none; color: #cbd5e1; padding: 2px 4px;
+      font-size: 0.84rem; font-weight: 600; text-decoration: none;
     }
-    .grid-3 {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 10px;
+    .month-hero-links a:hover, .month-hero-links button:hover { color: #38bdf8; }
+
+    .grid-2x2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 12px; }
+    .stat-tile {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+      padding: 14px 12px; text-align: left;
     }
+    .stat-tile-lbl { font-size: 0.8rem; color: var(--muted); }
+    .stat-tile-val { font-size: 1.35rem; font-weight: 800; margin-top: 6px; }
+
+    /* राऊंडेड सर्च व पिल फिल्टर्स */
+    .search-pill-box {
+      width: 100%; border-radius: 999px !important; padding: 10px 16px !important;
+      background: var(--card) !important; border: 1px solid var(--border) !important;
+      margin-bottom: 10px;
+    }
+    .pill-strip {
+      display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 12px;
+      align-items: center;
+    }
+    .pill-btn {
+      border-radius: 999px; padding: 6px 12px; font-size: 0.78rem; white-space: nowrap;
+      background: var(--card); border: 1px solid var(--border); color: var(--text);
+    }
+    .pill-btn.filter-active { background: #1d4ed8; border-color: #3b82f6; color: #fff; }
+    .pill-btn.pill-paid.filter-active { background: #14532d; border-color: #22c55e; color: #4ade80; }
+    .pill-btn.pill-partial.filter-active { background: #713f12; border-color: #eab308; color: #facc15; }
+    .pill-btn.pill-pending.filter-active { background: #7f1d1d; border-color: #ef4444; color: #fca5a5; }
+
+    /* नमुन्याप्रमाणे स्वच्छ ग्राहक कार्ड */
+    .borrower-item {
+      border: 1px solid var(--border); border-radius: 16px; padding: 14px;
+      margin-bottom: 12px; background: var(--default-item-bg);
+    }
+    .borrower-item.status-paid { background: var(--paid-bg); border-color: rgba(34,197,94,0.45); }
+    .borrower-item.status-partial { background: var(--partial-bg); border-color: rgba(245,158,11,0.45); }
+    .borrower-item.status-closed { background: var(--closed-bg); opacity: 0.88; }
+    .b-card-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .b-card-name { font-size: 1.05rem; font-weight: 700; }
+    .b-3col {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+      margin: 12px 0 10px;
+    }
+    .b-3col-lbl { font-size: 0.75rem; color: var(--muted); }
+    .b-3col-val { font-size: 0.98rem; font-weight: 700; margin-top: 2px; }
+    .b-status-line { font-size: 0.86rem; font-weight: 600; margin-bottom: 10px; }
+    .b-detail-btn {
+      width: 100%; border-radius: 999px; padding: 9px 12px;
+      background: transparent; border: 1px solid var(--border); color: var(--text);
+      font-size: 0.86rem; font-weight: 600;
+    }
+    .b-detail-btn:hover { background: var(--card-2); border-color: var(--accent); }
+
+    .alert-banner { background: rgba(239, 68, 68, 0.16); border: 1px solid var(--danger); border-radius: 12px; padding: 10px 14px; margin-bottom: 12px; }
+    .info-banner { background: rgba(14, 165, 233, 0.16); border: 1px solid var(--accent); border-radius: 12px; padding: 10px 14px; margin-bottom: 12px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
     .field { display: flex; flex-direction: column; gap: 4px; }
     .field label { font-size: 0.78rem; color: var(--muted); }
-    .borrower-item {
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 12px;
-      margin-top: 10px;
-      background: var(--default-item-bg);
-      line-height: 1.55;
-      transition: background 0.2s, border-color 0.2s;
-    }
-    .borrower-item.status-paid {
-      background: var(--paid-bg);
-      border-color: var(--paid-border);
-      border-left: 5px solid var(--paid-border);
-    }
-    .borrower-item.status-partial {
-      background: var(--partial-bg);
-      border-color: var(--partial-border);
-      border-left: 5px solid var(--partial-border);
-    }
-    .borrower-item.status-closed {
-      background: var(--closed-bg);
-      border-color: #64748b;
-      border-left: 5px solid #64748b;
-      opacity: 0.88;
-    }
-    /* अर्धवट जमा प्रोग्रेस बार */
-    .partial-prog-wrap {
-      width: 100%; height: 7px; background: rgba(245, 158, 11, 0.3);
-      border-radius: 999px; overflow: hidden; margin: 6px 0;
-    }
+    .partial-prog-wrap { width: 100%; height: 7px; background: rgba(245, 158, 11, 0.3); border-radius: 999px; overflow: hidden; margin: 6px 0; }
     .partial-prog-fill { height: 100%; background: #22c55e; border-radius: 999px; }
-    .meta-box {
-      margin-top: 6px;
-      padding: 8px;
-      border-radius: 8px;
-      background: var(--meta-bg);
-      border: 1px solid var(--border);
-      font-size: 0.82rem;
-    }
-    .doc-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 10px;
-      margin-top: 10px;
-    }
-    .doc-card {
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 8px;
-      background: var(--meta-bg);
-      text-align: center;
-    }
+    .meta-box { margin-top: 6px; padding: 8px; border-radius: 8px; background: var(--meta-bg); border: 1px solid var(--border); font-size: 0.82rem; }
+    .doc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-top: 10px; }
+    .doc-card { border: 1px solid var(--border); border-radius: 8px; padding: 8px; background: var(--meta-bg); text-align: center; }
     .doc-card img { max-width: 100%; max-height: 150px; border-radius: 6px; object-fit: cover; }
     .muted { color: var(--muted); font-size: 0.84rem; }
     .ok { color: var(--accent-2); }
     .err { color: var(--danger); }
     .warn-text { color: var(--warn); }
-    .audit-box {
-      max-height: 220px;
-      overflow-y: auto;
-      font-size: 0.82rem;
-      background: var(--bg);
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-    }
+    .audit-box { max-height: 220px; overflow-y: auto; font-size: 0.82rem; background: var(--bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border); }
     table.passbook-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-top: 8px; }
     table.passbook-table th, table.passbook-table td { border: 1px solid var(--border); padding: 6px 8px; text-align: left; }
     table.passbook-table th { background: var(--card-2); color: var(--accent); }
-    #authScreen {
-      max-width: 420px;
-      margin: 48px auto;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 20px;
-    }
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(2, 6, 23, 0.82);
-      z-index: 50;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 14px;
-      overflow-y: auto;
-    }
-    .modal-card {
-      width: 100%;
-      max-width: 840px;
-      max-height: 92vh;
-      overflow-y: auto;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 16px;
-    }
+    #authScreen { max-width: 420px; margin: 48px auto; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.82); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 14px; overflow-y: auto; }
+    .modal-card { width: 100%; max-width: 840px; max-height: 92vh; overflow-y: auto; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
     .tab-bar { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0; }
     .tab-btn.active { background: #0284c7; border-color: #0ea5e9; color: #fff; }
     .hidden { display: none !important; }
@@ -265,10 +199,7 @@
     @media print {
       body * { visibility: hidden; }
       #printArea, #printArea * { visibility: visible; }
-      #printArea {
-        display: block; position: absolute; left: 0; top: 0; width: 100%;
-        color: #000 !important; background: #fff !important; padding: 12px;
-      }
+      #printArea { display: block; position: absolute; left: 0; top: 0; width: 100%; color: #000 !important; background: #fff !important; padding: 12px; }
       #printArea table { width: 100%; border-collapse: collapse; font-size: 12px; }
       #printArea th, #printArea td { border: 1px solid #333; padding: 5px; text-align: left; }
     }
@@ -278,31 +209,27 @@
 
   <header>
     <div class="brand">
-      <span>Hishob V12.9</span>
+      <span id="tBrandTitle">व्याज हिशोब वही</span>
       <span id="networkBadge" class="badge paid">Online 🟢</span>
-      <span id="syncStatus" class="badge">Offline / Ready</span>
+      <span id="syncStatus" class="badge">Synced</span>
     </div>
     <div id="topActions" class="row hidden">
-      <select id="langSelect" title="भाषा निवडा">
-        <option value="mr">मराठी</option>
-        <option value="hi">हिंदी</option>
-        <option value="en">English</option>
-      </select>
-      <button id="openPnlBtn" class="sm" title="Profit & Loss Report">📈 P&L</button>
-      <button id="openSecurityDashBtn" class="sm" title="Admin Security Dashboard">🛡️ Security</button>
       <button id="notifBellBtn" class="sm bell-btn" title="रिमाइंडर व थकबाकी सूचना">
         🔔 <span id="dueCounterBadge" class="due-count-pill">0</span>
       </button>
-      <span id="userEmailBadge" class="muted"></span>
-      <button id="toggleHideAmtBtn" class="sm" title="रकमा लपवा/दाखवा">👁️ रकमा लपवा</button>
-      <button id="toggleThemeBtn" class="sm" title="Dark / Light Mode">☀️ Light</button>
-      <select id="autoLockSelect" title="Auto-lock वेळ">
-        <option value="300000">Auto-lock: 5 min</option>
-        <option value="600000">Auto-lock: 10 min</option>
-        <option value="900000">Auto-lock: 15 min</option>
-      </select>
-      <button id="lockBtn" class="danger sm" title="लॉक व साइन-आउट">🔒 लॉक / लॉगआउट</button>
+      <button id="toggleHideAmtBtn" class="sm" title="रकमा लपवा/दाखवा">👁️</button>
+      <button id="toggleThemeBtn" class="sm" title="Dark / Light Mode">☀️</button>
       <span id="threeDotMenuSlot"></span>
+
+      <!-- मेन्यू व इतर बटणांसाठी संदर्भ (मुख्य स्क्रीन स्वच्छ ठेवण्यासाठी लपवलेले) -->
+      <span class="hidden">
+        <select id="langSelect"><option value="mr">मराठी</option><option value="hi">हिंदी</option><option value="en">English</option></select>
+        <button id="openPnlBtn">📈 P&L</button>
+        <button id="openSecurityDashBtn">🛡️ Security</button>
+        <span id="userEmailBadge"></span>
+        <select id="autoLockSelect"><option value="300000">5m</option><option value="600000">10m</option><option value="900000">15m</option></select>
+        <button id="lockBtn">🔒</button>
+      </span>
     </div>
   </header>
 
@@ -321,54 +248,63 @@
     </div>
   </div>
 
-  <!-- मुख्य अ‍ॅप स्क्रीन -->
+  <!-- मुख्य अ‍ॅप स्क्रीन (नमुन्याप्रमाणे स्वच्छ लेआउट) -->
   <main id="appScreen" class="container hidden">
 
     <div id="monthEndBanner" class="info-banner hidden"></div>
     <div id="todayPromiseAlert" class="alert-banner hidden"></div>
 
-    <!-- सर्व खाती Dashboard -->
-    <section class="card">
-      <div class="row" style="justify-content:space-between;">
-        <h3 id="tDashTitle" style="margin:0;">📊 सर्व खाती Dashboard</h3>
-        <div class="row">
-          <span id="dashActiveCount" class="badge">सक्रिय खाती: 0</span>
-          <span id="dashClosedCount" class="badge closed">बंद खाती: 0</span>
-        </div>
-      </div>
-      <div class="dash-grid">
-        <div class="dash-box"><div id="tLblPrincipal" class="dash-label">एकूण मुद्दल</div><div id="dashTotalPrincipal" class="dash-val">₹0</div></div>
-        <div class="dash-box"><div id="tLblExpected" class="dash-label">मासिक अपेक्षित व्याज</div><div id="dashExpectedInterest" class="dash-val">₹0</div></div>
-        <div class="dash-box"><div id="tLblCollected" class="dash-label">महिन्यात जमा रक्कम</div><div id="dashCollectedMonth" class="dash-val ok">₹0</div></div>
-        <div class="dash-box"><div id="tLblPending" class="dash-label">एकूण बाकी व्याज / थकबाकी</div><div id="dashTotalPending" class="dash-val err">₹0</div></div>
+    <!-- चालू खातेवही महिना कार्ड -->
+    <section class="month-hero-card">
+      <div class="month-hero-sub">चालू खातेवही महिना</div>
+      <div id="bigActiveMonthTitle" class="month-hero-title" title="महिना बदलण्यासाठी क्लिक करा">नोव्हेंबर 2026</div>
+      <div class="month-hero-links">
+        <button type="button" id="heroPdfLink">PDF</button>
+        <span>|</span>
+        <button type="button" id="heroExcelLink">Excel</button>
+        <span>|</span>
+        <button type="button" id="heroBackupLink">Backup</button>
+        <span class="hidden"><input type="month" id="activeYm" /></span>
       </div>
     </section>
 
-    <!-- WhatsApp, UPI ID व सकाळचे Notification रिमाइंडर -->
-    <section class="card">
-      <h3 id="tRemTitle" style="margin-top:0;">📲 WhatsApp, UPI QR व सकाळचे Notification रिमाइंडर</h3>
-      <div class="row" style="margin-bottom:8px;">
-        <input type="tel" id="selfWaNumber" placeholder="तुमचा स्वतःचा WhatsApp नंबर (उदा. 9198XXXXXXXX)" style="flex:1; min-width:210px;" />
-        <button id="saveWaNumberBtn" class="primary sm">नंबर सेव्ह करा</button>
-        <input type="text" id="selfUpiId" placeholder="तुमचा UPI ID (उदा. name@okaxis)" style="flex:1; min-width:200px;" />
-        <button id="saveUpiBtn" class="success sm">UPI सेव्ह करा</button>
+    <!-- २x२ प्रीमियम डॅशबोर्ड कार्ड्स -->
+    <section class="grid-2x2">
+      <div class="stat-tile">
+        <div class="stat-tile-lbl">एकूण खाती</div>
+        <div id="dashActiveCount" class="stat-tile-val">0</div>
       </div>
-      <div class="row" style="margin-bottom:8px;">
-        <button id="waTodayPromiseBtn" class="success sm">💬 आजच्या वायद्याची यादी (WhatsApp)</button>
-        <button id="waPendingListBtn" class="warn sm">💬 बाकी / अर्धवट यादी (WhatsApp)</button>
-        <button id="enableNotifBtn" class="primary sm">🔔 सकाळचे Notification चालू करा</button>
-        <button id="testNotifBtn" class="sm">🧪 Test Notification</button>
+      <div class="stat-tile">
+        <div class="stat-tile-lbl">एकूण मुद्दल</div>
+        <div id="dashTotalPrincipal" class="stat-tile-val">₹0</div>
       </div>
-      <div id="notifStatusMsg" class="muted"></div>
+      <div class="stat-tile">
+        <div class="stat-tile-lbl">मासिक व्याज</div>
+        <div id="dashExpectedInterest" class="stat-tile-val" style="color:#38bdf8;">₹0</div>
+      </div>
+      <div class="stat-tile">
+        <div class="stat-tile-lbl">बाकी व्याज</div>
+        <div id="dashTotalPending" class="stat-tile-val" style="color:#fb923c;">₹0</div>
+      </div>
     </section>
 
-    <!-- उद्याच्या वायद्याची यादी -->
-    <section id="tomorrowPromiseCard" class="card hidden">
-      <h3 style="margin-top:0;">📅 उद्याच्या वायद्याची यादी</h3>
-      <div id="tomorrowPromiseList"></div>
-    </section>
+    <!-- राऊंडेड सर्च बार व पिल फिल्टर्स -->
+    <input type="text" id="searchInput" class="search-pill-box" placeholder="🔍 नाव किंवा मोबाईल नंबर शोधा..." />
 
-    <!-- नवीन ग्राहक / कर्ज नोंद -->
+    <div class="pill-strip">
+      <button type="button" class="pill-btn filter-active" data-statusfilter="all">सर्व खाती</button>
+      <button type="button" class="pill-btn" data-jobfilter="govt">Govt</button>
+      <button type="button" class="pill-btn" data-jobfilter="private">Pvt</button>
+      <button type="button" class="pill-btn pill-paid" data-statusfilter="paid">पूर्ण जमा</button>
+      <button type="button" class="pill-btn pill-partial" data-statusfilter="partial">अर्धवट</button>
+      <button type="button" class="pill-btn pill-pending" data-statusfilter="pending">बाकी</button>
+      <button type="button" class="pill-btn" data-accfilter="closed">Closed</button>
+    </div>
+
+    <!-- ग्राहक यादी -->
+    <section id="borrowersList"></section>
+
+    <!-- अतिरिक्त विभाग (☰ मेन्यूमधून उघडण्यासाठी) -->
     <section class="card" id="addBorrowerSection">
       <h3 id="tAddTitle" style="margin-top:0;">नवीन ग्राहक / कर्ज नोंद</h3>
       <div class="grid-3">
@@ -411,61 +347,38 @@
         <label>ग्राहकाच्या खात्याला टीप (Note)</label>
         <textarea id="bNote" rows="2" placeholder="महत्त्वाची टीप लिहा..."></textarea>
       </div>
-      <div style="margin-top:10px;">
-        <button id="addBorrowerBtn" class="primary">+ ग्राहक / कर्ज जोडा</button>
-      </div>
+      <div style="margin-top:10px;"><button id="addBorrowerBtn" class="primary">+ ग्राहक / कर्ज जोडा</button></div>
     </section>
 
-    <!-- सक्रिय / बंद ग्राहकांची यादी, स्मार्ट सर्च, व्हॉइस सर्च व फिल्टर्स -->
     <section class="card">
-      <div class="row" style="justify-content:space-between; margin-bottom:10px;">
-        <h3 id="tLedgerTitle" style="margin:0;">मासिक हिशोब व जमा नोंद</h3>
-        <div class="row">
-          <label class="muted">महिना:</label>
-          <input type="month" id="activeYm" />
-          <button id="toggleExpandAllBtn" class="sm">📂 सर्व तपशील उघडा</button>
-        </div>
-      </div>
-
-      <div class="row" style="margin-bottom:10px;">
-        <input type="text" id="searchInput" placeholder="मराठी किंवा इंग्रजीत शोधा (उदा. harshad, BMC, मोबाईल)..." style="flex:1; min-width:220px;" />
-        <button id="voiceSearchBtn" class="primary sm" title="मराठीत बोलून शोधा">🎤 मराठी Voice Search</button>
-        <span id="voiceStatusMsg" class="muted"></span>
-      </div>
-
+      <h3 id="tRemTitle" style="margin-top:0;">📲 WhatsApp, UPI QR व सकाळचे Notification रिमाइंडर</h3>
       <div class="row" style="margin-bottom:8px;">
-        <span class="muted">खाते:</span>
-        <button class="sm filter-active" data-accfilter="active">Active</button>
-        <button class="sm" data-accfilter="closed">Closed</button>
-        <button class="sm" data-accfilter="all">सर्व</button>
-
-        <span class="muted" style="margin-left:8px;">नोकरी:</span>
-        <button class="sm filter-active" data-jobfilter="all">सर्व</button>
-        <button class="sm" data-jobfilter="govt">Government</button>
-        <button class="sm" data-jobfilter="private">Private</button>
-
-        <span class="muted" style="margin-left:8px;">स्थिती:</span>
-        <button class="sm filter-active" data-statusfilter="all">सर्व</button>
-        <button class="sm" data-statusfilter="paid">Paid Full (हिरवे)</button>
-        <button class="sm" data-statusfilter="partial">Partial (पिवळे)</button>
-        <button class="sm" data-statusfilter="pending">Unpaid (बाकी)</button>
+        <input type="tel" id="selfWaNumber" placeholder="स्वतःचा WhatsApp नंबर (9198XXXXXXXX)" style="flex:1; min-width:200px;" />
+        <button id="saveWaNumberBtn" class="primary sm">नंबर सेव्ह करा</button>
+        <input type="text" id="selfUpiId" placeholder="UPI ID (name@okaxis)" style="flex:1; min-width:190px;" />
+        <button id="saveUpiBtn" class="success sm">UPI सेव्ह करा</button>
       </div>
-
-      <div id="borrowersList"></div>
+      <div class="row" style="margin-bottom:8px;">
+        <button id="waTodayPromiseBtn" class="success sm">💬 आजचे वायदे (WA)</button>
+        <button id="waPendingListBtn" class="warn sm">💬 बाकी/अर्धवट (WA)</button>
+        <button id="enableNotifBtn" class="primary sm">🔔 सकाळचे Notification</button>
+        <button id="testNotifBtn" class="sm">🧪 Test</button>
+      </div>
+      <div id="notifStatusMsg" class="muted"></div>
+      <div id="tomorrowPromiseCard" class="hidden" style="margin-top:8px;"><div id="tomorrowPromiseList"></div></div>
     </section>
 
-    <!-- रिपोर्ट्स, CSV, Android Share, Archive, Scheduled Cloud Backup, Vault, Gmail व Webhook -->
     <section class="card">
-      <h3 id="tReportsTitle" style="margin-top:0;">📑 रिपोर्ट्स, CSV, Android Share, Backup व Webhook</h3>
+      <h3 id="tReportsTitle" style="margin-top:0;">📑 रिपोर्ट्स, CSV, Share, Backup व Webhook</h3>
       <div class="row" style="margin-bottom:10px;">
-        <button id="printMonthlyPdfBtn" class="primary sm">🖨️ महिन्याचा PDF / Print रिपोर्ट</button>
-        <button id="exportMonthlyCsvBtn" class="success sm">📊 महिन्याची Excel CSV</button>
-        <button id="shareMonthlyCsvBtn" class="primary sm">📤 Android Share (CSV)</button>
-        <button id="exportAllCsvBtn" class="success sm">📑 संपूर्ण खात्यांची CSV</button>
+        <button id="printMonthlyPdfBtn" class="primary sm">🖨️ महिन्याचा PDF</button>
+        <button id="exportMonthlyCsvBtn" class="success sm">📊 महिन्याची CSV</button>
+        <button id="shareMonthlyCsvBtn" class="primary sm">📤 Share CSV</button>
+        <button id="exportAllCsvBtn" class="success sm">📑 संपूर्ण CSV</button>
         <button id="gmailReportBtn" class="warn sm">📧 Gmail Report</button>
       </div>
       <div class="row" style="margin-bottom:10px;">
-        <label class="muted">Scheduled Cloud Backup:</label>
+        <label class="muted">Scheduled Backup:</label>
         <select id="scheduledBackupSelect">
           <option value="off">बंद (Manual)</option>
           <option value="daily">दररोज (Daily)</option>
@@ -479,224 +392,109 @@
         <button id="importCsvBtn" class="primary sm">📥 CSV Import</button>
       </div>
       <div class="row" style="margin-bottom:10px;">
-        <input type="text" id="sheetUrlInput" placeholder="Google Sheet CSV / Export URL किंवा Sheet ID" style="flex:1; min-width:220px;" />
-        <button id="importSheetBtn" class="primary sm">Google Sheet Import</button>
+        <input type="text" id="sheetUrlInput" placeholder="Google Sheet URL किंवा ID" style="flex:1; min-width:200px;" />
+        <button id="importSheetBtn" class="primary sm">Sheet Import</button>
       </div>
       <div class="row" style="margin-bottom:10px;">
-        <input type="url" id="webhookUrlInput" placeholder="Google Apps Script Webhook URL" style="flex:1; min-width:220px;" />
-        <button id="saveWebhookBtn" class="sm">URL सेव्ह करा</button>
-        <button id="sendWebhookBtn" class="primary sm">🚀 Webhook वर पाठवा</button>
+        <input type="url" id="webhookUrlInput" placeholder="Google Apps Script Webhook URL" style="flex:1; min-width:200px;" />
+        <button id="saveWebhookBtn" class="sm">URL सेव्ह</button>
+        <button id="sendWebhookBtn" class="primary sm">🚀 Webhook</button>
       </div>
       <div class="row" style="margin-bottom:10px;">
-        <input type="password" id="backupPasskey" placeholder="मजबूत Passkey (किमान 6 अक्षरे)" />
-        <button id="exportEncBtn" class="success sm">🔐 Encrypted Backup (+SHA-256)</button>
+        <input type="password" id="backupPasskey" placeholder="Passkey (किमान 6 अक्षरे)" />
+        <button id="exportEncBtn" class="success sm">🔐 Encrypted Backup</button>
         <input type="file" id="importEncFile" accept=".json,.txt" />
-        <button id="importEncBtn" class="sm">🔓 Encrypted Restore</button>
+        <button id="importEncBtn" class="sm">🔓 Restore</button>
       </div>
-      <div class="row" style="margin-bottom:10px;">
-        <button id="saveLocalVaultBtn" class="warn sm">🛡️ Emergency Local Vault सेव्ह</button>
-        <button id="restoreLocalVaultBtn" class="sm">♻️ Local Vault Restore</button>
-        <button id="saveCloudBackupBtn" class="primary sm">☁️ Cloud Backup सेव्ह</button>
-        <button id="saveMonthlyArchiveBtn" class="primary sm">📦 महिन्याचा Archive सेव्ह</button>
+      <div class="row">
+        <button id="saveLocalVaultBtn" class="warn sm">🛡️ Local Vault</button>
+        <button id="restoreLocalVaultBtn" class="sm">♻️ Vault Restore</button>
+        <button id="saveCloudBackupBtn" class="primary sm">☁️ Cloud Backup</button>
+        <button id="saveMonthlyArchiveBtn" class="primary sm">📦 Archive</button>
       </div>
       <div id="ioMsg" class="muted" style="margin-top:8px;"></div>
       <div id="shaDigestBox" class="meta-box hidden"></div>
     </section>
 
-    <!-- EMI Simulator -->
     <section class="card">
       <h3 style="margin-top:0;">🧮 EMI Simulator</h3>
       <div class="grid-3">
-        <div class="field"><label>कर्ज रक्कम / मुद्दल (₹)</label><input type="number" id="emiPrincipal" value="100000" min="1" /></div>
-        <div class="field"><label>मासिक व्याज दर (%)</label><input type="number" id="emiMonthlyRate" value="2" step="0.1" min="0" /></div>
-        <div class="field"><label>कालावधी (महिने)</label><input type="number" id="emiMonths" value="12" min="1" /></div>
-        <div class="field">
-          <label>पद्धत</label>
-          <select id="emiType">
-            <option value="reducing">Reducing Balance EMI</option>
-            <option value="flat">Flat Interest EMI</option>
-          </select>
-        </div>
+        <div class="field"><label>मुद्दल (₹)</label><input type="number" id="emiPrincipal" value="100000" min="1" /></div>
+        <div class="field"><label>व्याज दर (%)</label><input type="number" id="emiMonthlyRate" value="2" step="0.1" min="0" /></div>
+        <div class="field"><label>महिने</label><input type="number" id="emiMonths" value="12" min="1" /></div>
+        <div class="field"><label>पद्धत</label><select id="emiType"><option value="reducing">Reducing</option><option value="flat">Flat</option></select></div>
       </div>
-      <div class="row" style="margin-top:10px;">
-        <button id="calcEmiBtn" class="primary">EMI मोजा</button>
-      </div>
-      <div id="emiResult" class="meta-box" style="margin-top:10px;">रक्कम, दर आणि महिने टाकून 'EMI मोजा' दाबा.</div>
+      <div style="margin-top:10px;"><button id="calcEmiBtn" class="primary">EMI मोजा</button></div>
+      <div id="emiResult" class="meta-box" style="margin-top:10px;">'EMI मोजा' दाबा.</div>
     </section>
 
-    <!-- Recycle Bin -->
     <section class="card">
       <div class="row" style="justify-content:space-between;">
-        <h3 style="margin:0;">🗑️ Recycle Bin (डिलीट केलेले ग्राहक)</h3>
+        <h3 style="margin:0;">🗑️ Recycle Bin</h3>
         <span id="recycleCountBadge" class="badge">0</span>
       </div>
       <div id="recycleBinList" style="margin-top:8px;"></div>
     </section>
 
-    <!-- Audit Log -->
     <section class="card">
-      <h3 style="margin-top:0;">Audit Log (केवळ नवीन नोंद)</h3>
+      <h3 style="margin-top:0;">Audit Log</h3>
       <div id="auditList" class="audit-box"></div>
     </section>
 
+    <span id="dashClosedCount" class="hidden"></span>
+    <span id="dashCollectedMonth" class="hidden"></span>
+    <span id="tDashTitle" class="hidden"></span>
+    <span id="tLblPrincipal" class="hidden"></span>
+    <span id="tLblExpected" class="hidden"></span>
+    <span id="tLblCollected" class="hidden"></span>
+    <span id="tLblPending" class="hidden"></span>
+    <span id="tLedgerTitle" class="hidden"></span>
+    <button id="toggleExpandAllBtn" class="hidden"></button>
+    <button id="voiceSearchBtn" class="hidden"></button>
+    <span id="voiceStatusMsg" class="hidden"></span>
+
   </main>
 
-  <!-- वचनचिट्ठी / UPI QR Code Modal -->
-  <div id="smartInfoModal" class="modal-backdrop hidden">
-    <div class="modal-card" style="max-width:540px;">
-      <div class="row" style="justify-content:space-between; margin-bottom:10px;">
-        <h3 id="smartInfoTitle" style="margin:0;">माहिती</h3>
-        <div class="row">
-          <button id="printSmartInfoBtn" class="primary sm">🖨️ प्रिंट / PDF</button>
-          <button id="closeSmartInfoBtn" class="danger sm">बंद करा</button>
-        </div>
-      </div>
-      <div id="smartInfoBody"></div>
-    </div>
-  </div>
+  <!-- Modals -->
+  <div id="smartInfoModal" class="modal-backdrop hidden"><div class="modal-card" style="max-width:540px;"><div class="row" style="justify-content:space-between; margin-bottom:10px;"><h3 id="smartInfoTitle" style="margin:0;">माहिती</h3><div class="row"><button id="printSmartInfoBtn" class="primary sm">🖨️ प्रिंट</button><button id="closeSmartInfoBtn" class="danger sm">बंद करा</button></div></div><div id="smartInfoBody"></div></div></div>
+  <div id="pnlModal" class="modal-backdrop hidden"><div class="modal-card"><div class="row" style="justify-content:space-between; margin-bottom:10px;"><h3 style="margin:0;">📈 Profit & Loss अहवाल</h3><button id="closePnlModalBtn" class="danger sm">बंद करा</button></div><div id="pnlContent"></div></div></div>
+  <div id="securityModal" class="modal-backdrop hidden"><div class="modal-card"><div class="row" style="justify-content:space-between; margin-bottom:10px;"><h3 style="margin:0;">🛡️ Admin Security Dashboard</h3><button id="closeSecurityModalBtn" class="danger sm">बंद करा</button></div><div class="dash-grid"><div class="dash-box"><div class="dash-label">File Scans</div><div id="secScanCount" class="dash-val">0</div></div><div class="dash-box"><div class="dash-label">Quarantine</div><div id="secQuarantineCount" class="dash-val warn-text">0</div></div><div class="dash-box"><div class="dash-label">Blocked</div><div id="secBlockedCount" class="dash-val err">0</div></div><div class="dash-box"><div class="dash-label">Network</div><div id="secNetSync" class="dash-val ok" style="font-size:0.95rem;">Online</div></div></div><div class="row" style="margin-top:12px;"><button id="runDiagnosticsBtn" class="primary sm">🔍 Diagnostics</button></div><div id="diagnosticsResult" class="meta-box" style="margin-top:8px;"></div><h4 style="margin-bottom:6px;">🚨 Threat Log</h4><div id="threatLogBox" class="audit-box"></div></div></div>
+  <div id="versionModal" class="modal-backdrop hidden"><div class="modal-card"><div class="row" style="justify-content:space-between; margin-bottom:10px;"><h3 id="versionModalTitle" style="margin:0;">🕒 Version History</h3><button id="closeVersionModalBtn" class="danger sm">बंद करा</button></div><div id="versionModalContent"></div></div></div>
+  <div id="notifModal" class="modal-backdrop hidden"><div class="modal-card"><div class="row" style="justify-content:space-between; margin-bottom:10px;"><h3 style="margin:0;">🔔 रिमाइंडर व थकबाकी</h3><button id="closeNotifModalBtn" class="danger sm">बंद करा</button></div><div id="notifModalContent"></div></div></div>
+  <div id="docsModal" class="modal-backdrop hidden"><div class="modal-card"><div class="row" style="justify-content:space-between; margin-bottom:10px;"><h3 id="docsModalTitle" style="margin:0;">📎 Document Gallery</h3><button id="closeDocsModalBtn" class="danger sm">बंद करा</button></div><div class="row" style="margin-bottom:10px;"><input type="text" id="docNameInput" placeholder="डॉक्युमेंटचे नाव" style="flex:1; min-width:180px;" /><input type="file" id="docFileInput" accept="image/jpeg,image/png,image/webp" /><button id="uploadDocBtn" class="success sm">⬆️ Upload</button></div><div id="docUploadMsg" class="muted"></div><div id="docGalleryGrid" class="doc-grid"></div></div></div>
 
-  <!-- Profit & Loss Report Modal -->
-  <div id="pnlModal" class="modal-backdrop hidden">
-    <div class="modal-card">
-      <div class="row" style="justify-content:space-between; margin-bottom:10px;">
-        <h3 style="margin:0;">📈 Profit & Loss (नफा-तोटा) अहवाल</h3>
-        <button id="closePnlModalBtn" class="danger sm">बंद करा</button>
-      </div>
-      <div id="pnlContent"></div>
-    </div>
-  </div>
-
-  <!-- Admin Security Dashboard Modal -->
-  <div id="securityModal" class="modal-backdrop hidden">
-    <div class="modal-card">
-      <div class="row" style="justify-content:space-between; margin-bottom:10px;">
-        <h3 style="margin:0;">🛡️ Admin Security Dashboard & Diagnostics</h3>
-        <button id="closeSecurityModalBtn" class="danger sm">बंद करा</button>
-      </div>
-      <div class="dash-grid">
-        <div class="dash-box"><div class="dash-label">File Scan Counter</div><div id="secScanCount" class="dash-val">0</div></div>
-        <div class="dash-box"><div class="dash-label">Quarantine Counter</div><div id="secQuarantineCount" class="dash-val warn-text">0</div></div>
-        <div class="dash-box"><div class="dash-label">Blocked Threats</div><div id="secBlockedCount" class="dash-val err">0</div></div>
-        <div class="dash-box"><div class="dash-label">Network / Sync</div><div id="secNetSync" class="dash-val ok" style="font-size:0.95rem;">Online</div></div>
-      </div>
-      <div class="row" style="margin-top:12px;">
-        <button id="runDiagnosticsBtn" class="primary sm">🔍 Security Diagnostics चालवा</button>
-      </div>
-      <div id="diagnosticsResult" class="meta-box" style="margin-top:8px;">तपासणीसाठी 'Security Diagnostics चालवा' दाबा.</div>
-      <h4 style="margin-bottom:6px;">🚨 Threat Log</h4>
-      <div id="threatLogBox" class="audit-box">कोणताही धोका आढळला नाही.</div>
-    </div>
-  </div>
-
-  <!-- Version History & Conflict Rollback Modal -->
-  <div id="versionModal" class="modal-backdrop hidden">
-    <div class="modal-card">
-      <div class="row" style="justify-content:space-between; margin-bottom:10px;">
-        <h3 id="versionModalTitle" style="margin:0;">🕒 Version History व Conflict Rollback</h3>
-        <button id="closeVersionModalBtn" class="danger sm">बंद करा</button>
-      </div>
-      <div id="versionModalContent"></div>
-    </div>
-  </div>
-
-  <!-- Notification Bell Modal -->
-  <div id="notifModal" class="modal-backdrop hidden">
-    <div class="modal-card">
-      <div class="row" style="justify-content:space-between; margin-bottom:10px;">
-        <h3 style="margin:0;">🔔 आजचे रिमाइंडर व थकबाकी यादी</h3>
-        <button id="closeNotifModalBtn" class="danger sm">बंद करा</button>
-      </div>
-      <div id="notifModalContent"></div>
-    </div>
-  </div>
-
-  <!-- Document Upload & Gallery Modal -->
-  <div id="docsModal" class="modal-backdrop hidden">
-    <div class="modal-card">
-      <div class="row" style="justify-content:space-between; margin-bottom:10px;">
-        <h3 id="docsModalTitle" style="margin:0;">📎 ग्राहक Document Gallery</h3>
-        <button id="closeDocsModalBtn" class="danger sm">बंद करा</button>
-      </div>
-      <div class="row" style="margin-bottom:10px;">
-        <input type="text" id="docNameInput" placeholder="डॉक्युमेंटचे नाव (उदा. करारपत्र, चेक)" style="flex:1; min-width:180px;" />
-        <input type="file" id="docFileInput" accept="image/jpeg,image/png,image/webp" />
-        <button id="uploadDocBtn" class="success sm">⬆️ Upload करा</button>
-      </div>
-      <div id="docUploadMsg" class="muted"></div>
-      <div id="docGalleryGrid" class="doc-grid"></div>
-    </div>
-  </div>
-
-  <!-- संपूर्ण माहिती Edit Modal -->
   <div id="editModal" class="modal-backdrop hidden">
     <div class="modal-card">
-      <div class="row" style="justify-content:space-between; margin-bottom:10px;">
-        <h3 style="margin:0;">ग्राहकाची संपूर्ण माहिती Edit करा</h3>
-        <button id="closeEditModalBtn" class="danger sm">बंद करा</button>
-      </div>
+      <div class="row" style="justify-content:space-between; margin-bottom:10px;"><h3 style="margin:0;">संपूर्ण माहिती Edit करा</h3><button id="closeEditModalBtn" class="danger sm">बंद करा</button></div>
       <input type="hidden" id="eId" />
       <div class="grid-3">
-        <div class="field"><label>ग्राहकाचे नाव *</label><input type="text" id="eName" /></div>
-        <div class="field"><label>कर्ज खाते नाव / क्रमांक</label><input type="text" id="eLoanLabel" /></div>
-        <div class="field"><label>मोबाईल नंबर</label><input type="tel" id="eMobile" /></div>
+        <div class="field"><label>नाव *</label><input type="text" id="eName" /></div>
+        <div class="field"><label>कर्ज खाते नाव</label><input type="text" id="eLoanLabel" /></div>
+        <div class="field"><label>मोबाईल</label><input type="tel" id="eMobile" /></div>
         <div class="field"><label>सध्याचे मुद्दल (₹)</label><input type="number" id="ePrincipal" min="0" /></div>
-        <div class="field"><label>मूळ मुद्दल (Flat साठी ₹)</label><input type="number" id="eOriginalPrincipal" min="0" /></div>
-        <div class="field"><label>मुद्दल दिल्याची तारीख</label><input type="date" id="eLoanDate" /></div>
-        <div class="field"><label>हिशोब सुरू महिना</label><input type="month" id="eStartYm" /></div>
+        <div class="field"><label>मूळ मुद्दल (₹)</label><input type="number" id="eOriginalPrincipal" min="0" /></div>
+        <div class="field"><label>मुद्दल तारीख</label><input type="date" id="eLoanDate" /></div>
+        <div class="field"><label>सुरू महिना</label><input type="month" id="eStartYm" /></div>
         <div class="field"><label>व्याज दर (%)</label><input type="number" id="eRate" step="0.01" /></div>
-        <div class="field"><label>महिन्याचे व्याज (₹ — ऑटो/निश्चित)</label><input type="number" id="eFixedInterest" min="0" /></div>
-        <div class="field">
-          <label>व्याज पद्धत</label>
-          <select id="eInterestType">
-            <option value="reducing">Reducing Balance</option>
-            <option value="flat">Flat Interest</option>
-          </select>
-        </div>
-        <div class="field"><label>दरमहा व्याजाची तारीख (1-31)</label><input type="number" id="eInterestDay" min="1" max="31" /></div>
-        <div class="field"><label>दररोजचा विलंब दंड (₹)</label><input type="number" id="eLateFee" min="0" /></div>
+        <div class="field"><label>महिन्याचे व्याज (₹)</label><input type="number" id="eFixedInterest" min="0" /></div>
+        <div class="field"><label>व्याज पद्धत</label><select id="eInterestType"><option value="reducing">Reducing</option><option value="flat">Flat</option></select></div>
+        <div class="field"><label>व्याज तारीख (1-31)</label><input type="number" id="eInterestDay" min="1" max="31" /></div>
+        <div class="field"><label>विलंब दंड (₹/दिन)</label><input type="number" id="eLateFee" min="0" /></div>
         <div class="field"><label>मुख्य जामीनदार</label><input type="text" id="eGuarantor" /></div>
         <div class="field"><label>अतिरिक्त जामीनदार</label><input type="text" id="eExtraGuarantors" /></div>
-        <div class="field">
-          <label>नोकरीचा प्रकार</label>
-          <select id="eJobType">
-            <option value="">निवडा</option>
-            <option value="govt">सरकारी नोकरी</option>
-            <option value="private">खाजगी नोकरी</option>
-            <option value="business">व्यवसाय / इतर</option>
-          </select>
-        </div>
-        <div class="field"><label>कंपनी / डिपार्टमेंट</label><input type="text" id="eCompanyDept" /></div>
+        <div class="field"><label>नोकरी</label><select id="eJobType"><option value="">निवडा</option><option value="govt">सरकारी</option><option value="private">खाजगी</option><option value="business">व्यवसाय</option></select></div>
+        <div class="field"><label>डिपार्टमेंट / कंपनी</label><input type="text" id="eCompanyDept" /></div>
         <div class="field"><label>Retirement Date</label><input type="date" id="eRetirementDate" /></div>
-        <div class="field"><label>वायदा तारीख १</label><input type="date" id="ePromise1" /></div>
-        <div class="field"><label>वायदा तारीख २</label><input type="date" id="ePromise2" /></div>
-        <div class="field"><label>वायदा तारीख ३</label><input type="date" id="ePromise3" /></div>
+        <div class="field"><label>वायदा १</label><input type="date" id="ePromise1" /></div>
+        <div class="field"><label>वायदा २</label><input type="date" id="ePromise2" /></div>
+        <div class="field"><label>वायदा ३</label><input type="date" id="ePromise3" /></div>
       </div>
-      <div class="field" style="margin-top:10px;">
-        <label>खात्याची टीप</label>
-        <textarea id="eNote" rows="2"></textarea>
-      </div>
-      <div class="row" style="margin-top:12px;">
-        <button id="saveEditBtn" class="success">बदल सेव्ह करा</button>
-      </div>
+      <div class="field" style="margin-top:10px;"><label>टीप</label><textarea id="eNote" rows="2"></textarea></div>
+      <div class="row" style="margin-top:12px;"><button id="saveEditBtn" class="success">बदल सेव्ह करा</button></div>
     </div>
   </div>
 
-  <!-- Passbook / Payment History / Financial Timeline Modal -->
-  <div id="passbookModal" class="modal-backdrop hidden">
-    <div class="modal-card">
-      <div class="row" style="justify-content:space-between;">
-        <h3 id="pbTitle" style="margin:0;">ग्राहक Passbook व Timeline</h3>
-        <button id="closePassbookBtn" class="danger sm">बंद करा</button>
-      </div>
-      <div class="tab-bar">
-        <button class="tab-btn active sm" data-pbtab="passbook">📖 Passbook</button>
-        <button class="tab-btn sm" data-pbtab="timeline">🕒 Financial Timeline</button>
-        <button class="tab-btn sm" data-pbtab="payments">💰 Payment History</button>
-        <button class="tab-btn sm" data-pbtab="principals">📊 मुद्दल नोंदी</button>
-      </div>
-      <div id="pbContent"></div>
-    </div>
-  </div>
+  <div id="passbookModal" class="modal-backdrop hidden"><div class="modal-card"><div class="row" style="justify-content:space-between;"><h3 id="pbTitle" style="margin:0;">Passbook</h3><button id="closePassbookBtn" class="danger sm">बंद करा</button></div><div class="tab-bar"><button class="tab-btn active sm" data-pbtab="passbook">📖 Passbook</button><button class="tab-btn sm" data-pbtab="timeline">🕒 Timeline</button><button class="tab-btn sm" data-pbtab="payments">💰 Payments</button><button class="tab-btn sm" data-pbtab="principals">📊 मुद्दल</button></div><div id="pbContent"></div></div></div>
 
   <script src="./app.js"></script>
   <script src="./dashboard.js"></script>
