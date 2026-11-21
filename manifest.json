@@ -1,11 +1,18 @@
 {
-  "name": "Hishob — व्याज व कर्ज हिशोब",
-  "short_name": "Hishob",
-  "description": "सुरक्षित व्याज व कर्ज हिशोब अ‍ॅप (V12.0)",
+  "name": "व्याज हिशोब वही (Hishob)",
+  "short_name": "हिशोब वही",
+  "description": "सुरक्षित व्याज व कर्ज हिशोब अ‍ॅप",
   "start_url": "./index.html",
-  "scope": "./",
   "display": "standalone",
-  "background_color": "#0b1120",
-  "theme_color": "#0f172a",
-  "orientation": "portrait"
+  "background_color": "#05070e",
+  "theme_color": "#05070e",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2830/2830284.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
 }
