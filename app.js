@@ -1,4 +1,4 @@
-// १. Hishob (hishob-4b548) साठी अचूक Firebase Configuration (V13.7)
+// १. Hishob (hishob-4b548) साठी अचूक Firebase Configuration (V13.9)
 const firebaseConfig = {
   apiKey: "AIzaSyDYpC1Pdm9jDtmNlT2J6BOPzk88QvBo8ds",
   authDomain: "hishob-4b548.firebaseapp.com",
@@ -19,23 +19,75 @@ async function ensurePersistenceEnabled() {
 }
 ensurePersistenceEnabled();
 
-// नवीन सुटसुटीत कार्ड डिझाईनसाठी CSS (Dark व Light दोन्ही मोडसाठी)
+// नवीन ग्राहक कार्ड (V13.9) व आतल्या तपशील कार्डसाठी CSS (Dark व Light दोन्ही मोडसाठी)
 (function injectStructuredCardStyles() {
   if (document.getElementById('hishobStructuredCardCss')) return;
   const st = document.createElement('style');
   st.id = 'hishobStructuredCardCss';
   st.textContent = `
+    /* नवीन कॉम्पॅक्ट ग्राहक कार्ड (डाव्या बाजूला रंगीत पट्टीसह) */
+    .borrower-item.nc-card {
+      padding: 0; overflow: hidden; border-left: 5px solid #0284c7;
+      border-radius: 14px; transition: border-color 0.2s;
+    }
+    .borrower-item.nc-card.status-paid { border-left-color: #22c55e; }
+    .borrower-item.nc-card.status-partial { border-left-color: #f59e0b; }
+    .borrower-item.nc-card.status-closed { border-left-color: #64748b; }
+
+    .nc-clickable-area {
+      padding: 13px 14px; cursor: pointer; user-select: none;
+    }
+    .nc-clickable-area:active { opacity: 0.92; }
+
+    .nc-top-row {
+      display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    .nc-title { font-size: 1.08rem; font-weight: 800; display: flex; align-items: center; gap: 6px; }
+    .nc-num { color: #0ea5e9; font-weight: 800; }
+    .nc-top-btns { display: flex; gap: 6px; align-items: center; }
+
+    .nc-call-btn {
+      border-radius: 999px !important; padding: 5px 12px !important; font-size: 0.8rem !important;
+      font-weight: 700 !important; display: inline-flex; align-items: center; gap: 4px;
+    }
+    .nc-call-btn.no-num { background: #475569 !important; border-color: #64748b !important; color: #fff !important; }
+    .nc-call-btn.has-num { background: #15803d !important; border-color: #22c55e !important; color: #fff !important; }
+
+    .nc-detail-toggle {
+      border-radius: 10px !important; padding: 5px 11px !important; font-size: 0.8rem !important;
+      font-weight: 700 !important; background: var(--card-2) !important; border: 1px solid var(--border) !important;
+      color: var(--accent) !important;
+    }
+
+    .nc-job-pill {
+      margin-top: 8px; display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px !important; border-radius: 8px !important; font-size: 0.78rem !important;
+      background: var(--meta-bg) !important; border: 1px solid var(--border) !important; color: var(--muted) !important;
+    }
+    .nc-job-pill.has-job { color: var(--text) !important; border-color: rgba(56,189,248,0.45) !important; }
+
+    .nc-3col-box {
+      margin-top: 10px; padding: 10px 12px; border-radius: 10px;
+      background: var(--meta-bg); border: 1px solid var(--border);
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+    }
+    .nc-3col-lbl { font-size: 0.74rem; color: var(--muted); }
+    .nc-3col-val { font-size: 1rem; font-weight: 800; margin-top: 2px; }
+
+    .nc-foot-row {
+      margin-top: 10px; padding-top: 9px; border-top: 1px dashed var(--border);
+      display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;
+      font-size: 0.84rem;
+    }
+
+    /* आतल्या क्रमांक २ ते ८ तपशील कार्डसाठी CSS */
     .sc-wrap {
-      margin-top: 10px; border: 1px solid var(--border); border-radius: 12px;
+      margin: 0 10px 12px; border: 1px solid var(--border); border-radius: 12px;
       background: var(--meta-bg); overflow: hidden; font-size: 0.85rem;
     }
-    .sc-sec {
-      padding: 10px 12px; border-bottom: 1px solid var(--border);
-    }
+    .sc-sec { padding: 10px 12px; border-bottom: 1px solid var(--border); }
     .sc-sec:last-child { border-bottom: none; }
-    .sc-row {
-      display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between;
-    }
+    .sc-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
     .sc-left { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
     .sc-right { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
     .sc-pill {
@@ -57,9 +109,7 @@ ensurePersistenceEnabled();
       background: var(--card); border: 1px solid var(--border);
       display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between;
     }
-    .sc-grid-2 {
-      display: grid; grid-template-columns: 1.15fr 1fr; gap: 10px; margin-top: 8px; align-items: start;
-    }
+    .sc-grid-2 { display: grid; grid-template-columns: 1.15fr 1fr; gap: 10px; margin-top: 8px; align-items: start; }
     @media (max-width: 640px) { .sc-grid-2 { grid-template-columns: 1fr; } }
     .sc-note-box {
       background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.45);
@@ -72,9 +122,7 @@ ensurePersistenceEnabled();
     .sc-btn-purple { background: #7e22ce !important; border-color: #a855f7 !important; color: #fff !important; }
     .sc-btn-teal { background: #0f766e !important; border-color: #14b8a6 !important; color: #fff !important; }
     .sc-btn-orange { background: #c2410c !important; border-color: #f97316 !important; color: #fff !important; }
-    .sc-promise-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px;
-    }
+    .sc-promise-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
     @media (max-width: 560px) { .sc-promise-grid { grid-template-columns: 1fr; } }
     .sc-promise-cell {
       background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 7px 8px;
@@ -120,7 +168,7 @@ const state = {
 };
 
 // मोबाईल Back बटण कंट्रोल
-const ALL_MODAL_IDS = ['smartInfoModal', 'pnlModal', 'securityModal', 'versionModal', 'notifModal', 'docsModal', 'editModal', 'passbookModal'];
+const ALL_MODAL_IDS = ['toolSectionModal', 'smartInfoModal', 'pnlModal', 'securityModal', 'versionModal', 'notifModal', 'docsModal', 'editModal', 'passbookModal'];
 function openModalSafe(modalId) {
   const el = document.getElementById(modalId);
   if (el) { el.classList.remove('hidden'); try { history.pushState({ hishobOverlay: modalId }, ''); } catch (_) {} }
@@ -605,7 +653,7 @@ function prefillNewLoanForCustomer(borrowerId) {
   document.getElementById('bMobile').value = b.mobile || ''; document.getElementById('bGuarantor').value = b.guarantor || '';
   document.getElementById('bExtraGuarantors').value = b.extraGuarantors || ''; document.getElementById('bJobType').value = b.jobType || '';
   document.getElementById('bCompanyDept').value = b.companyDept || ''; document.getElementById('bPrincipal').value = '';
-  document.getElementById('addBorrowerSection').scrollIntoView({ behavior: 'smooth' }); document.getElementById('bPrincipal').focus();
+  document.getElementById('bPrincipal').focus();
 }
 
 // ७. Version History व Conflict Rollback
@@ -703,10 +751,9 @@ document.getElementById('uploadDocBtn').addEventListener('click', async () => {
 });
 document.getElementById('docGalleryGrid').addEventListener('click', async (e) => { const btn = e.target.closest('button[data-deldoc]'); if (!btn || !state.currentDocsBorrowerId || !confirm('डिलीट करायचे का?')) return; await getBorrowerDoc(state.currentDocsBorrowerId).collection('documents').doc(btn.getAttribute('data-deldoc')).delete(); loadBorrowerDocs(state.currentDocsBorrowerId); });
 
-// १०. ग्राहक अ‍ॅक्शन्स (नवीन झटपट बटणांसह)
+// १०. ग्राहक अ‍ॅक्शन्स
 function getBorrowerDoc(borrowerId) { return db.collection('users').doc(state.user.uid).collection('borrowers').doc(borrowerId); }
 
-// विभाग ४ मधील एकाच 'जमा करा' बटणातून पूर्ण किंवा अर्धवट व्याज जमा करणे
 async function smartCollectMonthPayment(borrowerId, ym, monthlyInterest, alreadyPaid) {
   if (!state.user || !checkRateLimit('SMART_PAY')) return;
   const inputEl = document.getElementById(`quickPayInput_${borrowerId}`);
@@ -869,7 +916,6 @@ function parseCsvLine(line) { const result = []; let current = '', inQuotes = fa
 function escapeHtml(str) { return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m])); }
 function jobLabel(jobType) { return jobType === 'govt' ? 'सरकारी' : jobType === 'private' ? 'खाजगी' : jobType === 'business' ? 'व्यवसाय' : '-'; }
 
-// तारखेला DD/MM/YYYY फॉरमॅटमध्ये दाखवणे
 function formatDateShort(isoStr) {
   const s = String(isoStr || '').slice(0, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return s || '-';
@@ -877,7 +923,16 @@ function formatDateShort(isoStr) {
   return `${d}/${m}/${y}`;
 }
 
-// १२. UI Render (नवीन क्रमांक २ ते ८ सुटसुटीत कार्ड डिझाईन)
+function toggleBorrowerCardDetails(id) {
+  const el = document.getElementById(`cardDetails_${id}`);
+  const tBtn = document.getElementById(`toggleDetailBtn_${id}`);
+  if (el) {
+    el.classList.toggle('hidden');
+    if (tBtn) tBtn.textContent = el.classList.contains('hidden') ? '▼ तपशील' : '▲ बंद';
+  }
+}
+
+// १२. UI Render (नवीन कॉम्पॅक्ट ग्राहक कार्ड + पूर्ण कार्डवर क्लिक करून तपशील उघडणे)
 function renderBorrowers() {
   const container = document.getElementById('borrowersList'), recycleContainer = document.getElementById('recycleBinList');
   const activeYm = document.getElementById('activeYm').value || currentYmDefault(), query = (document.getElementById('searchInput').value || '').trim();
@@ -935,15 +990,30 @@ function renderBorrowers() {
   } else {
     container.innerHTML = filtered.map(({ b, calc }, idx) => {
       const isClosed = b.accountStatus === 'closed';
-      const statusText = isClosed ? 'बंद' : calc.status === 'paid' ? 'जमा' : calc.status === 'partial' ? 'अर्धवट' : 'बाकी';
       const cardColorClass = isClosed ? 'status-closed' : calc.status === 'paid' ? 'status-paid' : calc.status === 'partial' ? 'status-partial' : '';
       const detailsHiddenClass = state.expandAllDetails ? '' : 'hidden';
       const cleanMobile = String(b.mobile || '').replace(/\D/g, '');
-      const partialPct = (calc.status === 'partial' && calc.monthlyInterest > 0) ? Math.min(100, Math.round((calc.paidThisMonth / calc.monthlyInterest) * 100)) : 0;
       const startYmDisp = formatMonthMarathi(b.startYm || activeYm);
       const activeYmDisp = formatMonthMarathi(activeYm);
 
-      // मुद्दल नोंदीची यादी तयार करणे
+      // नोकरी बॅज मजकूर
+      const hasJob = Boolean(b.jobType || b.companyDept);
+      const jobText = hasJob
+        ? `${b.jobType ? jobLabel(b.jobType) : ''}${b.companyDept ? ` (${b.companyDept})` : ''}`.trim()
+        : 'नोकरी नोंदवा';
+
+      // पुढची वायदा तारीख
+      const pDates = [b.promiseDate1, b.promiseDate2, b.promiseDate3].filter(Boolean).sort();
+      const latestPromise = pDates.length ? formatDateShort(pDates[pDates.length - 1]) : 'नाही';
+
+      // तळाची मागील बाकी ओळ
+      const pastDueFootHtml = isClosed
+        ? `<span class="muted" style="font-weight:700;">✓ खाते बंद (${fmtAmt((b.settlement && b.settlement.amount) || 0)})</span>`
+        : calc.pastDue > 0
+          ? `<span class="err" style="font-weight:700;">⚠️ मागील बाकी: ${fmtAmt(calc.pastDue)}</span>`
+          : `<span class="ok" style="font-weight:700;">✅ मागील बाकी: ₹0</span>`;
+
+      // मुद्दल नोंदीची यादी
       const principalEntries = [];
       const initDate = formatDateShort(b.loanDate || b.createdAt);
       principalEntries.push(`• ${initDate}: <strong>${fmtAmt(b.originalPrincipal || b.principal || 0)}</strong> (सुरुवातीचे मुद्दल)`);
@@ -954,12 +1024,6 @@ function renderBorrowers() {
         principalEntries.push(`• ${formatDateShort(pr.date)}: <span class="warn-text">-${fmtAmt(pr.amount)}</span> (वजा)`);
       });
 
-      const bottomLineText = isClosed
-        ? `✓ खाते बंद (${fmtAmt((b.settlement && b.settlement.amount) || 0)})`
-        : calc.status === 'paid'
-          ? `<span class="ok">✓ जमा व्याज: ${fmtAmt(calc.paidThisMonth)}</span>`
-          : `<span class="${calc.status === 'partial' ? 'warn-text' : 'err'}">• जमा: ${fmtAmt(calc.paidThisMonth)} | बाकी: ${fmtAmt(calc.totalPayable)}</span>`;
-
       const monthStatusLine = calc.status === 'paid'
         ? `<span class="ok" style="font-weight:700;">✅ ${escapeHtml(activeYmDisp)} - पूर्ण जमा: ${fmtAmt(calc.paidThisMonth)}</span>`
         : calc.status === 'partial'
@@ -969,24 +1033,41 @@ function renderBorrowers() {
       const suggestedPayAmt = calc.remainingThisMonth > 0 ? calc.remainingThisMonth : calc.monthlyInterest;
 
       return `
-        <div class="borrower-item ${cardColorClass}">
-          <div class="b-card-head">
-            <div class="b-card-name">#${idx + 1} ${escapeHtml(b.name || 'नाव नाही')}</div>
-            <span class="badge ${isClosed ? 'closed' : calc.status}">${statusText}</span>
+        <div class="borrower-item nc-card ${cardColorClass}">
+          <!-- पूर्ण कार्डचा क्लिकेबल भाग (कुठेही क्लिक केल्यावर तपशील उघडेल) -->
+          <div class="nc-clickable-area" data-toggle-card="${b.id}">
+            <div class="nc-top-row">
+              <div class="nc-title">
+                <span class="nc-num">#${idx + 1}</span>
+                <span>${escapeHtml(b.name || 'नाव नाही')}</span>
+              </div>
+              <div class="nc-top-btns">
+                ${cleanMobile
+                  ? `<button type="button" class="nc-call-btn has-num" data-action="call-borrower" data-mobile="${escapeHtml(cleanMobile)}">📞 Call</button>`
+                  : `<button type="button" class="nc-call-btn no-num" data-action="quick-edit-mobile" data-id="${b.id}" data-val="">📞 +नंबर</button>`}
+                <button type="button" id="toggleDetailBtn_${b.id}" class="nc-detail-toggle" data-action="toggle-card-details" data-id="${b.id}">${state.expandAllDetails ? '▲ बंद' : '▼ तपशील'}</button>
+              </div>
+            </div>
+
+            <div>
+              <button type="button" class="nc-job-pill ${hasJob ? 'has-job' : ''}" data-action="full-edit" data-id="${b.id}">
+                💼 ${escapeHtml(jobText)}
+              </button>
+            </div>
+
+            <div class="nc-3col-box">
+              <div><div class="nc-3col-lbl">एकूण मुद्दल</div><div class="nc-3col-val">${fmtAmt(calc.principal)}</div></div>
+              <div><div class="nc-3col-lbl">व्याज दर (%)</div><div class="nc-3col-val">${Number(b.rate || 0)}%</div></div>
+              <div><div class="nc-3col-lbl">महिन्याचे व्याज</div><div class="nc-3col-val" style="color:#0ea5e9;">${fmtAmt(calc.monthlyInterest)}</div></div>
+            </div>
+
+            <div class="nc-foot-row">
+              <div>${pastDueFootHtml}</div>
+              <div class="muted" style="font-weight:600;">📅 वायदा: <span>${escapeHtml(latestPromise)}</span></div>
+            </div>
           </div>
 
-          <div class="b-3col">
-            <div><div class="b-3col-lbl">मुद्दल</div><div class="b-3col-val">${fmtAmt(calc.principal)}</div></div>
-            <div><div class="b-3col-lbl">व्याज दर</div><div class="b-3col-val">${Number(b.rate || 0)}%</div></div>
-            <div><div class="b-3col-lbl">मासिक व्याज</div><div class="b-3col-val" style="color:#38bdf8;">${fmtAmt(calc.monthlyInterest)}</div></div>
-          </div>
-
-          <div class="b-status-line">${bottomLineText}</div>
-          ${partialPct > 0 ? `<div class="partial-prog-wrap"><div class="partial-prog-fill" style="width:${partialPct}%;"></div></div>` : ''}
-
-          <button type="button" class="b-detail-btn" data-action="toggle-card-details" data-id="${b.id}">खात्याचा तपशील पहा</button>
-
-          <!-- नवीन फोटोप्रमाणे क्रमांक २ ते ८ सुटसुटीत तपशील कार्ड -->
+          <!-- आतले क्रमांक २ ते ८ सुटसुटीत तपशील कार्ड -->
           <div id="cardDetails_${b.id}" class="${detailsHiddenClass}">
             <div class="sc-wrap">
 
@@ -1006,7 +1087,6 @@ function renderBorrowers() {
                     <button type="button" data-action="soft-delete" data-id="${b.id}" data-name="${escapeHtml(b.name || '')}" class="danger sm" title="डिलीट">🗑️</button>
                   </div>
                 </div>
-                ${b.jobType || b.companyDept ? `<div class="muted" style="margin-top:6px; font-size:0.78rem;">💼 नोकरी: ${jobLabel(b.jobType)} ${b.companyDept ? `(${escapeHtml(b.companyDept)})` : ''}</div>` : ''}
               </div>
 
               ${isClosed && b.settlement ? `
@@ -1140,7 +1220,7 @@ function renderBorrowers() {
                   </div>
                 </div>
 
-                <!-- अतिरिक्त उपयुक्त साधने (Passbook, नवीन कर्ज, Versions, खाते बंद) -->
+                <!-- अतिरिक्त उपयुक्त साधने -->
                 <div class="sc-sec">
                   <div class="sc-left">
                     <button type="button" data-action="passbook" data-id="${b.id}" class="primary sm">📖 Passbook</button>
@@ -1163,52 +1243,53 @@ function renderBorrowers() {
     : '<div class="muted">Recycle Bin रिकामा आहे.</div>';
 }
 
-// कार्डवरील सर्व बटणांचे इव्हेंट्स
+// कार्डवरील सर्व बटणांचे व संपूर्ण कार्ड क्लिकचे इव्हेंट्स
 document.getElementById('borrowersList').addEventListener('click', (e) => {
-  const btn = e.target.closest('button[data-action]'); if (!btn) return;
-  const action = btn.getAttribute('data-action'), id = btn.getAttribute('data-id'), ym = btn.getAttribute('data-ym');
-  if (action === 'toggle-card-details') {
-    const el = document.getElementById(`cardDetails_${id}`);
-    if (el) { el.classList.toggle('hidden'); btn.textContent = el.classList.contains('hidden') ? 'खात्याचा तपशील पहा' : 'तपशील बंद करा'; }
+  const btn = e.target.closest('button[data-action]');
+  if (btn) {
+    const action = btn.getAttribute('data-action'), id = btn.getAttribute('data-id'), ym = btn.getAttribute('data-ym');
+    if (action === 'toggle-card-details') toggleBorrowerCardDetails(id);
+    else if (action === 'quick-edit-guarantor') quickEditField(id, 'guarantor', 'जामीनदाराचे नाव', btn.getAttribute('data-val'));
+    else if (action === 'quick-edit-mobile') quickEditField(id, 'mobile', 'मोबाईल नंबर', btn.getAttribute('data-val'));
+    else if (action === 'quick-edit-day') quickEditField(id, 'interestDay', 'दर महिन्याची व्याजाची तारीख (1-31)', btn.getAttribute('data-val'));
+    else if (action === 'call-borrower') { const mob = btn.getAttribute('data-mobile'); if (mob) window.location.href = `tel:${mob}`; }
+    else if (action === 'wa-receipt') sendWaReceipt(id, ym, Number(btn.getAttribute('data-paidamt') || 0), Number(btn.getAttribute('data-pending') || 0));
+    else if (action === 'wa-reminder') sendCustomerWaReminder(id, ym, Number(btn.getAttribute('data-pending') || 0));
+    else if (action === 'upi-qr') openUpiQr(id, Number(btn.getAttribute('data-pending') || 0));
+    else if (action === 'vachan') openVachanChitthi(id);
+    else if (action === 'timeline') openPassbookModal(id, 'timeline');
+    else if (action === 'passbook') openPassbookModal(id, 'passbook');
+    else if (action === 'smart-collect') smartCollectMonthPayment(id, ym, Number(btn.getAttribute('data-interest') || 0), Number(btn.getAttribute('data-paidamt') || 0));
+    else if (action === 'reset-pay') resetMonthPayment(id, ym);
+    else if (action === 'add-manual-month') addManualPendingForMonth(id);
+    else if (action === 'pay-past-prompt') payCustomPastDuePrompt(id, ym, Number(btn.getAttribute('data-past') || 0));
+    else if (action === 'compound-past') compoundPastDue(id, ym, Number(btn.getAttribute('data-past') || 0));
+    else if (action === 'add-principal-prompt') addExtraPrincipalPrompt(id, Number(btn.getAttribute('data-principal') || 0), Number(btn.getAttribute('data-original') || 0));
+    else if (action === 'reduce-principal-prompt') reducePrincipalPrompt(id, Number(btn.getAttribute('data-principal') || 0));
+    else if (action === 'followup') addFollowUpNote(id, btn.getAttribute('data-name'));
+    else if (action === 'add-loan-same') prefillNewLoanForCustomer(id);
+    else if (action === 'close-acc') closeAccountWithSettlement(id, btn.getAttribute('data-name'), Number(btn.getAttribute('data-principal') || 0), Number(btn.getAttribute('data-pending') || 0));
+    else if (action === 'reopen-acc') reopenAccount(id, btn.getAttribute('data-name'));
+    else if (action === 'docs') openDocsModal(id);
+    else if (action === 'versions') openVersionModal(id);
+    else if (action === 'full-edit') openEditModal(id);
+    else if (action === 'soft-delete') softDeleteBorrower(id, btn.getAttribute('data-name'));
+    return;
   }
-  else if (action === 'quick-edit-guarantor') quickEditField(id, 'guarantor', 'जामीनदाराचे नाव', btn.getAttribute('data-val'));
-  else if (action === 'quick-edit-mobile') quickEditField(id, 'mobile', 'मोबाईल नंबर', btn.getAttribute('data-val'));
-  else if (action === 'quick-edit-day') quickEditField(id, 'interestDay', 'दर महिन्याची व्याजाची तारीख (1-31)', btn.getAttribute('data-val'));
-  else if (action === 'call-borrower') { const mob = btn.getAttribute('data-mobile'); if (mob) window.location.href = `tel:${mob}`; }
-  else if (action === 'wa-receipt') sendWaReceipt(id, ym, Number(btn.getAttribute('data-paidamt') || 0), Number(btn.getAttribute('data-pending') || 0));
-  else if (action === 'wa-reminder') sendCustomerWaReminder(id, ym, Number(btn.getAttribute('data-pending') || 0));
-  else if (action === 'upi-qr') openUpiQr(id, Number(btn.getAttribute('data-pending') || 0));
-  else if (action === 'vachan') openVachanChitthi(id);
-  else if (action === 'timeline') openPassbookModal(id, 'timeline');
-  else if (action === 'passbook') openPassbookModal(id, 'passbook');
-  else if (action === 'smart-collect') smartCollectMonthPayment(id, ym, Number(btn.getAttribute('data-interest') || 0), Number(btn.getAttribute('data-paidamt') || 0));
-  else if (action === 'reset-pay') resetMonthPayment(id, ym);
-  else if (action === 'add-manual-month') addManualPendingForMonth(id);
-  else if (action === 'pay-past-prompt') payCustomPastDuePrompt(id, ym, Number(btn.getAttribute('data-past') || 0));
-  else if (action === 'compound-past') compoundPastDue(id, ym, Number(btn.getAttribute('data-past') || 0));
-  else if (action === 'add-principal-prompt') addExtraPrincipalPrompt(id, Number(btn.getAttribute('data-principal') || 0), Number(btn.getAttribute('data-original') || 0));
-  else if (action === 'reduce-principal-prompt') reducePrincipalPrompt(id, Number(btn.getAttribute('data-principal') || 0));
-  else if (action === 'followup') addFollowUpNote(id, btn.getAttribute('data-name'));
-  else if (action === 'add-loan-same') prefillNewLoanForCustomer(id);
-  else if (action === 'close-acc') closeAccountWithSettlement(id, btn.getAttribute('data-name'), Number(btn.getAttribute('data-principal') || 0), Number(btn.getAttribute('data-pending') || 0));
-  else if (action === 'reopen-acc') reopenAccount(id, btn.getAttribute('data-name'));
-  else if (action === 'docs') openDocsModal(id);
-  else if (action === 'versions') openVersionModal(id);
-  else if (action === 'full-edit') openEditModal(id);
-  else if (action === 'soft-delete') softDeleteBorrower(id, btn.getAttribute('data-name'));
+
+  // कार्डवर कुठेही क्लिक केल्यावर तपशील उघडणे/बंद करणे
+  const cardTop = e.target.closest('.nc-clickable-area[data-toggle-card]');
+  if (cardTop) {
+    toggleBorrowerCardDetails(cardTop.getAttribute('data-toggle-card'));
+  }
 });
 
 // टीप (Note) आणि वायदा तारखा आपोआप सेव्ह होण्यासाठी इव्हेंट्स
 document.getElementById('borrowersList').addEventListener('change', (e) => {
   const noteEl = e.target.closest('textarea[data-inline-note]');
-  if (noteEl) {
-    saveInlineNote(noteEl.getAttribute('data-inline-note'), noteEl.value);
-    return;
-  }
+  if (noteEl) { saveInlineNote(noteEl.getAttribute('data-inline-note'), noteEl.value); return; }
   const promEl = e.target.closest('input[data-promise-field]');
-  if (promEl) {
-    saveInlinePromiseDate(promEl.getAttribute('data-id'), promEl.getAttribute('data-promise-field'), promEl.value);
-  }
+  if (promEl) { saveInlinePromiseDate(promEl.getAttribute('data-id'), promEl.getAttribute('data-promise-field'), promEl.value); }
 });
 
 document.getElementById('recycleBinList').addEventListener('click', (e) => { const btn = e.target.closest('button[data-action]'); if (!btn) return; if (btn.getAttribute('data-action') === 'restore') restoreBorrower(btn.getAttribute('data-id'), btn.getAttribute('data-name')); else if (btn.getAttribute('data-action') === 'perm-delete') permanentDeleteBorrower(btn.getAttribute('data-id'), btn.getAttribute('data-name')); });
@@ -1225,6 +1306,7 @@ document.getElementById('addBorrowerBtn').addEventListener('click', async () => 
   await appendAuditLog('BORROWER_ADDED', `${name} (₹${principal})`);
   ['bName', 'bLoanLabel', 'bMobile', 'bPrincipal', 'bLoanDate', 'bFixedInterest', 'bCustomDue', 'bInterestDay', 'bGuarantor', 'bExtraGuarantors', 'bCompanyDept', 'bRetirementDate', 'bPromise1', 'bPromise2', 'bPromise3', 'bNote'].forEach(id => { document.getElementById(id).value = ''; });
   document.getElementById('bLateFee').value = '0'; document.getElementById('bJobType').value = '';
+  document.getElementById('toolSectionModal')?.classList.add('hidden');
 });
 
 document.getElementById('activeYm').addEventListener('change', renderBorrowers);
