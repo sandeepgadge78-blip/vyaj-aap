@@ -1,7 +1,7 @@
 // =========================================================================
 // Hishob Premium Fintech Dashboard V3 + Gmail-Style Hamburger Menu (☰)
-// V13.6: Quick Payment Full Customer Summary Card (Principal, Past Due, Pending Months, Guarantor, Call)
-// + Smart Mobile Back-Button Navigation + Strict Month Ledger + Independent Excel
+// V13.8: Clean Home Screen (All 6 Bottom Tools Moved to ☰ Menu Modal)
+// + Quick Payment Full Summary Card + Smart Mobile Back-Button + Strict Month Ledger
 // =========================================================================
 
 (function () {
@@ -53,9 +53,29 @@
   }
 
   // =========================================================================
+  // ☰ मेन्यूमधील ६ फीचर्स उघडण्याचे पॉपअप कंट्रोलर
+  // =========================================================================
+  function openToolSection(sectionId, titleText) {
+    const modal = document.getElementById('toolSectionModal');
+    const titleEl = document.getElementById('toolSectionModalTitle');
+    if (!modal) return;
+    document.querySelectorAll('#toolSectionModal .tool-sec-pane').forEach(sec => sec.classList.add('hidden'));
+    const target = document.getElementById(sectionId);
+    if (target) target.classList.remove('hidden');
+    if (titleEl) titleEl.textContent = titleText || 'साधने';
+    document.getElementById('v3Overlay')?.classList.add('hidden');
+    modal.classList.remove('hidden');
+    pushNavHistory(`tool:${sectionId}`);
+  }
+
+  function closeToolSectionModal() {
+    document.getElementById('toolSectionModal')?.classList.add('hidden');
+  }
+
+  // =========================================================================
   // स्मार्ट मोबाईल Back-Button कंट्रोलर (History Stack + Double-Back to Exit)
   // =========================================================================
-  const MODAL_IDS = ['smartInfoModal', 'pnlModal', 'securityModal', 'versionModal', 'notifModal', 'docsModal', 'editModal', 'passbookModal'];
+  const MODAL_IDS = ['toolSectionModal', 'smartInfoModal', 'pnlModal', 'securityModal', 'versionModal', 'notifModal', 'docsModal', 'editModal', 'passbookModal'];
   let v3TabHistory = [];
   let lastBackPressTime = 0;
 
@@ -275,7 +295,7 @@
   `;
   document.head.appendChild(styleEl);
 
-  // २. Strict Start Month व बाकी महिन्यांची अचूक यादी काढणारे Helper
+  // २. Strict Start Month व बाकी महिन्यांची अचूक यादी
   function extractValidYm(val) {
     const s = String(val || '').trim();
     return /^\d{4}-\d{2}/.test(s) ? s.slice(0, 7) : '';
@@ -291,7 +311,6 @@
     );
   }
 
-  // ग्राहकाचे नेमके कोणते महिने बाकी (Pending/Partial) आहेत ते काढणे
   function getPendingMonthsList(borrower, upToYm) {
     const startYm = getEffectiveStartYm(borrower);
     if (!startYm || !upToYm || startYm > upToYm) return [];
@@ -411,7 +430,7 @@
     };
   }
 
-  // ३. Gmail-Style Three-Line Hamburger Menu (☰) + Drawer
+  // ३. Gmail-Style Three-Line Hamburger Menu (☰) + सर्व ६ साधने
   let isDrawerOpen = false;
   let touchStartX = 0;
 
@@ -462,6 +481,19 @@
   }
 
   function initHamburgerDrawer() {
+    // पॉपअप बंद करण्याचे बटण
+    document.getElementById('closeToolSectionModalBtn')?.addEventListener('click', closeToolSectionModal);
+    document.getElementById('toolSectionModal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'toolSectionModal') closeToolSectionModal();
+    });
+
+    // ग्राहक कार्डवरील '➕ नवीन कर्ज' क्लिक केल्यावर नवीन ग्राहक पॉपअप उघडावा
+    document.getElementById('borrowersList')?.addEventListener('click', (e) => {
+      if (e.target.closest('button[data-action="add-loan-same"]')) {
+        openToolSection('addBorrowerSection', '➕ नवीन ग्राहक / कर्ज नोंद');
+      }
+    });
+
     const brandEl = document.querySelector('header .brand');
     if (brandEl && !document.getElementById('hmMenuBtn')) {
       const hmBtn = document.createElement('button');
@@ -496,28 +528,27 @@
 
       <div class="hm-body">
         <button class="hm-item active" data-hm="home"><span class="hm-item-left"><span>🏠</span><span>मुख्य Dashboard</span></span></button>
-        <button class="hm-item" data-hm="archive"><span class="hm-item-left"><span>📅</span><span>महिना निहाय हिशोब (Month Ledger)</span></span></button>
+        <button class="hm-item" data-hm="archive"><span class="hm-item-left"><span>📅</span><span>महिना निहाय हिशोब</span></span></button>
         <button class="hm-item" data-hm="v3-dash"><span class="hm-item-left"><span>🚀</span><span>Premium Dashboard V3</span></span></button>
-        <button class="hm-item" data-hm="add-cust"><span class="hm-item-left"><span>➕</span><span>नवीन ग्राहक / कर्ज जोडा</span></span></button>
         <button class="hm-item" data-hm="quick-pay"><span class="hm-item-left"><span>⚡</span><span>Quick Add Payment</span></span></button>
         <button class="hm-item" data-hm="due-list">
           <span class="hm-item-left"><span>⏳</span><span>Pending / Overdue खाती</span></span>
           <span id="hmDueBadge" class="hm-badge">0</span>
         </button>
-        <button class="hm-item" data-hm="analytics"><span class="hm-item-left"><span>📈</span><span>Analytics & Charts</span></span></button>
-        <button class="hm-item" data-hm="goals"><span class="hm-item-left"><span>🎯</span><span>Goals & Targets</span></span></button>
-        <button class="hm-item" data-hm="notifs"><span class="hm-item-left"><span>🔔</span><span>Notifications & वायदे</span></span></button>
 
         <div class="hm-div"></div>
-        <button class="hm-item" id="hmReportsToggle"><span class="hm-item-left"><span>📑</span><span>Reports & Export</span></span><span>▾</span></button>
-        <div id="hmReportsSub" class="hm-sub hidden">
-          <button class="hm-item" data-hm="pnl"><span class="hm-item-left"><span>📈</span><span>Profit & Loss Report</span></span></button>
-          <button class="hm-item" data-hm="pdf"><span class="hm-item-left"><span>🖨️</span><span>महिन्याचा PDF / Print</span></span></button>
-          <button class="hm-item" data-hm="csv"><span class="hm-item-left"><span>📊</span><span>महिन्याची Excel CSV</span></span></button>
-          <button class="hm-item" data-hm="all-csv"><span class="hm-item-left"><span>📋</span><span>संपूर्ण खात्यांची CSV</span></span></button>
-        </div>
+        <!-- मुख्य स्क्रीनवरून हलवलेली सर्व ६ फीचर्स -->
+        <button class="hm-item" data-hm="add-cust"><span class="hm-item-left"><span>➕</span><span>नवीन ग्राहक / कर्ज नोंद</span></span></button>
+        <button class="hm-item" data-hm="tool-rem"><span class="hm-item-left"><span>📲</span><span>WhatsApp, UPI QR व Notification</span></span></button>
+        <button class="hm-item" data-hm="tool-reports"><span class="hm-item-left"><span>📑</span><span>रिपोर्ट्स, CSV, Backup व Webhook</span></span></button>
+        <button class="hm-item" data-hm="tool-emi"><span class="hm-item-left"><span>🧮</span><span>EMI Simulator</span></span></button>
+        <button class="hm-item" data-hm="tool-recycle"><span class="hm-item-left"><span>🗑️</span><span>Recycle Bin</span></span></button>
+        <button class="hm-item" data-hm="tool-audit"><span class="hm-item-left"><span>📜</span><span>Audit Log</span></span></button>
 
-        <button class="hm-item" data-hm="backup"><span class="hm-item-left"><span>☁️</span><span>Cloud Backup सेव्ह</span></span></button>
+        <div class="hm-div"></div>
+        <button class="hm-item" data-hm="analytics"><span class="hm-item-left"><span>📈</span><span>Analytics & Charts</span></span></button>
+        <button class="hm-item" data-hm="goals"><span class="hm-item-left"><span>🎯</span><span>Goals & Targets</span></span></button>
+        <button class="hm-item" data-hm="pnl"><span class="hm-item-left"><span>💹</span><span>Profit & Loss Report</span></span></button>
         <button class="hm-item" data-hm="security"><span class="hm-item-left"><span>🛡️</span><span>Security Dashboard</span></span></button>
 
         <div class="hm-div"></div>
@@ -538,33 +569,26 @@
     drawer.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, { passive: true });
     drawer.addEventListener('touchend', (e) => { if (touchStartX - e.changedTouches[0].clientX > 55) setDrawerState(false); }, { passive: true });
 
-    document.getElementById('hmReportsToggle').addEventListener('click', () => {
-      document.getElementById('hmReportsSub').classList.toggle('hidden');
-    });
-
     drawer.addEventListener('click', async (e) => {
       const btn = e.target.closest('button[data-hm]');
       if (!btn) return;
       const act = btn.getAttribute('data-hm');
       setDrawerState(false);
 
-      if (act === 'home') { v3TabHistory = []; document.getElementById('v3Overlay')?.classList.add('hidden'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+      if (act === 'home') { v3TabHistory = []; closeToolSectionModal(); document.getElementById('v3Overlay')?.classList.add('hidden'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
       else if (act === 'archive') openV3Dashboard('archive');
       else if (act === 'v3-dash') openV3Dashboard('overview');
-      else if (act === 'add-cust') {
-        v3TabHistory = []; document.getElementById('v3Overlay')?.classList.add('hidden');
-        document.getElementById('addBorrowerSection')?.scrollIntoView({ behavior: 'smooth' });
-      }
       else if (act === 'quick-pay') openV3Dashboard('payments');
       else if (act === 'due-list') openV3Dashboard('customers');
+      else if (act === 'add-cust') openToolSection('addBorrowerSection', '➕ नवीन ग्राहक / कर्ज नोंद');
+      else if (act === 'tool-rem') openToolSection('remSection', '📲 WhatsApp, UPI QR व Notification');
+      else if (act === 'tool-reports') openToolSection('reportsSection', '📑 रिपोर्ट्स, CSV, Share, Backup व Webhook');
+      else if (act === 'tool-emi') openToolSection('emiSection', '🧮 EMI Simulator');
+      else if (act === 'tool-recycle') openToolSection('recycleSection', '🗑️ Recycle Bin');
+      else if (act === 'tool-audit') openToolSection('auditSection', '📜 Audit Log');
       else if (act === 'analytics') openV3Dashboard('analytics');
       else if (act === 'goals') openV3Dashboard('goals');
-      else if (act === 'notifs') document.getElementById('notifBellBtn')?.click();
       else if (act === 'pnl') document.getElementById('openPnlBtn')?.click();
-      else if (act === 'pdf') document.getElementById('printMonthlyPdfBtn')?.click();
-      else if (act === 'csv') document.getElementById('exportMonthlyCsvBtn')?.click();
-      else if (act === 'all-csv') document.getElementById('exportAllCsvBtn')?.click();
-      else if (act === 'backup') document.getElementById('saveCloudBackupBtn')?.click();
       else if (act === 'security') document.getElementById('openSecurityDashBtn')?.click();
       else if (act === 'hide-amt') document.getElementById('toggleHideAmtBtn')?.click();
       else if (act === 'theme') document.getElementById('toggleThemeBtn')?.click();
@@ -574,7 +598,7 @@
         try { await firebase.auth().sendPasswordResetEmail(u.email); showToast(`✅ ${u.email} वर Password Reset लिंक पाठवली.`); }
         catch (err) { showToast(`एरर: ${err.message}`, true); }
       }
-      else if (act === 'about') showToast('व्याज हिशोब वही V13.6 — Full Quick Pay Card');
+      else if (act === 'about') showToast('व्याज हिशोब वही V13.8 — Clean Dashboard');
       else if (act === 'logout') document.getElementById('lockBtn')?.click();
     });
   }
@@ -590,6 +614,7 @@
         <div class="td-wrap">
           <button id="threeDotBtn" class="sm td-btn" title="अधिक पर्याय (Menu)">⋮</button>
           <div id="threeDotDropdown" class="td-menu hidden">
+            <button data-td="add-cust">➕ नवीन ग्राहक जोडा</button>
             <button data-td="archive">📅 महिना निहाय हिशोब</button>
             <button data-td="v3-dash">🚀 Premium Dashboard V3</button>
             <button data-td="v3-pay">⚡ Quick Add Payment</button>
@@ -619,7 +644,8 @@
         const item = e.target.closest('button[data-td]'); if (!item) return;
         menu.classList.add('hidden');
         const act = item.getAttribute('data-td');
-        if (act === 'archive') openV3Dashboard('archive');
+        if (act === 'add-cust') openToolSection('addBorrowerSection', '➕ नवीन ग्राहक / कर्ज नोंद');
+        else if (act === 'archive') openV3Dashboard('archive');
         else if (act === 'v3-dash') openV3Dashboard('overview');
         else if (act === 'v3-pay') openV3Dashboard('payments');
         else if (act === 'pnl') document.getElementById('openPnlBtn')?.click();
@@ -653,7 +679,7 @@
       nav.addEventListener('click', (e) => {
         const b = e.target.closest('button[data-bnav]'); if (!b) return;
         const t = b.getAttribute('data-bnav');
-        if (t === 'home') { v3TabHistory = []; document.getElementById('v3Overlay')?.classList.add('hidden'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+        if (t === 'home') { v3TabHistory = []; closeToolSectionModal(); document.getElementById('v3Overlay')?.classList.add('hidden'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
         else if (t === 'archive') openV3Dashboard('archive');
         else if (t === 'v3') openV3Dashboard('overview');
         else if (t === 'pay') openV3Dashboard('payments');
@@ -749,6 +775,7 @@
 
   function openV3Dashboard(tab = 'overview') {
     ensureV3Overlay();
+    closeToolSectionModal();
     const curYm = document.getElementById('activeYm')?.value || getTodayIso().slice(0, 7);
     archiveSelectedYear = curYm.slice(0, 4);
     archiveSelectedMonth = curYm.slice(5, 7);
@@ -840,7 +867,7 @@
       body.innerHTML = `
         <div class="v3-panel">
           <div class="row" style="justify-content:space-between; margin-bottom:10px;">
-            <h3 style="margin:0;">📅 महिना निहाय खरा हिशोब (V13.6)</h3>
+            <h3 style="margin:0;">📅 महिना निहाय खरा हिशोब (V13.8)</h3>
             <button id="v3ApplyMainYmBtn" class="sm">📂 मुख्य स्क्रीनवर सेट करा</button>
           </div>
 
@@ -1035,7 +1062,6 @@
       }));
 
     } else if (v3Tab === 'payments') {
-      // Quick Add Payment + संपूर्ण ग्राहक माहिती कार्ड
       body.innerHTML = `
         <div class="v3-panel" style="max-width:560px; margin:0 auto;">
           <h3 style="margin-top:0;">⚡ Quick Add Payment (झटपट पेमेंट नोंद)</h3>
@@ -1046,7 +1072,6 @@
               ${d.allActiveRows.map(r => `<option value="${r.id}">${esc(r.name)} (बाकी: ₹${r.outstanding})</option>`).join('')}
             </select>
 
-            <!-- ग्राहकाची संपूर्ण माहिती दाखवणारे कार्ड -->
             <div id="v3PayBalInfo" class="meta-box">ग्राहक निवडल्यावर मुद्दल, आधीची बाकी, बाकी महिने, जामीनदार आणि Call बटण दिसेल.</div>
 
             <input type="number" id="v3PayAmount" placeholder="जमा रक्कम (₹)" min="1" />
@@ -1089,22 +1114,10 @@
           </div>
 
           <div class="v3-pay-grid">
-            <div class="v3-pay-cell">
-              <div class="muted" style="font-size:0.74rem;">एकूण मुद्दल</div>
-              <strong>${fmt(row.principal)}</strong>
-            </div>
-            <div class="v3-pay-cell">
-              <div class="muted" style="font-size:0.74rem;">मासिक व्याज</div>
-              <strong style="color:#38bdf8;">${fmt(row.monthlyInterest)}</strong>
-            </div>
-            <div class="v3-pay-cell">
-              <div class="muted" style="font-size:0.74rem;">आधीची बाकी (मागील)</div>
-              <strong class="warn-text">${fmt(row.pastDue)}</strong>
-            </div>
-            <div class="v3-pay-cell">
-              <div class="muted" style="font-size:0.74rem;">एकूण थकबाकी</div>
-              <strong class="err">${fmt(row.outstanding)}</strong>
-            </div>
+            <div class="v3-pay-cell"><div class="muted" style="font-size:0.74rem;">एकूण मुद्दल</div><strong>${fmt(row.principal)}</strong></div>
+            <div class="v3-pay-cell"><div class="muted" style="font-size:0.74rem;">मासिक व्याज</div><strong style="color:#38bdf8;">${fmt(row.monthlyInterest)}</strong></div>
+            <div class="v3-pay-cell"><div class="muted" style="font-size:0.74rem;">आधीची बाकी (मागील)</div><strong class="warn-text">${fmt(row.pastDue)}</strong></div>
+            <div class="v3-pay-cell"><div class="muted" style="font-size:0.74rem;">एकूण थकबाकी</div><strong class="err">${fmt(row.outstanding)}</strong></div>
           </div>
 
           <div>
