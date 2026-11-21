@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#070c16" />
+  <meta name="theme-color" content="#05070e" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://sandeepgadge78-blip.github.io; script-src 'self' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://*.googleusercontent.com https://api.qrserver.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://docs.google.com https://*.googleusercontent.com https://script.google.com https://script.googleusercontent.com; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com;" />
-  <title>व्याज हिशोब वही (V14.1)</title>
+  <title>व्याज हिशोब वही (V14.2)</title>
 
   <link rel="manifest" href="./manifest.json" />
 
@@ -14,170 +14,263 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js" crossorigin="anonymous"></script>
 
   <style>
+    /* Ultra-Pro Obsidian Glass + Fintech Neon Theme (V14.2) */
     :root {
-      --bg: #060a12;
-      --card: #0d1422;
-      --card-2: #152036;
+      --bg: #05070e;
+      --card: rgba(13, 20, 36, 0.78);
+      --card-solid: #0d1424;
+      --card-2: rgba(23, 33, 56, 0.85);
       --text: #f8fafc;
       --muted: #94a3b8;
       --accent: #38bdf8;
-      --accent-2: #22c55e;
-      --danger: #ef4444;
+      --accent-2: #10b981;
+      --gold: #fbbf24;
+      --purple: #a855f7;
+      --danger: #f43f5e;
       --warn: #f59e0b;
-      --border: #24324d;
-      --paid-bg: rgba(21, 128, 61, 0.16);
-      --paid-border: #22c55e;
-      --partial-bg: rgba(180, 83, 9, 0.18);
+      --border: rgba(56, 189, 248, 0.18);
+      --paid-bg: rgba(16, 185, 129, 0.14);
+      --paid-border: #10b981;
+      --partial-bg: rgba(245, 158, 11, 0.15);
       --partial-border: #f59e0b;
-      --closed-bg: rgba(100, 116, 139, 0.18);
-      --default-item-bg: #0d1422;
-      --meta-bg: #111b2e;
+      --closed-bg: rgba(100, 116, 139, 0.16);
+      --default-item-bg: rgba(13, 20, 36, 0.82);
+      --meta-bg: rgba(17, 27, 46, 0.75);
+      --glass-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
     }
+
     body.light-mode {
       --bg: #f1f5f9;
       --card: #ffffff;
+      --card-solid: #ffffff;
       --card-2: #e2e8f0;
       --text: #0f172a;
       --muted: #475569;
       --accent: #0284c7;
       --accent-2: #15803d;
+      --gold: #b45309;
+      --purple: #7e22ce;
       --danger: #dc2626;
       --warn: #d97706;
       --border: #cbd5e1;
-      --paid-bg: rgba(34, 197, 94, 0.14);
+      --paid-bg: rgba(34, 197, 94, 0.12);
       --paid-border: #16a34a;
-      --partial-bg: rgba(245, 158, 11, 0.16);
+      --partial-bg: rgba(245, 158, 11, 0.14);
       --partial-border: #d97706;
-      --closed-bg: rgba(148, 163, 184, 0.2);
+      --closed-bg: rgba(148, 163, 184, 0.18);
       --default-item-bg: #ffffff;
       --meta-bg: #f8fafc;
+      --glass-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
     }
+
     * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      background: var(--bg);
+      background-color: var(--bg);
+      background-image:
+        radial-gradient(circle at 12% 8%, rgba(168, 85, 247, 0.14), transparent 38%),
+        radial-gradient(circle at 88% 14%, rgba(56, 189, 248, 0.14), transparent 40%),
+        radial-gradient(circle at 50% 92%, rgba(16, 185, 129, 0.09), transparent 42%);
+      background-attachment: fixed;
       color: var(--text);
-      padding-bottom: 76px;
-      transition: background 0.2s, color 0.2s;
+      padding-bottom: 80px;
+      transition: background 0.25s, color 0.25s;
     }
+    body.light-mode { background-image: none; }
+
+    /* Frosted Glass हेडर */
     header {
-      position: sticky; top: 0; z-index: 20;
-      background: var(--card); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 25;
+      background: rgba(8, 12, 24, 0.78);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
       padding: 10px 14px; display: flex; gap: 8px; align-items: center; justify-content: space-between;
     }
-    .brand { font-weight: 700; font-size: 1.02rem; display: flex; align-items: center; gap: 8px; }
+    body.light-mode header { background: rgba(255, 255, 255, 0.88); }
+
+    .brand { font-weight: 800; font-size: 1.02rem; display: flex; align-items: center; gap: 8px; letter-spacing: 0.2px; }
     .badge {
       font-size: 0.72rem; padding: 3px 8px; border-radius: 999px;
       background: var(--card-2); border: 1px solid var(--border); color: var(--accent);
     }
-    .badge.paid { color: #22c55e; border-color: #22c55e; background: rgba(34,197,94,0.14); }
-    .badge.partial { color: #f59e0b; border-color: #f59e0b; background: rgba(245,158,11,0.14); }
-    .badge.pending { color: #ef4444; border-color: #ef4444; background: rgba(239,68,68,0.14); }
+    .badge.paid { color: #34d399; border-color: rgba(16,185,129,0.5); background: rgba(16,185,129,0.14); }
+    .badge.partial { color: #fbbf24; border-color: rgba(245,158,11,0.5); background: rgba(245,158,11,0.14); }
+    .badge.pending { color: #fb7185; border-color: rgba(244,63,94,0.5); background: rgba(244,63,94,0.14); }
     .badge.closed { color: #94a3b8; border-color: #64748b; }
+
     .bell-btn { position: relative; display: inline-flex; align-items: center; gap: 3px; }
     .due-count-pill {
-      background: var(--danger); color: #fff; font-size: 0.68rem; font-weight: 700;
-      padding: 1px 5px; border-radius: 999px; min-width: 16px; text-align: center;
+      background: linear-gradient(135deg, #f43f5e, #e11d48); color: #fff; font-size: 0.68rem; font-weight: 700;
+      padding: 1px 6px; border-radius: 999px; min-width: 17px; text-align: center;
+      box-shadow: 0 0 8px rgba(244, 63, 94, 0.55);
     }
+
     .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
     button, input, select, textarea {
       background: var(--card-2); color: var(--text); border: 1px solid var(--border);
-      border-radius: 8px; padding: 8px 10px; font-size: 0.88rem; font-family: inherit;
+      border-radius: 10px; padding: 8px 10px; font-size: 0.88rem; font-family: inherit;
     }
-    button { cursor: pointer; font-weight: 600; transition: 0.15s; }
+    button { cursor: pointer; font-weight: 600; transition: transform 0.14s, border-color 0.18s, box-shadow 0.18s; }
+    button:active { transform: scale(0.97); }
     button:hover { border-color: var(--accent); }
-    button.primary { background: #0284c7; border-color: #0ea5e9; color: #fff; }
-    button.success { background: #15803d; border-color: #22c55e; color: #fff; }
-    button.danger { background: #991b1b; border-color: #ef4444; color: #fff; }
-    button.warn { background: #92400e; border-color: #f59e0b; color: #fff; }
-    button.sm { padding: 5px 8px; font-size: 0.78rem; }
+    button.primary {
+      background: linear-gradient(135deg, #6366f1, #0ea5e9);
+      border-color: rgba(56, 189, 248, 0.6); color: #fff;
+      box-shadow: 0 4px 14px rgba(14, 165, 233, 0.28);
+    }
+    button.success {
+      background: linear-gradient(135deg, #059669, #10b981);
+      border-color: rgba(52, 211, 153, 0.55); color: #fff;
+    }
+    button.danger {
+      background: linear-gradient(135deg, #be123c, #e11d48);
+      border-color: rgba(251, 113, 133, 0.5); color: #fff;
+    }
+    button.warn {
+      background: linear-gradient(135deg, #b45309, #d97706);
+      border-color: rgba(251, 191, 36, 0.5); color: #fff;
+    }
+    button.sm { padding: 5px 9px; font-size: 0.78rem; }
+
     .container { max-width: 1020px; margin: 12px auto; padding: 0 12px; }
     .card {
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: 14px; padding: 14px; margin-bottom: 12px;
+      background: var(--card); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border); border-radius: 16px; padding: 14px; margin-bottom: 12px;
+      box-shadow: var(--glass-shadow);
     }
 
+    /* Ultra-Pro महिना कार्ड + लाईव्ह वसुली प्रोग्रेस बार */
     .month-hero-card {
-      background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+      background: linear-gradient(145deg, rgba(18, 28, 52, 0.85), rgba(15, 19, 38, 0.88));
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 18px;
       padding: 16px 14px; text-align: center; margin-bottom: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.06);
     }
-    .month-hero-sub { font-size: 0.78rem; color: var(--muted); margin-bottom: 4px; }
+    body.light-mode .month-hero-card {
+      background: linear-gradient(145deg, #ffffff, #f0f9ff);
+      border-color: #bae6fd; box-shadow: var(--glass-shadow);
+    }
+    .month-hero-sub { font-size: 0.76rem; color: var(--muted); letter-spacing: 0.5px; text-transform: uppercase; }
     .month-hero-title {
-      font-size: 1.75rem; font-weight: 800; color: #38bdf8;
-      margin: 2px 0 8px; cursor: pointer; display: inline-block;
+      font-size: 1.8rem; font-weight: 900;
+      background: linear-gradient(90deg, #38bdf8, #a855f7, #34d399);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      margin: 3px 0 8px; cursor: pointer; display: inline-block;
+    }
+    body.light-mode .month-hero-title {
+      background: linear-gradient(90deg, #0284c7, #6366f1);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
     .month-hero-links {
-      display: flex; justify-content: center; align-items: center; gap: 8px;
-      font-size: 0.84rem; color: var(--muted); flex-wrap: wrap;
+      display: flex; justify-content: center; align-items: center; gap: 10px;
+      font-size: 0.84rem; color: var(--muted); flex-wrap: wrap; margin-bottom: 10px;
     }
-    .month-hero-links a, .month-hero-links button {
-      background: none; border: none; color: #cbd5e1; padding: 2px 4px;
-      font-size: 0.84rem; font-weight: 600; text-decoration: none;
+    .month-hero-links button {
+      background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25);
+      color: var(--text); padding: 4px 12px; border-radius: 999px;
+      font-size: 0.78rem; font-weight: 700;
     }
-    .month-hero-links a:hover, .month-hero-links button:hover { color: #38bdf8; }
+    .month-hero-links button:hover { border-color: var(--accent); color: var(--accent); }
 
-    /* २x२ क्लिकेबल डॅशबोर्ड कार्ड्स */
+    /* लाईव्ह वसुली प्रोग्रेस बार */
+    .hero-prog-wrap {
+      max-width: 440px; margin: 4px auto 0; text-align: left;
+      background: rgba(0, 0, 0, 0.22); border: 1px solid var(--border);
+      border-radius: 12px; padding: 8px 10px;
+    }
+    body.light-mode .hero-prog-wrap { background: rgba(2, 132, 199, 0.06); }
+    .hero-prog-head {
+      display: flex; justify-content: space-between; font-size: 0.75rem;
+      font-weight: 700; margin-bottom: 5px; color: var(--muted);
+    }
+    .hero-prog-track {
+      width: 100%; height: 8px; border-radius: 999px;
+      background: rgba(148, 163, 184, 0.22); overflow: hidden;
+    }
+    .hero-prog-fill {
+      height: 100%; width: 0%; border-radius: 999px;
+      background: linear-gradient(90deg, #a855f7, #38bdf8, #10b981);
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.65);
+      transition: width 0.45s cubic-bezier(.22,1,.36,1);
+    }
+
+    /* २x२ निऑन ग्लो डॅशबोर्ड कार्ड्स */
     .grid-2x2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 12px; }
     .stat-tile {
-      background: var(--card); border: 1px solid var(--border); border-radius: 14px;
-      padding: 14px 12px; text-align: left; transition: 0.15s;
+      position: relative; overflow: hidden;
+      background: var(--card); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border); border-top: 3px solid var(--purple);
+      border-radius: 15px; padding: 13px 12px; text-align: left;
+      box-shadow: var(--glass-shadow); transition: transform 0.16s, box-shadow 0.2s, border-color 0.2s;
     }
+    .stat-tile.tile-gold { border-top-color: var(--gold); }
+    .stat-tile.tile-cyan { border-top-color: var(--accent); }
+    .stat-tile.tile-crimson { border-top-color: var(--danger); }
     .stat-tile.clickable { cursor: pointer; }
     .stat-tile.clickable:hover, .stat-tile.clickable:active {
-      border-color: var(--accent); background: var(--card-2); transform: translateY(-1px);
+      transform: translateY(-2px);
+      border-color: rgba(56, 189, 248, 0.55);
+      box-shadow: 0 8px 24px rgba(56, 189, 248, 0.18);
     }
-    .stat-tile-lbl { font-size: 0.8rem; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
-    .stat-tile-val { font-size: 1.35rem; font-weight: 800; margin-top: 6px; }
+    .stat-tile-lbl { font-size: 0.78rem; color: var(--muted); display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
+    .stat-tile-val { font-size: 1.38rem; font-weight: 900; margin-top: 6px; letter-spacing: 0.2px; }
 
     .search-pill-box {
-      width: 100%; border-radius: 999px !important; padding: 10px 16px !important;
-      background: var(--card) !important; border: 1px solid var(--border) !important;
-      margin-bottom: 10px;
+      width: 100%; border-radius: 999px !important; padding: 11px 16px !important;
+      background: var(--card) !important; backdrop-filter: blur(10px);
+      border: 1px solid var(--border) !important; margin-bottom: 10px;
+      box-shadow: var(--glass-shadow);
     }
     .pill-strip {
       display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 12px;
       align-items: center;
     }
     .pill-btn {
-      border-radius: 999px; padding: 6px 12px; font-size: 0.78rem; white-space: nowrap;
+      border-radius: 999px; padding: 6px 13px; font-size: 0.78rem; white-space: nowrap;
       background: var(--card); border: 1px solid var(--border); color: var(--text);
     }
-    .pill-btn.filter-active { background: #1d4ed8; border-color: #3b82f6; color: #fff; }
-    .pill-btn.pill-paid.filter-active { background: #14532d; border-color: #22c55e; color: #4ade80; }
-    .pill-btn.pill-partial.filter-active { background: #713f12; border-color: #eab308; color: #facc15; }
-    .pill-btn.pill-pending.filter-active { background: #7f1d1d; border-color: #ef4444; color: #fca5a5; }
+    .pill-btn.filter-active {
+      background: linear-gradient(135deg, #6366f1, #0ea5e9);
+      border-color: #38bdf8; color: #fff; box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+    }
+    .pill-btn.pill-paid.filter-active { background: #065f46; border-color: #10b981; color: #6ee7b7; box-shadow: 0 0 10px rgba(16,185,129,0.35); }
+    .pill-btn.pill-partial.filter-active { background: #78350f; border-color: #f59e0b; color: #fde68a; box-shadow: 0 0 10px rgba(245,158,11,0.35); }
+    .pill-btn.pill-pending.filter-active { background: #881337; border-color: #f43f5e; color: #fda4af; box-shadow: 0 0 10px rgba(244,63,94,0.35); }
 
     .borrower-item {
       border: 1px solid var(--border); border-radius: 16px; padding: 14px;
       margin-bottom: 12px; background: var(--default-item-bg);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      box-shadow: var(--glass-shadow);
     }
-    .borrower-item.status-paid { background: var(--paid-bg); border-color: rgba(34,197,94,0.45); }
+    .borrower-item.status-paid { background: var(--paid-bg); border-color: rgba(16,185,129,0.45); }
     .borrower-item.status-partial { background: var(--partial-bg); border-color: rgba(245,158,11,0.45); }
     .borrower-item.status-closed { background: var(--closed-bg); opacity: 0.88; }
 
-    .alert-banner { background: rgba(239, 68, 68, 0.16); border: 1px solid var(--danger); border-radius: 12px; padding: 10px 14px; margin-bottom: 12px; }
+    .alert-banner { background: rgba(244, 63, 94, 0.16); border: 1px solid var(--danger); border-radius: 12px; padding: 10px 14px; margin-bottom: 12px; }
     .info-banner { background: rgba(14, 165, 233, 0.16); border: 1px solid var(--accent); border-radius: 12px; padding: 10px 14px; margin-bottom: 12px; }
     .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
     .field { display: flex; flex-direction: column; gap: 4px; }
     .field label { font-size: 0.78rem; color: var(--muted); }
-    .meta-box { margin-top: 6px; padding: 8px; border-radius: 8px; background: var(--meta-bg); border: 1px solid var(--border); font-size: 0.82rem; }
+    .meta-box { margin-top: 6px; padding: 8px; border-radius: 10px; background: var(--meta-bg); border: 1px solid var(--border); font-size: 0.82rem; }
     .doc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-top: 10px; }
-    .doc-card { border: 1px solid var(--border); border-radius: 8px; padding: 8px; background: var(--meta-bg); text-align: center; }
+    .doc-card { border: 1px solid var(--border); border-radius: 10px; padding: 8px; background: var(--meta-bg); text-align: center; }
     .doc-card img { max-width: 100%; max-height: 150px; border-radius: 6px; object-fit: cover; }
     .muted { color: var(--muted); font-size: 0.84rem; }
     .ok { color: var(--accent-2); }
     .err { color: var(--danger); }
     .warn-text { color: var(--warn); }
-    .audit-box { max-height: 320px; overflow-y: auto; font-size: 0.82rem; background: var(--bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border); }
+    .audit-box { max-height: 320px; overflow-y: auto; font-size: 0.82rem; background: var(--bg); padding: 10px; border-radius: 10px; border: 1px solid var(--border); }
     table.passbook-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-top: 8px; }
     table.passbook-table th, table.passbook-table td { border: 1px solid var(--border); padding: 6px 8px; text-align: left; }
     table.passbook-table th { background: var(--card-2); color: var(--accent); }
-    #authScreen { max-width: 420px; margin: 48px auto; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
-    .modal-backdrop { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.82); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 14px; overflow-y: auto; }
-    .modal-card { width: 100%; max-width: 840px; max-height: 92vh; overflow-y: auto; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+    #authScreen { max-width: 420px; margin: 48px auto; background: var(--card); backdrop-filter: blur(14px); border: 1px solid var(--border); border-radius: 16px; padding: 20px; box-shadow: var(--glass-shadow); }
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.8); backdrop-filter: blur(6px); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 14px; overflow-y: auto; }
+    .modal-card { width: 100%; max-width: 840px; max-height: 92vh; overflow-y: auto; background: var(--card-solid); border: 1px solid rgba(56, 189, 248, 0.28); border-radius: 16px; padding: 16px; box-shadow: 0 20px 50px rgba(0,0,0,0.65); }
     .tab-bar { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0; }
-    .tab-btn.active { background: #0284c7; border-color: #0ea5e9; color: #fff; }
+    .tab-btn.active { background: linear-gradient(135deg, #6366f1, #0ea5e9); border-color: #38bdf8; color: #fff; }
     .hidden { display: none !important; }
 
     #printArea { display: none; }
@@ -192,7 +285,7 @@
 </head>
 <body>
 
-  <!-- स्वच्छ हेडर: फक्त ☰ (मेन्यू), 🔔 (अलर्ट) आणि ⋮ (सेटिंग्ज) -->
+  <!-- स्वच्छ Frosted Glass हेडर -->
   <header>
     <div class="brand">
       <span id="tBrandTitle">व्याज हिशोब वही</span>
@@ -205,7 +298,7 @@
       </button>
       <span id="threeDotMenuSlot"></span>
 
-      <!-- अंतर्गत सुरक्षित ट्रिगर्स (⋮ आणि ☰ मेन्यूमधून चालतात) -->
+      <!-- अंतर्गत सुरक्षित ट्रिगर्स -->
       <span class="hidden">
         <button id="toggleHideAmtBtn">👁️</button>
         <button id="toggleThemeBtn">☀️</button>
@@ -240,37 +333,44 @@
     <div id="monthEndBanner" class="info-banner hidden"></div>
     <div id="todayPromiseAlert" class="alert-banner hidden"></div>
 
-    <!-- चालू खातेवही महिना कार्ड -->
+    <!-- Ultra-Pro महिना कार्ड + लाईव्ह वसुली प्रोग्रेस बार -->
     <section class="month-hero-card">
       <div class="month-hero-sub">चालू खातेवही महिना</div>
       <div id="bigActiveMonthTitle" class="month-hero-title" title="महिना बदलण्यासाठी क्लिक करा">नोव्हेंबर 2026</div>
       <div class="month-hero-links">
-        <button type="button" id="heroPdfLink">PDF</button>
-        <span>|</span>
-        <button type="button" id="heroExcelLink">Excel</button>
-        <span>|</span>
-        <button type="button" id="heroBackupLink">Backup</button>
+        <button type="button" id="heroPdfLink">🖨️ PDF</button>
+        <button type="button" id="heroExcelLink">📊 Excel</button>
+        <button type="button" id="heroBackupLink">☁️ Backup</button>
         <span class="hidden"><input type="month" id="activeYm" /></span>
+      </div>
+      <div class="hero-prog-wrap">
+        <div class="hero-prog-head">
+          <span>महिन्याची वसुली प्रगती</span>
+          <span id="heroCollectionPctText" style="color:var(--accent-2);">0% (₹0 / ₹0)</span>
+        </div>
+        <div class="hero-prog-track">
+          <div id="heroCollectionBarFill" class="hero-prog-fill"></div>
+        </div>
       </div>
     </section>
 
-    <!-- २x२ क्लिकेबल डॅशबोर्ड कार्ड्स -->
+    <!-- २x२ निऑन ग्लो क्लिकेबल डॅशबोर्ड कार्ड्स -->
     <section class="grid-2x2">
       <div class="stat-tile">
         <div class="stat-tile-lbl"><span>एकूण खाती</span></div>
-        <div id="dashActiveCount" class="stat-tile-val">0</div>
+        <div id="dashActiveCount" class="stat-tile-val" style="color:var(--purple);">0</div>
       </div>
-      <div class="stat-tile clickable" id="tilePrincipal" data-stat-drill="principal" title="सर्व ग्राहकांची मुद्दल यादी पहा">
-        <div class="stat-tile-lbl"><span>एकूण मुद्दल</span><span style="font-size:0.72rem; color:var(--accent);">पहा ▸</span></div>
-        <div id="dashTotalPrincipal" class="stat-tile-val">₹0</div>
+      <div class="stat-tile tile-gold clickable" id="tilePrincipal" data-stat-drill="principal" title="सर्व ग्राहकांची मुद्दल यादी पहा">
+        <div class="stat-tile-lbl"><span>एकूण मुद्दल</span><span style="font-size:0.72rem; color:var(--gold);">पहा ▸</span></div>
+        <div id="dashTotalPrincipal" class="stat-tile-val" style="color:var(--gold);">₹0</div>
       </div>
-      <div class="stat-tile clickable" id="tileInterest" data-stat-drill="interest" title="मासिक व्याज यादी पहा">
+      <div class="stat-tile tile-cyan clickable" id="tileInterest" data-stat-drill="interest" title="मासिक व्याज यादी पहा">
         <div class="stat-tile-lbl"><span>मासिक व्याज</span><span style="font-size:0.72rem; color:var(--accent);">पहा ▸</span></div>
-        <div id="dashExpectedInterest" class="stat-tile-val" style="color:#38bdf8;">₹0</div>
+        <div id="dashExpectedInterest" class="stat-tile-val" style="color:var(--accent);">₹0</div>
       </div>
-      <div class="stat-tile clickable" id="tilePending" data-stat-drill="pending" title="बाकी व्याज व बाकी महिने यादी पहा">
-        <div class="stat-tile-lbl"><span>बाकी व्याज</span><span style="font-size:0.72rem; color:#fb923c;">पहा ▸</span></div>
-        <div id="dashTotalPending" class="stat-tile-val" style="color:#fb923c;">₹0</div>
+      <div class="stat-tile tile-crimson clickable" id="tilePending" data-stat-drill="pending" title="बाकी व्याज व बाकी महिने यादी पहा">
+        <div class="stat-tile-lbl"><span>बाकी व्याज</span><span style="font-size:0.72rem; color:var(--danger);">पहा ▸</span></div>
+        <div id="dashTotalPending" class="stat-tile-val" style="color:var(--danger);">₹0</div>
       </div>
     </section>
 
@@ -304,7 +404,7 @@
 
   </main>
 
-  <!-- डॅशबोर्ड कार्ड्स (मुद्दल / मासिक व्याज / बाकी व्याज) साठी नवीन सविस्तर यादी पॉपअप -->
+  <!-- डॅशबोर्ड कार्ड्स (मुद्दल / मासिक व्याज / बाकी व्याज) साठी सविस्तर यादी पॉपअप -->
   <div id="statDrillModal" class="modal-backdrop hidden">
     <div class="modal-card">
       <div class="row" style="justify-content:space-between; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--border);">
@@ -317,7 +417,7 @@
     </div>
   </div>
 
-  <!-- ☰ मेन्यूमधील ६ फीचर्ससाठी स्वतंत्र पॉपअप कंटेनर (✕ बंद करा बटण काढले) -->
+  <!-- ☰ मेन्यूमधील ६ फीचर्ससाठी स्वतंत्र पॉपअप कंटेनर -->
   <div id="toolSectionModal" class="modal-backdrop hidden">
     <div class="modal-card">
       <div class="row" style="justify-content:space-between; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border);">
@@ -468,7 +568,7 @@
     </div>
   </div>
 
-  <!-- इतर सर्व Modals (✕ बंद करा बटण काढले — फोनच्या Back बटणाने बंद होतील) -->
+  <!-- इतर सर्व Modals -->
   <div id="smartInfoModal" class="modal-backdrop hidden"><div class="modal-card" style="max-width:540px;"><div class="row" style="justify-content:space-between; margin-bottom:10px;"><h3 id="smartInfoTitle" style="margin:0;">माहिती</h3><button id="printSmartInfoBtn" class="primary sm">🖨️ प्रिंट</button></div><div id="smartInfoBody"></div></div></div>
   <div id="pnlModal" class="modal-backdrop hidden"><div class="modal-card"><div class="row" style="justify-content:space-between; margin-bottom:10px;"><h3 style="margin:0;">📈 Profit & Loss अहवाल</h3></div><div id="pnlContent"></div></div></div>
   <div id="securityModal" class="modal-backdrop hidden"><div class="modal-card"><div class="row" style="justify-content:space-between; margin-bottom:10px;"><h3 style="margin:0;">🛡️ Admin Security Dashboard</h3></div><div class="dash-grid"><div class="dash-box"><div class="dash-label">File Scans</div><div id="secScanCount" class="dash-val">0</div></div><div class="dash-box"><div class="dash-label">Quarantine</div><div id="secQuarantineCount" class="dash-val warn-text">0</div></div><div class="dash-box"><div class="dash-label">Blocked</div><div id="secBlockedCount" class="dash-val err">0</div></div><div class="dash-box"><div class="dash-label">Network</div><div id="secNetSync" class="dash-val ok" style="font-size:0.95rem;">Online</div></div></div><div class="row" style="margin-top:12px;"><button id="runDiagnosticsBtn" class="primary sm">🔍 Diagnostics</button></div><div id="diagnosticsResult" class="meta-box" style="margin-top:8px;"></div><h4 style="margin-bottom:6px;">🚨 Threat Log</h4><div id="threatLogBox" class="audit-box"></div></div></div>
@@ -509,8 +609,8 @@
 
   <div id="passbookModal" class="modal-backdrop hidden"><div class="modal-card"><div class="row" style="justify-content:space-between;"><h3 id="pbTitle" style="margin:0;">Passbook</h3></div><div class="tab-bar"><button class="tab-btn active sm" data-pbtab="passbook">📖 Passbook</button><button class="tab-btn sm" data-pbtab="timeline">🕒 Timeline</button><button class="tab-btn sm" data-pbtab="payments">💰 Payments</button><button class="tab-btn sm" data-pbtab="principals">📊 मुद्दल</button></div><div id="pbContent"></div></div></div>
 
-  <!-- ब्राउझर कॅश रिफ्रेशसाठी V14.1 व्हर्जन -->
-  <script src="./app.js?v=14.1"></script>
-  <script src="./dashboard.js?v=14.1"></script>
+  <!-- ब्राउझर कॅश रिफ्रेशसाठी V14.2 व्हर्जन -->
+  <script src="./app.js?v=14.2"></script>
+  <script src="./dashboard.js?v=14.2"></script>
 </body>
 </html>
