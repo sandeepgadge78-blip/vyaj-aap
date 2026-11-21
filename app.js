@@ -1,4 +1,4 @@
-// १. Hishob (hishob-4b548) साठी अचूक Firebase Configuration (V14.1)
+// १. Hishob (hishob-4b548) साठी अचूक Firebase Configuration (V14.2 - Ultra-Pro Obsidian Glass)
 const firebaseConfig = {
   apiKey: "AIzaSyDYpC1Pdm9jDtmNlT2J6BOPzk88QvBo8ds",
   authDomain: "hishob-4b548.firebaseapp.com",
@@ -19,17 +19,18 @@ async function ensurePersistenceEnabled() {
 }
 ensurePersistenceEnabled();
 
-// नवीन ग्राहक कार्ड (V14.1) व आतल्या तपशील कार्डसाठी CSS (Dark व Light दोन्ही मोडसाठी)
+// Ultra-Pro ग्राहक कार्ड (V14.2) व आतल्या तपशील कार्डसाठी CSS (Dark Neon Glass + Light Mode)
 (function injectStructuredCardStyles() {
   if (document.getElementById('hishobStructuredCardCss')) return;
   const st = document.createElement('style');
   st.id = 'hishobStructuredCardCss';
   st.textContent = `
     .borrower-item.nc-card {
-      padding: 0; overflow: hidden; border-left: 5px solid #0284c7;
-      border-radius: 14px; transition: border-color 0.2s;
+      padding: 0; overflow: hidden; border-left: 5px solid #38bdf8;
+      border-radius: 16px; transition: transform 0.16s, border-color 0.2s, box-shadow 0.2s;
     }
-    .borrower-item.nc-card.status-paid { border-left-color: #22c55e; }
+    .borrower-item.nc-card:hover { box-shadow: 0 8px 26px rgba(56, 189, 248, 0.16); }
+    .borrower-item.nc-card.status-paid { border-left-color: #10b981; }
     .borrower-item.nc-card.status-partial { border-left-color: #f59e0b; }
     .borrower-item.nc-card.status-closed { border-left-color: #64748b; }
 
@@ -38,7 +39,7 @@ ensurePersistenceEnabled();
 
     .nc-top-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
     .nc-title { font-size: 1.08rem; font-weight: 800; display: flex; align-items: center; gap: 6px; }
-    .nc-num { color: #0ea5e9; font-weight: 800; }
+    .nc-num { color: #38bdf8; font-weight: 900; }
     .nc-top-btns { display: flex; gap: 6px; align-items: center; }
 
     .nc-call-btn {
@@ -46,7 +47,11 @@ ensurePersistenceEnabled();
       font-weight: 700 !important; display: inline-flex; align-items: center; gap: 4px;
     }
     .nc-call-btn.no-num { background: #475569 !important; border-color: #64748b !important; color: #fff !important; }
-    .nc-call-btn.has-num { background: #15803d !important; border-color: #22c55e !important; color: #fff !important; }
+    .nc-call-btn.has-num {
+      background: linear-gradient(135deg, #059669, #10b981) !important;
+      border-color: rgba(52, 211, 153, 0.6) !important; color: #fff !important;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+    }
 
     .nc-detail-toggle {
       border-radius: 10px !important; padding: 5px 11px !important; font-size: 0.8rem !important;
@@ -62,7 +67,7 @@ ensurePersistenceEnabled();
     .nc-job-pill.has-job { color: var(--text) !important; border-color: rgba(56,189,248,0.45) !important; }
 
     .nc-3col-box {
-      margin-top: 10px; padding: 10px 12px; border-radius: 10px;
+      margin-top: 10px; padding: 10px 12px; border-radius: 12px;
       background: var(--meta-bg); border: 1px solid var(--border);
       display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
     }
@@ -90,7 +95,7 @@ ensurePersistenceEnabled();
       background: var(--card-2); color: var(--text);
     }
     .sc-pill.blue { background: rgba(14,165,233,0.16); border-color: rgba(56,189,248,0.45); color: #38bdf8; }
-    .sc-pill.green { background: rgba(34,197,94,0.16); border-color: rgba(34,197,94,0.45); color: #4ade80; }
+    .sc-pill.green { background: rgba(16,185,129,0.16); border-color: rgba(16,185,129,0.45); color: #34d399; }
     .sc-pill.orange { background: rgba(245,158,11,0.16); border-color: rgba(245,158,11,0.45); color: #fbbf24; }
     .sc-pill.click { cursor: pointer; }
     .sc-pill.click:hover { border-color: var(--accent); }
@@ -113,9 +118,9 @@ ensurePersistenceEnabled();
       width: 100%; margin-top: 6px; background: var(--card); border: 1px solid rgba(245,158,11,0.45);
       border-radius: 8px; padding: 6px 8px; font-size: 0.82rem; color: var(--text); resize: vertical;
     }
-    .sc-btn-purple { background: #7e22ce !important; border-color: #a855f7 !important; color: #fff !important; }
-    .sc-btn-teal { background: #0f766e !important; border-color: #14b8a6 !important; color: #fff !important; }
-    .sc-btn-orange { background: #c2410c !important; border-color: #f97316 !important; color: #fff !important; }
+    .sc-btn-purple { background: linear-gradient(135deg, #7e22ce, #a855f7) !important; border-color: #c084fc !important; color: #fff !important; }
+    .sc-btn-teal { background: linear-gradient(135deg, #0f766e, #14b8a6) !important; border-color: #2dd4bf !important; color: #fff !important; }
+    .sc-btn-orange { background: linear-gradient(135deg, #c2410c, #f97316) !important; border-color: #fb923c !important; color: #fff !important; }
     .sc-promise-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
     @media (max-width: 560px) { .sc-promise-grid { grid-template-columns: 1fr; } }
     .sc-promise-cell {
@@ -487,7 +492,7 @@ function triggerDailyMorningNotification(force = false) {
   }
 }
 
-// 🔔 रिमाइंडर पॉपअपमध्ये थेट Call बटण जोडले आहे
+// 🔔 रिमाइंडर पॉपअपमध्ये थेट Call बटण
 document.getElementById('notifBellBtn')?.addEventListener('click', () => {
   const box = document.getElementById('notifModalContent');
   const todayHtml = state.todayPromisesCache.length ? state.todayPromisesCache.map(x => {
@@ -934,7 +939,7 @@ function toggleBorrowerCardDetails(id) {
   }
 }
 
-// १२. UI Render
+// १२. UI Render + लाईव्ह वसुली प्रोग्रेस बार अपडेट
 function renderBorrowers() {
   const container = document.getElementById('borrowersList'), recycleContainer = document.getElementById('recycleBinList');
   const activeYm = document.getElementById('activeYm').value || currentYmDefault(), query = (document.getElementById('searchInput').value || '').trim();
@@ -969,6 +974,13 @@ function renderBorrowers() {
   document.getElementById('dashTotalPrincipal').textContent = fmtAmt(totalPrincipal);
   document.getElementById('dashExpectedInterest').textContent = fmtAmt(totalExpectedInterest);
   document.getElementById('dashTotalPending').textContent = fmtAmt(totalPending);
+
+  // लाईव्ह मासिक वसुली प्रोग्रेस बार अपडेट (V14.2)
+  const collPct = totalExpectedInterest > 0 ? Math.min(100, Math.round((totalCollectedMonth / totalExpectedInterest) * 100)) : 0;
+  const pctTextEl = document.getElementById('heroCollectionPctText');
+  const barFillEl = document.getElementById('heroCollectionBarFill');
+  if (pctTextEl) pctTextEl.textContent = `${collPct}% (${fmtAmt(totalCollectedMonth)} / ${fmtAmt(totalExpectedInterest)})`;
+  if (barFillEl) barFillEl.style.width = `${collPct}%`;
 
   const todayAlertEl = document.getElementById('todayPromiseAlert');
   if (todayPromises.length) { todayAlertEl.classList.remove('hidden'); todayAlertEl.innerHTML = `<strong>🔔 आजचा वायदा (${todayStr}):</strong> ${todayPromises.map(x => `${escapeHtml(x.name)} — <strong>${fmtAmt(x.amount)}</strong>`).join(' | ')}`; }
@@ -1053,9 +1065,9 @@ function renderBorrowers() {
             </div>
 
             <div class="nc-3col-box">
-              <div><div class="nc-3col-lbl">एकूण मुद्दल</div><div class="nc-3col-val">${fmtAmt(calc.principal)}</div></div>
+              <div><div class="nc-3col-lbl">एकूण मुद्दल</div><div class="nc-3col-val" style="color:var(--gold);">${fmtAmt(calc.principal)}</div></div>
               <div><div class="nc-3col-lbl">व्याज दर (%)</div><div class="nc-3col-val">${Number(b.rate || 0)}%</div></div>
-              <div><div class="nc-3col-lbl">महिन्याचे व्याज</div><div class="nc-3col-val" style="color:#0ea5e9;">${fmtAmt(calc.monthlyInterest)}</div></div>
+              <div><div class="nc-3col-lbl">महिन्याचे व्याज</div><div class="nc-3col-val" style="color:var(--accent);">${fmtAmt(calc.monthlyInterest)}</div></div>
             </div>
 
             <div class="nc-foot-row">
