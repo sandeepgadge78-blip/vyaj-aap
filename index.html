@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#05070e" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://sandeepgadge78-blip.github.io; script-src 'self' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://*.googleusercontent.com https://api.qrserver.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://docs.google.com https://*.googleusercontent.com https://script.google.com https://script.googleusercontent.com; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com;" />
-  <title>व्याज हिशोब वही (V14.2)</title>
+  <title>व्याज हिशोब वही (V14.3)</title>
 
   <link rel="manifest" href="./manifest.json" />
 
@@ -14,7 +14,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js" crossorigin="anonymous"></script>
 
   <style>
-    /* Ultra-Pro Obsidian Glass + Fintech Neon Theme (V14.2) */
+    /* Ultra-Pro Obsidian Glass + Fintech Neon Theme (V14.3) */
     :root {
       --bg: #05070e;
       --card: rgba(13, 20, 36, 0.78);
@@ -78,6 +78,32 @@
       transition: background 0.25s, color 0.25s;
     }
     body.light-mode { background-image: none; }
+
+    /* Splash Screen (V14.3) */
+    #splashScreen {
+      position: fixed; inset: 0; z-index: 9999;
+      background: radial-gradient(circle at 50% 35%, #131c36 0%, #05070e 75%);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 12px; transition: opacity 0.4s ease, visibility 0.4s ease;
+    }
+    #splashScreen.splash-hide { opacity: 0; visibility: hidden; pointer-events: none; }
+    .splash-logo {
+      width: 78px; height: 78px; border-radius: 22px;
+      background: linear-gradient(135deg, #6366f1, #0ea5e9, #10b981);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.2rem; box-shadow: 0 0 32px rgba(56, 189, 248, 0.55);
+      animation: splashPulse 1.4s infinite ease-in-out;
+    }
+    .splash-title {
+      font-size: 1.55rem; font-weight: 900; letter-spacing: 0.4px;
+      background: linear-gradient(90deg, #38bdf8, #a855f7, #34d399);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .splash-sub { font-size: 0.8rem; color: #94a3b8; }
+    @keyframes splashPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.06); }
+    }
 
     /* Frosted Glass हेडर */
     header {
@@ -285,6 +311,13 @@
 </head>
 <body>
 
+  <!-- Splash Screen (अ‍ॅप सुरू होताना १ सेकंदासाठी) -->
+  <div id="splashScreen">
+    <div class="splash-logo">💎</div>
+    <div class="splash-title">व्याज हिशोब वही</div>
+    <div class="splash-sub">Ultra-Pro Fintech V14.3 • सुरक्षित लोडिंग...</div>
+  </div>
+
   <!-- स्वच्छ Frosted Glass हेडर -->
   <header>
     <div class="brand">
@@ -306,7 +339,7 @@
         <button id="openPnlBtn">📈 P&L</button>
         <button id="openSecurityDashBtn">🛡️ Security</button>
         <span id="userEmailBadge"></span>
-        <select id="autoLockSelect"><option value="300000">5m</option><option value="600000">10m</option><option value="900000">15m</option></select>
+        <select id="autoLockSelect"><option value="120000">2m</option><option value="300000" selected>5m</option><option value="600000">10m</option><option value="900000">15m</option></select>
         <button id="lockBtn">🔒</button>
       </span>
     </div>
@@ -314,7 +347,7 @@
 
   <div id="printArea"></div>
 
-  <!-- लॉगिन स्क्रीन -->
+  <!-- लॉगिन स्क्रीन (Forgot Password सह) -->
   <div id="authScreen">
     <h2 style="margin-top:0;">व्याज हिशोब लॉगिन</h2>
     <p class="muted">केवळ अधिकृत खात्यासाठी सुरक्षित प्रवेश.</p>
@@ -323,7 +356,8 @@
       <input type="password" id="loginPassword" placeholder="पासवर्ड" autocomplete="current-password" />
       <button id="emailLoginBtn" class="primary">ईमेल/पासवर्डने लॉगिन करा</button>
       <button id="googleLoginBtn" class="success">Google Sign-In</button>
-      <div id="authMsg" class="muted"></div>
+      <button type="button" id="forgotPasswordBtn" class="sm" style="background:transparent; border:none; color:var(--accent); text-decoration:underline; margin-top:2px;">🔑 पासवर्ड विसरलात? (Forgot Password)</button>
+      <div id="authMsg" class="muted" style="text-align:center;"></div>
     </div>
   </div>
 
@@ -403,6 +437,87 @@
     <span id="voiceStatusMsg" class="hidden"></span>
 
   </main>
+
+  <!-- नवीन १: बिझनेस प्रोफाईल पॉपअप (Auto-Branding) -->
+  <div id="profileModal" class="modal-backdrop hidden">
+    <div class="modal-card" style="max-width:520px;">
+      <div class="row" style="justify-content:space-between; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border);">
+        <h3 style="margin:0; color:var(--accent);">👤 बिझनेस प्रोफाईल (Auto-Branding)</h3>
+      </div>
+      <p class="muted" style="margin-top:0;">इथे सेव्ह केलेले नाव व नंबर तुमच्या **वचनचिट्ठी**, **PDF रिपोर्ट** आणि **WhatsApp पावतीवर** आपोआप छापून येईल.</p>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <div class="field"><label>व्यवसायाचे / फर्मचे नाव</label><input type="text" id="profBizName" placeholder="उदा. श्री गणेश फायनान्स / व्याज हिशोब वही" /></div>
+        <div class="field"><label>तुमचे पूर्ण नाव (Owner Name)</label><input type="text" id="profOwnerName" placeholder="उदा. संदीप गाडगे" /></div>
+        <div class="field"><label>तुमचा मोबाईल नंबर</label><input type="tel" id="profMobile" placeholder="10 अंकी मोबाईल नंबर" /></div>
+        <div class="field"><label>तुमचा UPI ID (QR साठी)</label><input type="text" id="profUpiId" placeholder="उदा. name@okaxis" /></div>
+        <button type="button" id="saveProfileBtn" class="success" style="width:100%; margin-top:4px;">✅ प्रोफाईल सेव्ह करा</button>
+        <div id="profMsg" class="muted" style="text-align:center;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- नवीन २: एकत्रित Settings पॉपअप -->
+  <div id="settingsModal" class="modal-backdrop hidden">
+    <div class="modal-card" style="max-width:520px;">
+      <div class="row" style="justify-content:space-between; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border);">
+        <h3 style="margin:0; color:var(--accent);">⚙️ अ‍ॅप सेटिंग्ज (Settings)</h3>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <div class="field">
+          <label>⏱️ Auto-Lock टाईमर (अ‍ॅप न वापरल्यास आपोआप लॉक):</label>
+          <select id="setAutoLockSelect">
+            <option value="120000">२ मिनिटे (2 Min)</option>
+            <option value="300000">५ मिनिटे (5 Min - शिफारस)</option>
+            <option value="600000">१० मिनिटे (10 Min)</option>
+            <option value="900000">१५ मिनिटे (15 Min)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>📊 Default मासिक व्याज दर (% — नवीन ग्राहकासाठी आपोआप भरेल):</label>
+          <input type="number" id="setDefaultRate" step="0.1" min="0" value="2" placeholder="उदा. 2 किंवा 5" />
+        </div>
+        <button type="button" id="saveSettingsBtn" class="primary">💾 सेटिंग्ज सेव्ह करा</button>
+        <div style="height:1px; background:var(--border); margin:4px 0;"></div>
+        <div class="row">
+          <button type="button" id="setToggleHideBtn" class="sm" style="flex:1;">👁️ रकमा Hide / Show</button>
+          <button type="button" id="setToggleThemeBtn" class="sm" style="flex:1;">☀️ Dark / Light Mode</button>
+        </div>
+        <button type="button" id="setResetPassBtn" class="warn sm" style="width:100%;">🔑 Password Reset Email पाठवा</button>
+        <div id="setStatusMsg" class="muted" style="text-align:center;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- नवीन ३: मराठी अ‍ॅप गाईड (Help & FAQ) पॉपअप -->
+  <div id="helpGuideModal" class="modal-backdrop hidden">
+    <div class="modal-card" style="max-width:600px;">
+      <div class="row" style="justify-content:space-between; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border);">
+        <h3 style="margin:0; color:var(--accent);">❓ मराठी अ‍ॅप गाईड (Help & FAQ)</h3>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:10px; font-size:0.86rem; line-height:1.6;">
+        <div class="meta-box">
+          <strong>१. मोबाईलवर खऱ्या अ‍ॅपसारखे कसे इन्स्टॉल करावे?</strong><br/>
+          Chrome ब्राउझरमध्ये वरच्या उजव्या कोपऱ्यातील <code>⋮</code> वर क्लिक करा आणि <strong>"Add to Home screen"</strong> किंवा <strong>"Install app"</strong> निवडा.
+        </div>
+        <div class="meta-box">
+          <strong>२. कोणत्याही स्क्रीन किंवा पॉपअपमधून मागे कसे यावे?</strong><br/>
+          तुमच्या मोबाईलचे नेहमीचे <strong>Back (&lt;)</strong> बटण दाबा — प्रत्येक पॉपअप आणि मेन्यू आपोआप बंद होईल.
+        </div>
+        <div class="meta-box">
+          <strong>३. डेटा सुरक्षित ठेवण्यासाठी बॅकअप कसा घ्यावा?</strong><br/>
+          डाव्या <code>☰</code> मेन्यूमधील <strong>☁️ Cloud Sync, Backup & Restore</strong> मध्ये जाऊन <strong>क्लाउड डेटा सिंक</strong> किंवा <strong>SHA-256 बॅकअप (.JSON)</strong> डाउनलोड करून ठेवा.
+        </div>
+        <div class="meta-box">
+          <strong>४. एका क्लिकवर मुद्दल, व्याज आणि बाकी कसे पाहावे?</strong><br/>
+          मुख्य स्क्रीनवरील <strong>एकूण मुद्दल</strong>, <strong>मासिक व्याज</strong> किंवा <strong>बाकी व्याज</strong> या कार्ड्सवर टॅप करा — सर्व ग्राहकांची सविस्तर यादी आणि थेट <strong>📞 Call / 💬 WA</strong> बटण दिसेल.
+        </div>
+        <div class="meta-box">
+          <strong>५. एका वेळी एकाच ग्राहकाचे कार्ड उघडे राहील:</strong><br/>
+          दुसऱ्या ग्राहकाच्या कार्डवर क्लिक करताच पहिल्या ग्राहकाचे तपशील आपोआप बंद होतील, त्यामुळे चुकून दुसऱ्या खात्यात नोंद होणार नाही.
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- डॅशबोर्ड कार्ड्स (मुद्दल / मासिक व्याज / बाकी व्याज) साठी सविस्तर यादी पॉपअप -->
   <div id="statDrillModal" class="modal-backdrop hidden">
@@ -609,8 +724,8 @@
 
   <div id="passbookModal" class="modal-backdrop hidden"><div class="modal-card"><div class="row" style="justify-content:space-between;"><h3 id="pbTitle" style="margin:0;">Passbook</h3></div><div class="tab-bar"><button class="tab-btn active sm" data-pbtab="passbook">📖 Passbook</button><button class="tab-btn sm" data-pbtab="timeline">🕒 Timeline</button><button class="tab-btn sm" data-pbtab="payments">💰 Payments</button><button class="tab-btn sm" data-pbtab="principals">📊 मुद्दल</button></div><div id="pbContent"></div></div></div>
 
-  <!-- ब्राउझर कॅश रिफ्रेशसाठी V14.2 व्हर्जन -->
-  <script src="./app.js?v=14.2"></script>
-  <script src="./dashboard.js?v=14.2"></script>
+  <!-- ब्राउझर कॅश रिफ्रेशसाठी V14.3 व्हर्जन -->
+  <script src="./app.js?v=14.3"></script>
+  <script src="./dashboard.js?v=14.3"></script>
 </body>
 </html>
