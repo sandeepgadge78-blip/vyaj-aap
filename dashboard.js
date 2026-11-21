@@ -1,7 +1,7 @@
 // =========================================================================
-// Hishob Ultra-Pro Obsidian Glass Dashboard V14.2
-// + Frosted Glass Bottom Bar & Menus + Neon Glow UI + Clickable Drill-Downs
-// + Unified Mobile Back-Button Controller + Zero Duplicate Menu Items + Call Everywhere
+// Hishob Ultra-Pro Obsidian Glass Dashboard V14.3
+// + Business Profile + Unified Settings + Marathi Help Guide (FAQ)
+// + Frosted Glass Bottom Bar & Menus + Clickable Drill-Downs + Unified Back Nav
 // =========================================================================
 
 (function () {
@@ -72,10 +72,19 @@
     document.getElementById('toolSectionModal')?.classList.add('hidden');
   }
 
+  function openSimpleModal(modalId) {
+    const m = document.getElementById(modalId);
+    if (!m) return;
+    document.getElementById('v3Overlay')?.classList.add('hidden');
+    m.classList.remove('hidden');
+    pushNavHistory(`modal:${modalId}`);
+  }
+
   // =========================================================================
-  // संपूर्ण अ‍ॅपसाठी एकच मजबूत मोबाईल Back-Button कंट्रोलर
+  // संपूर्ण अ‍ॅपसाठी एकच मजबूत मोबाईल Back-Button कंट्रोलर (V14.3)
   // =========================================================================
   const MODAL_IDS = [
+    'profileModal', 'settingsModal', 'helpGuideModal',
     'statDrillModal', 'toolSectionModal', 'smartInfoModal', 'pnlModal',
     'securityModal', 'versionModal', 'notifModal', 'docsModal', 'editModal', 'passbookModal'
   ];
@@ -127,7 +136,7 @@
     }
   });
 
-  // १. Ultra-Pro Obsidian Glass + Neon CSS (V14.2)
+  // १. Ultra-Pro Obsidian Glass + Neon CSS (V14.3)
   const styleEl = document.createElement('style');
   styleEl.textContent = `
     .hm-btn {
@@ -157,7 +166,7 @@
       padding: 14px; border-bottom: 1px solid var(--border);
       background: linear-gradient(135deg, #6366f1, #0ea5e9); color: #fff;
     }
-    .hm-profile { display: flex; align-items: center; gap: 10px; }
+    .hm-profile { display: flex; align-items: center; gap: 10px; cursor: pointer; }
     .hm-avatar {
       width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
       background: rgba(255,255,255,0.22); color: #fff; border: 1px solid rgba(255,255,255,0.45);
@@ -222,7 +231,7 @@
     .td-wrap { position: relative; display: inline-block; }
     .td-btn { font-size: 1.15rem; padding: 4px 10px; line-height: 1; }
     .td-menu {
-      position: fixed; right: 14px; top: 64px; min-width: 220px; z-index: 95;
+      position: fixed; right: 14px; top: 64px; min-width: 225px; z-index: 95;
       background: rgba(11, 17, 32, 0.94); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
       border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 14px;
       box-shadow: 0 14px 36px rgba(0,0,0,0.6); padding: 6px; display: flex; flex-direction: column; gap: 4px;
@@ -668,7 +677,7 @@
     drawer.id = 'hmDrawer'; drawer.className = 'hm-drawer';
     drawer.innerHTML = `
       <div class="hm-head">
-        <div class="hm-profile">
+        <div class="hm-profile" id="hmProfileClick" title="बिझनेस प्रोफाईल उघडा">
           <div id="hmAvatar" class="hm-avatar">H</div>
           <div style="overflow:hidden;">
             <div id="hmUserName" style="font-weight:700; font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Hishob Admin</div>
@@ -719,6 +728,11 @@
     `;
     document.body.appendChild(drawer);
 
+    document.getElementById('hmProfileClick')?.addEventListener('click', () => {
+      setDrawerState(false);
+      openSimpleModal('profileModal');
+    });
+
     document.getElementById('hmDirectWaSaveBtn').addEventListener('click', () => {
       const val = document.getElementById('hmDirectWaInput').value.trim();
       const mainInp = document.getElementById('selfWaNumber');
@@ -760,7 +774,7 @@
     });
   }
 
-  // ४. Three-Dot (⋮) Menu (फक्त सेटिंग्जसाठी) + Frosted Glass Bottom Nav + Neon FAB
+  // ४. स्वच्छ Three-Dot (⋮) Menu (Profile, Settings, Marathi Help Guide, Logout) + Bottom Nav + Neon FAB
   function initNavigationChrome() {
     initHamburgerDrawer();
 
@@ -769,12 +783,12 @@
       slot.dataset.ready = '1';
       slot.innerHTML = `
         <div class="td-wrap">
-          <button id="threeDotBtn" class="sm td-btn" title="सेटिंग्ज">⋮</button>
+          <button id="threeDotBtn" class="sm td-btn" title="प्रोफाईल व सेटिंग्ज">⋮</button>
           <div id="threeDotDropdown" class="td-menu hidden">
-            <button data-td="hide-amt">👁️ रकमा Hide / Show</button>
-            <button data-td="theme">☀️ Dark / Light Mode</button>
-            <button data-td="reset-pass">🔑 Password Reset Email</button>
-            <button data-td="about">ℹ️ About Hishob (V14.2)</button>
+            <button data-td="profile">👤 बिझनेस प्रोफाईल</button>
+            <button data-td="settings">⚙️ अ‍ॅप सेटिंग्ज (Settings)</button>
+            <button data-td="help">❓ मराठी अ‍ॅप गाईड (FAQ)</button>
+            <button data-td="about">ℹ️ About Hishob (V14.3)</button>
             <div class="td-divider"></div>
             <button data-td="logout" style="color:var(--danger);">🔒 अ‍ॅप लॉक करा (Logout)</button>
           </div>
@@ -789,19 +803,14 @@
         if (willOpen) pushNavHistory('td-menu');
       });
       document.addEventListener('click', () => menu.classList.add('hidden'));
-      menu.addEventListener('click', async (e) => {
+      menu.addEventListener('click', (e) => {
         const item = e.target.closest('button[data-td]'); if (!item) return;
         menu.classList.add('hidden');
         const act = item.getAttribute('data-td');
-        if (act === 'hide-amt') document.getElementById('toggleHideAmtBtn')?.click();
-        else if (act === 'theme') document.getElementById('toggleThemeBtn')?.click();
-        else if (act === 'reset-pass') {
-          const u = firebase.auth().currentUser;
-          if (!u || !u.email) { showToast('ईमेल सापडला नाही.', true); return; }
-          try { await firebase.auth().sendPasswordResetEmail(u.email); showToast(`✅ ${u.email} वर Password Reset लिंक पाठवली.`); }
-          catch (err) { showToast(`एरर: ${err.message}`, true); }
-        }
-        else if (act === 'about') showToast('व्याज हिशोब वही V14.2 — Ultra-Pro Obsidian Glass');
+        if (act === 'profile') openSimpleModal('profileModal');
+        else if (act === 'settings') openSimpleModal('settingsModal');
+        else if (act === 'help') openSimpleModal('helpGuideModal');
+        else if (act === 'about') showToast('व्याज हिशोब वही V14.3 — Ultra-Pro Edition');
         else if (act === 'logout') document.getElementById('lockBtn')?.click();
       });
     }
@@ -855,7 +864,7 @@
     ov.innerHTML = `
       <aside id="v3Sidebar" class="v3-sidebar">
         <div class="row" style="justify-content:space-between; padding:4px 6px 10px;">
-          <strong class="v3-nav-lbl" style="font-size:1.05rem;">💎 Hishob V14.2</strong>
+          <strong class="v3-nav-lbl" style="font-size:1.05rem;">💎 Hishob V14.3</strong>
           <button id="v3ToggleSideBtn" class="sm" title="Sidebar लहान/मोठा">☰</button>
         </div>
         <button class="v3-nav-item active" data-v3tab="overview"><span>📊</span><span class="v3-nav-lbl">Dashboard</span></button>
@@ -1193,7 +1202,7 @@
       body.innerHTML = `
         <div class="v3-panel">
           <div class="row" style="justify-content:space-between; margin-bottom:10px;">
-            <h3 style="margin:0;">📅 महिना निहाय खरा हिशोब (V14.2)</h3>
+            <h3 style="margin:0;">📅 महिना निहाय खरा हिशोब (V14.3)</h3>
             <button id="v3ApplyMainYmBtn" class="sm">📂 मुख्य स्क्रीनवर सेट करा</button>
           </div>
           <div class="row" style="margin-bottom:12px; align-items:flex-end;">
