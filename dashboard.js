@@ -1,6 +1,6 @@
 // =========================================================================
 // Hishob Premium Fintech Dashboard V3 + Gmail-Style Hamburger Menu (☰)
-// V13.4: Strict Month Ledger (No False Entries) + 2 View Modes + Filter/Search + Independent Excel
+// V13.5: Smart Mobile Back-Button Navigation + Strict Month Ledger + Independent Excel
 // =========================================================================
 
 (function () {
@@ -48,8 +48,71 @@
     t.textContent = msg;
     t.className = `v3-toast ${isError ? 'err' : 'ok'} show`;
     clearTimeout(t._timer);
-    t._timer = setTimeout(() => t.classList.remove('show'), 3200);
+    t._timer = setTimeout(() => t.classList.remove('show'), 2800);
   }
+
+  // =========================================================================
+  // स्मार्ट मोबाईल Back-Button कंट्रोलर (History Stack + Double-Back to Exit)
+  // =========================================================================
+  const MODAL_IDS = ['smartInfoModal', 'pnlModal', 'securityModal', 'versionModal', 'notifModal', 'docsModal', 'editModal', 'passbookModal'];
+  let v3TabHistory = [];
+  let lastBackPressTime = 0;
+
+  // ब्राउझर History मध्ये नवीन स्टेप जोडणे
+  function pushNavHistory(tag) {
+    try { history.pushState({ hishobV3Nav: tag, ts: Date.now() }, ''); } catch (_) {}
+  }
+
+  // Home स्क्रीनवर चुकून अ‍ॅप बंद होऊ नये म्हणून सुरुवातीचा Guard
+  try { history.replaceState({ hishobRoot: true }, ''); history.pushState({ hishobGuard: true }, ''); } catch (_) {}
+
+  window.addEventListener('popstate', () => {
+    // १. Three-Dot (⋮) मेन्यू उघडा असल्यास बंद करा
+    const tdMenu = document.getElementById('threeDotDropdown');
+    if (tdMenu && !tdMenu.classList.contains('hidden')) {
+      tdMenu.classList.add('hidden');
+      return;
+    }
+
+    // २. डावा साईड ड्रॉअर (☰) उघडा असल्यास बंद करा
+    if (isDrawerOpen) {
+      setDrawerState(false, true);
+      return;
+    }
+
+    // ३. कोणताही Modal उघडा असल्यास बंद करा
+    for (const id of MODAL_IDS) {
+      const m = document.getElementById(id);
+      if (m && !m.classList.contains('hidden')) {
+        m.classList.add('hidden');
+        return;
+      }
+    }
+
+    // ४. V3 Dashboard / Months उघडे असल्यास स्टेप-बाय-स्टेप मागील टॅबवर जा
+    const v3Ov = document.getElementById('v3Overlay');
+    if (v3Ov && !v3Ov.classList.contains('hidden')) {
+      if (v3TabHistory.length > 1) {
+        v3TabHistory.pop();
+        const prevTab = v3TabHistory[v3TabHistory.length - 1];
+        switchV3Tab(prevTab, false); // History न वाढवता मागील टॅब उघडा
+      } else {
+        v3TabHistory = [];
+        v3Ov.classList.add('hidden');
+      }
+      return;
+    }
+
+    // ५. मुख्य Home स्क्रीनवर असल्यास Double-Back to Exit सुरक्षा
+    const now = Date.now();
+    if (now - lastBackPressTime < 2000) {
+      history.back(); // २ सेकंदात पुन्हा दाबल्यास बाहेर पडा
+    } else {
+      lastBackPressTime = now;
+      showToast('बाहेर पडण्यासाठी पुन्हा Back दाबा');
+      try { history.pushState({ hishobGuard: true }, ''); } catch (_) {}
+    }
+  });
 
   // १. Premium CSS
   const styleEl = document.createElement('style');
@@ -194,6 +257,7 @@
       position: fixed; left: 50%; bottom: 76px; transform: translateX(-50%) translateY(20px);
       padding: 10px 16px; border-radius: 999px; font-size: 0.84rem; font-weight: 600;
       z-index: 120; opacity: 0; pointer-events: none; transition: 0.25s; color: #fff;
+      white-space: nowrap;
     }
     .v3-toast.ok { background: #15803d; }
     .v3-toast.err { background: #b91c1c; }
@@ -207,13 +271,12 @@
   `;
   document.head.appendChild(styleEl);
 
-  // २. Strict Start Month व खरा व्यवहार तपासणी (No False Entries)
+  // २. Strict Start Month व खरा व्यवहार तपासणी
   function extractValidYm(val) {
     const s = String(val || '').trim();
     return /^\d{4}-\d{2}/.test(s) ? s.slice(0, 7) : '';
   }
 
-  // प्रत्येक खात्याचा खरा सुरू महिना शोधणे
   function getEffectiveStartYm(borrower) {
     return (
       extractValidYm(borrower.startYm) ||
@@ -224,7 +287,6 @@
     );
   }
 
-  // त्या विशिष्ट महिन्यात प्रत्यक्ष व्यवहार झाला आहे का?
   function hasTransactionInMonth(borrower, targetYm) {
     const hasPaidObj = Boolean(borrower.paidMonths && borrower.paidMonths[targetYm]);
     const hasPartial = Number((borrower.partialPayments && borrower.partialPayments[targetYm]) || 0) > 0;
@@ -235,22 +297,14 @@
     return hasPaidObj || hasPartial || hasHist || hasPrin || hasCustomDue;
   }
 
-  // निवडलेल्या महिन्यात खाते खरोखर सक्रिय होते का?
   function isAccountActiveInMonth(borrower, targetYm) {
     if (borrower.isDeleted) return false;
     const startYm = getEffectiveStartYm(borrower);
     const hasTx = hasTransactionInMonth(borrower, targetYm);
-
-    // जर निवडलेला महिना खाते सुरू होण्याच्या आधीचा असेल आणि व्यवहार नसेल, तर अजिबात दाखवू नका
-    if (startYm > targetYm && !hasTx) {
-      return false;
-    }
-    // जर खाते आधीच बंद झाले असेल आणि व्यवहार नसेल, तर दाखवू नका
+    if (startYm > targetYm && !hasTx) return false;
     if (borrower.accountStatus === 'closed') {
       const closedYm = extractValidYm(borrower.settlement && borrower.settlement.date);
-      if (closedYm && closedYm < targetYm && !hasTx) {
-        return false;
-      }
+      if (closedYm && closedYm < targetYm && !hasTx) return false;
     }
     return true;
   }
@@ -308,21 +362,14 @@
         if (c.totalPayable > 0) dueCustomers.push(row);
       }
 
-      // फक्त निवडलेल्या महिन्यात खरोखर सक्रिय असलेलीच खाती जोडणे
       if (isAccountActiveInMonth(b, activeYm)) {
         totalPrincipal += b.accountStatus === 'closed' ? 0 : c.principal;
         monthLedgerRows.push({
-          id: b.id,
-          name: b.name,
-          mobile: b.mobile || '',
-          startYm: effStart,
+          id: b.id, name: b.name, mobile: b.mobile || '', startYm: effStart,
           hasTx: hasTransactionInMonth(b, activeYm),
           principal: b.accountStatus === 'closed' ? 0 : c.principal,
-          monthlyInterest: c.monthlyInterest,
-          paidThisMonth: c.paidThisMonth,
-          pastDue: c.pastDue,
-          outstanding: c.totalPayable,
-          status: c.status
+          monthlyInterest: c.monthlyInterest, paidThisMonth: c.paidThisMonth,
+          pastDue: c.pastDue, outstanding: c.totalPayable, status: c.status
         });
       }
     });
@@ -342,7 +389,7 @@
   let isDrawerOpen = false;
   let touchStartX = 0;
 
-  function setDrawerState(open) {
+  function setDrawerState(open, fromPopstate = false) {
     isDrawerOpen = Boolean(open);
     const btn = document.getElementById('hmMenuBtn');
     const drawer = document.getElementById('hmDrawer');
@@ -356,6 +403,7 @@
       btn.classList.add('open');
       btn.textContent = '✕';
       document.body.style.overflow = 'hidden';
+      if (!fromPopstate) pushNavHistory('drawer'); // मोबाईल Back साठी नोंद
     } else {
       drawer.classList.remove('open');
       backdrop.classList.remove('open');
@@ -374,9 +422,7 @@
       const disp = user.displayName || (user.email ? user.email.split('@')[0] : 'Admin');
       nameEl.textContent = disp;
       emailEl.textContent = user.email || 'Authorized Admin';
-      avEl.innerHTML = user.photoURL
-        ? `<img src="${esc(user.photoURL)}" alt="Admin" />`
-        : esc(disp[0].toUpperCase());
+      avEl.innerHTML = user.photoURL ? `<img src="${esc(user.photoURL)}" alt="Admin" />` : esc(disp[0].toUpperCase());
     }
     const d = computeV3Data();
     if (d) {
@@ -393,28 +439,20 @@
     const brandEl = document.querySelector('header .brand');
     if (brandEl && !document.getElementById('hmMenuBtn')) {
       const hmBtn = document.createElement('button');
-      hmBtn.id = 'hmMenuBtn';
-      hmBtn.className = 'hm-btn';
-      hmBtn.title = 'मेन्यू उघडा / बंद करा';
-      hmBtn.textContent = '☰';
+      hmBtn.id = 'hmMenuBtn'; hmBtn.className = 'hm-btn';
+      hmBtn.title = 'मेन्यू उघडा / बंद करा'; hmBtn.textContent = '☰';
       brandEl.insertBefore(hmBtn, brandEl.firstChild);
-
-      hmBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        setDrawerState(!isDrawerOpen);
-      });
+      hmBtn.addEventListener('click', (e) => { e.stopPropagation(); setDrawerState(!isDrawerOpen); });
     }
 
     if (document.getElementById('hmDrawer')) return;
 
     const backdrop = document.createElement('div');
-    backdrop.id = 'hmBackdrop';
-    backdrop.className = 'hm-backdrop';
+    backdrop.id = 'hmBackdrop'; backdrop.className = 'hm-backdrop';
     document.body.appendChild(backdrop);
 
     const drawer = document.createElement('aside');
-    drawer.id = 'hmDrawer';
-    drawer.className = 'hm-drawer';
+    drawer.id = 'hmDrawer'; drawer.className = 'hm-drawer';
     drawer.innerHTML = `
       <div class="hm-head">
         <div class="hm-profile">
@@ -471,11 +509,8 @@
 
     backdrop.addEventListener('click', () => setDrawerState(false));
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && isDrawerOpen) setDrawerState(false); });
-
     drawer.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, { passive: true });
-    drawer.addEventListener('touchend', (e) => {
-      if (touchStartX - e.changedTouches[0].clientX > 55) setDrawerState(false);
-    }, { passive: true });
+    drawer.addEventListener('touchend', (e) => { if (touchStartX - e.changedTouches[0].clientX > 55) setDrawerState(false); }, { passive: true });
 
     document.getElementById('hmReportsToggle').addEventListener('click', () => {
       document.getElementById('hmReportsSub').classList.toggle('hidden');
@@ -487,11 +522,11 @@
       const act = btn.getAttribute('data-hm');
       setDrawerState(false);
 
-      if (act === 'home') { document.getElementById('v3Overlay')?.classList.add('hidden'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+      if (act === 'home') { v3TabHistory = []; document.getElementById('v3Overlay')?.classList.add('hidden'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
       else if (act === 'archive') openV3Dashboard('archive');
       else if (act === 'v3-dash') openV3Dashboard('overview');
       else if (act === 'add-cust') {
-        document.getElementById('v3Overlay')?.classList.add('hidden');
+        v3TabHistory = []; document.getElementById('v3Overlay')?.classList.add('hidden');
         document.getElementById('addBorrowerSection')?.scrollIntoView({ behavior: 'smooth' });
       }
       else if (act === 'quick-pay') openV3Dashboard('payments');
@@ -513,7 +548,7 @@
         try { await firebase.auth().sendPasswordResetEmail(u.email); showToast(`✅ ${u.email} वर Password Reset लिंक पाठवली.`); }
         catch (err) { showToast(`एरर: ${err.message}`, true); }
       }
-      else if (act === 'about') showToast('व्याज हिशोब वही V13.4 — Secure Loan Ledger');
+      else if (act === 'about') showToast('व्याज हिशोब वही V13.5 — Smart Back Navigation');
       else if (act === 'logout') document.getElementById('lockBtn')?.click();
     });
   }
@@ -547,7 +582,12 @@
       `;
       const btn = document.getElementById('threeDotBtn');
       const menu = document.getElementById('threeDotDropdown');
-      btn.addEventListener('click', (e) => { e.stopPropagation(); menu.classList.toggle('hidden'); });
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const willOpen = menu.classList.contains('hidden');
+        menu.classList.toggle('hidden');
+        if (willOpen) pushNavHistory('td-menu'); // मोबाईल Back साठी नोंद
+      });
       document.addEventListener('click', () => menu.classList.add('hidden'));
       menu.addEventListener('click', (e) => {
         const item = e.target.closest('button[data-td]'); if (!item) return;
@@ -569,8 +609,7 @@
 
     if (!document.getElementById('v3BottomNav')) {
       const nav = document.createElement('nav');
-      nav.id = 'v3BottomNav';
-      nav.className = 'v3-bottom-nav';
+      nav.id = 'v3BottomNav'; nav.className = 'v3-bottom-nav';
       nav.innerHTML = `
         <button data-bnav="home" class="active"><span>🏠</span><span>Home</span></button>
         <button data-bnav="archive"><span>📅</span><span>Months</span></button>
@@ -581,17 +620,14 @@
       document.body.appendChild(nav);
 
       const fab = document.createElement('button');
-      fab.id = 'v3FabBtn';
-      fab.className = 'v3-fab';
-      fab.title = 'झटपट पेमेंट';
-      fab.textContent = '+';
+      fab.id = 'v3FabBtn'; fab.className = 'v3-fab'; fab.title = 'झटपट पेमेंट'; fab.textContent = '+';
       document.body.appendChild(fab);
 
       fab.addEventListener('click', () => openV3Dashboard('payments'));
       nav.addEventListener('click', (e) => {
         const b = e.target.closest('button[data-bnav]'); if (!b) return;
         const t = b.getAttribute('data-bnav');
-        if (t === 'home') { document.getElementById('v3Overlay')?.classList.add('hidden'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+        if (t === 'home') { v3TabHistory = []; document.getElementById('v3Overlay')?.classList.add('hidden'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
         else if (t === 'archive') openV3Dashboard('archive');
         else if (t === 'v3') openV3Dashboard('overview');
         else if (t === 'pay') openV3Dashboard('payments');
@@ -607,8 +643,8 @@
   let archiveSelectedYear = getTodayIso().slice(0, 4);
   let archiveSelectedMonth = getTodayIso().slice(5, 7);
   let hasClickedShowMonthLedger = false;
-  let archiveViewMode = 'all';      // 'all' | 'tx'
-  let archiveStatusFilter = 'all';  // 'all' | 'paid' | 'partial' | 'pending'
+  let archiveViewMode = 'all';
+  let archiveStatusFilter = 'all';
   let archiveSearchQuery = '';
 
   function ensureV3Overlay() {
@@ -654,25 +690,31 @@
     document.body.appendChild(ov);
 
     document.getElementById('v3ToggleSideBtn').addEventListener('click', () => document.getElementById('v3Sidebar').classList.toggle('collapsed'));
-    document.getElementById('v3CloseBtn').addEventListener('click', () => ov.classList.add('hidden'));
-    document.getElementById('v3TopCloseBtn').addEventListener('click', () => ov.classList.add('hidden'));
+    document.getElementById('v3CloseBtn').addEventListener('click', () => { v3TabHistory = []; ov.classList.add('hidden'); });
+    document.getElementById('v3TopCloseBtn').addEventListener('click', () => { v3TabHistory = []; ov.classList.add('hidden'); });
     document.getElementById('v3TopRefreshBtn').addEventListener('click', () => { renderV3Body(); showToast('Dashboard रिफ्रेश झाले!'); });
     document.getElementById('v3GradThemeBtn').addEventListener('click', () => {
       v3Gradient = !v3Gradient; localStorage.setItem('hishob_v3_grad', v3Gradient ? '1' : '0');
       ov.classList.toggle('v3-gradient-theme', v3Gradient);
     });
-    document.getElementById('v3MobOverviewBtn').addEventListener('click', () => switchV3Tab('overview'));
-    document.getElementById('v3MobArchiveBtn').addEventListener('click', () => switchV3Tab('archive'));
-    document.getElementById('v3MobPayBtn').addEventListener('click', () => switchV3Tab('payments'));
-    document.getElementById('v3MobChartsBtn').addEventListener('click', () => switchV3Tab('analytics'));
+    document.getElementById('v3MobOverviewBtn').addEventListener('click', () => switchV3Tab('overview', true));
+    document.getElementById('v3MobArchiveBtn').addEventListener('click', () => switchV3Tab('archive', true));
+    document.getElementById('v3MobPayBtn').addEventListener('click', () => switchV3Tab('payments', true));
+    document.getElementById('v3MobChartsBtn').addEventListener('click', () => switchV3Tab('analytics', true));
     document.getElementById('v3Sidebar').addEventListener('click', (e) => {
       const btn = e.target.closest('button[data-v3tab]'); if (!btn) return;
-      switchV3Tab(btn.getAttribute('data-v3tab'));
+      switchV3Tab(btn.getAttribute('data-v3tab'), true);
     });
   }
 
-  function switchV3Tab(tab) {
+  function switchV3Tab(tab, pushToHistory = true) {
     v3Tab = tab;
+    if (pushToHistory) {
+      if (v3TabHistory[v3TabHistory.length - 1] !== tab) {
+        v3TabHistory.push(tab);
+        pushNavHistory(`v3:${tab}`);
+      }
+    }
     document.querySelectorAll('#v3Sidebar .v3-nav-item[data-v3tab]').forEach(b => {
       b.classList.toggle('active', b.getAttribute('data-v3tab') === tab);
     });
@@ -686,7 +728,7 @@
     archiveSelectedMonth = curYm.slice(5, 7);
     hasClickedShowMonthLedger = true;
     document.getElementById('v3Overlay').classList.remove('hidden');
-    switchV3Tab(tab);
+    switchV3Tab(tab, true);
   }
 
   // ६. Pure SVG Charts
@@ -751,7 +793,6 @@
       const mData = computeV3Data(selYm) || d;
       const baseRows = mData.monthLedgerRows || [];
 
-      // व्ह्यू मोड, स्थिती फिल्टर व सर्च लागू करणे
       const filteredRows = baseRows.filter(r => {
         if (archiveViewMode === 'tx' && !r.hasTx) return false;
         if (archiveStatusFilter !== 'all' && r.status !== archiveStatusFilter) return false;
@@ -773,7 +814,7 @@
       body.innerHTML = `
         <div class="v3-panel">
           <div class="row" style="justify-content:space-between; margin-bottom:10px;">
-            <h3 style="margin:0;">📅 महिना निहाय खरा हिशोब (V13.4)</h3>
+            <h3 style="margin:0;">📅 महिना निहाय खरा हिशोब (V13.5)</h3>
             <button id="v3ApplyMainYmBtn" class="sm">📂 मुख्य स्क्रीनवर सेट करा</button>
           </div>
 
@@ -803,13 +844,11 @@
               📌 निवडलेला महिना: ${esc(fmtYmMarathi(selYm))} (${esc(selYm)})
             </div>
 
-            <!-- २ व्ह्यू मोड Toggle -->
             <div class="v3-seg-wrap">
               <button type="button" class="v3-seg-btn ${archiveViewMode === 'all' ? 'active' : ''}" data-archmode="all">📋 सर्व सक्रिय हिशोब (${baseRows.length})</button>
               <button type="button" class="v3-seg-btn ${archiveViewMode === 'tx' ? 'active' : ''}" data-archmode="tx">💸 फक्त व्यवहार (${baseRows.filter(x => x.hasTx).length})</button>
             </div>
 
-            <!-- स्थिती फिल्टर व सर्च -->
             <div class="v3-seg-wrap">
               <button type="button" class="v3-seg-btn ${archiveStatusFilter === 'all' ? 'active' : ''}" data-archst="all">सर्व</button>
               <button type="button" class="v3-seg-btn ${archiveStatusFilter === 'paid' ? 'active' : ''}" data-archst="paid">🟢 पूर्ण जमा</button>
@@ -877,30 +916,12 @@
         </div>
       `;
 
-      document.getElementById('v3ArchYearSel')?.addEventListener('change', (e) => {
-        archiveSelectedYear = e.target.value;
-        hasClickedShowMonthLedger = false;
-        renderV3Body();
-      });
-      document.getElementById('v3ArchMonthSel')?.addEventListener('change', (e) => {
-        archiveSelectedMonth = e.target.value;
-        hasClickedShowMonthLedger = false;
-        renderV3Body();
-      });
-      document.getElementById('v3ShowMonthLedgerBtn')?.addEventListener('click', () => {
-        hasClickedShowMonthLedger = true;
-        renderV3Body();
-        showToast(`📅 ${fmtYmMarathi(selYm)} चा हिशोब उघडला!`);
-      });
+      document.getElementById('v3ArchYearSel')?.addEventListener('change', (e) => { archiveSelectedYear = e.target.value; hasClickedShowMonthLedger = false; renderV3Body(); });
+      document.getElementById('v3ArchMonthSel')?.addEventListener('change', (e) => { archiveSelectedMonth = e.target.value; hasClickedShowMonthLedger = false; renderV3Body(); });
+      document.getElementById('v3ShowMonthLedgerBtn')?.addEventListener('click', () => { hasClickedShowMonthLedger = true; renderV3Body(); showToast(`📅 ${fmtYmMarathi(selYm)} चा हिशोब उघडला!`); });
 
-      body.querySelectorAll('button[data-archmode]').forEach(b => b.addEventListener('click', () => {
-        archiveViewMode = b.getAttribute('data-archmode');
-        renderV3Body();
-      }));
-      body.querySelectorAll('button[data-archst]').forEach(b => b.addEventListener('click', () => {
-        archiveStatusFilter = b.getAttribute('data-archst');
-        renderV3Body();
-      }));
+      body.querySelectorAll('button[data-archmode]').forEach(b => b.addEventListener('click', () => { archiveViewMode = b.getAttribute('data-archmode'); renderV3Body(); }));
+      body.querySelectorAll('button[data-archst]').forEach(b => b.addEventListener('click', () => { archiveStatusFilter = b.getAttribute('data-archst'); renderV3Body(); }));
       const sInp = document.getElementById('v3ArchSearchInp');
       if (sInp) {
         sInp.addEventListener('input', (e) => {
@@ -913,19 +934,14 @@
 
       document.getElementById('v3ApplyMainYmBtn')?.addEventListener('click', () => {
         const mainYmInp = document.getElementById('activeYm');
-        if (mainYmInp) {
-          mainYmInp.value = selYm;
-          mainYmInp.dispatchEvent(new Event('change'));
-        }
+        if (mainYmInp) { mainYmInp.value = selYm; mainYmInp.dispatchEvent(new Event('change')); }
+        v3TabHistory = [];
         document.getElementById('v3Overlay')?.classList.add('hidden');
         showToast(`📅 मुख्य स्क्रीनवर ${fmtYmMarathi(selYm)} सेट केले!`);
       });
 
       document.getElementById('v3DownloadIndepExcelBtn')?.addEventListener('click', () => {
-        if (!filteredRows.length) {
-          showToast('या महिन्यात डाउनलोड करण्यासाठी कोणतीही नोंद नाही.', true);
-          return;
-        }
+        if (!filteredRows.length) { showToast('या महिन्यात डाउनलोड करण्यासाठी कोणतीही नोंद नाही.', true); return; }
         const header = ['क्र.', 'महिना', 'ग्राहक नाव', 'मोबाईल', 'मुद्दल (₹)', 'मासिक व्याज (₹)', 'जमा रक्कम (₹)', 'मागील व्याज बाकी (₹)', 'एकूण बाकी (₹)'].map(csvCell).join(',');
         const bodyLines = filteredRows.map((r, i) => [
           i + 1, selYm, r.name, r.mobile || '-', r.principal, r.monthlyInterest, r.paidThisMonth, r.pastDue, r.outstanding
@@ -986,7 +1002,7 @@
           </div>
         </div>
       `;
-      body.querySelectorAll('.v3-wave-card[data-jump]').forEach(c => c.addEventListener('click', () => switchV3Tab(c.getAttribute('data-jump'))));
+      body.querySelectorAll('.v3-wave-card[data-jump]').forEach(c => c.addEventListener('click', () => switchV3Tab(c.getAttribute('data-jump'), true)));
       body.querySelectorAll('.v3-avatar-chip[data-callmob]').forEach(c => c.addEventListener('click', () => {
         const m = c.getAttribute('data-callmob');
         if (m) window.location.href = `tel:${m}`; else showToast('मोबाईल नंबर सेव्ह नाही.', true);
