@@ -1,6 +1,6 @@
 // =========================================================================
 // Hishob Premium Fintech Dashboard V3 + Gmail-Style Hamburger Menu (☰)
-// + Exact Month Ledger with Explicit "🔍 हिशोब पहा" Button & Independent Excel
+// V13.4: Strict Month Ledger (No False Entries) + 2 View Modes + Filter/Search + Independent Excel
 // =========================================================================
 
 (function () {
@@ -198,23 +198,57 @@
     .v3-toast.ok { background: #15803d; }
     .v3-toast.err { background: #b91c1c; }
     .v3-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .v3-seg-wrap { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+    .v3-seg-btn {
+      padding: 6px 11px; border-radius: 999px; font-size: 0.78rem; font-weight: 600;
+      background: var(--card-2); border: 1px solid var(--border); color: var(--muted); cursor: pointer;
+    }
+    .v3-seg-btn.active { background: #0284c7; border-color: #38bdf8; color: #fff; }
   `;
   document.head.appendChild(styleEl);
 
-  // २. Real Business Data Engine
+  // २. Strict Start Month व खरा व्यवहार तपासणी (No False Entries)
+  function extractValidYm(val) {
+    const s = String(val || '').trim();
+    return /^\d{4}-\d{2}/.test(s) ? s.slice(0, 7) : '';
+  }
+
+  // प्रत्येक खात्याचा खरा सुरू महिना शोधणे
+  function getEffectiveStartYm(borrower) {
+    return (
+      extractValidYm(borrower.startYm) ||
+      extractValidYm(borrower.startMonth) ||
+      extractValidYm(borrower.loanDate) ||
+      extractValidYm(borrower.createdAt) ||
+      getTodayIso().slice(0, 7)
+    );
+  }
+
+  // त्या विशिष्ट महिन्यात प्रत्यक्ष व्यवहार झाला आहे का?
+  function hasTransactionInMonth(borrower, targetYm) {
+    const hasPaidObj = Boolean(borrower.paidMonths && borrower.paidMonths[targetYm]);
+    const hasPartial = Number((borrower.partialPayments && borrower.partialPayments[targetYm]) || 0) > 0;
+    const hasHist = (borrower.paymentHistory || []).some(p => extractValidYm(p.date) === targetYm || p.ym === targetYm);
+    const hasPrin = [...(borrower.extraPrincipals || []), ...(borrower.principalReductions || [])]
+      .some(x => extractValidYm(x.date) === targetYm);
+    const hasCustomDue = Boolean(borrower.customPastDues && borrower.customPastDues[targetYm]);
+    return hasPaidObj || hasPartial || hasHist || hasPrin || hasCustomDue;
+  }
+
+  // निवडलेल्या महिन्यात खाते खरोखर सक्रिय होते का?
   function isAccountActiveInMonth(borrower, targetYm) {
     if (borrower.isDeleted) return false;
-    const startYm = String(borrower.startYm || '').slice(0, 7);
-    const hasPayInMonth = (borrower.paymentHistory || []).some(p => String(p.date || '').slice(0, 7) === targetYm || p.ym === targetYm);
-    const hasPrinChangeInMonth = [...(borrower.extraPrincipals || []), ...(borrower.principalReductions || [])]
-      .some(x => String(x.date || '').slice(0, 7) === targetYm);
+    const startYm = getEffectiveStartYm(borrower);
+    const hasTx = hasTransactionInMonth(borrower, targetYm);
 
-    if (startYm && startYm > targetYm && !hasPayInMonth && !hasPrinChangeInMonth) {
+    // जर निवडलेला महिना खाते सुरू होण्याच्या आधीचा असेल आणि व्यवहार नसेल, तर अजिबात दाखवू नका
+    if (startYm > targetYm && !hasTx) {
       return false;
     }
+    // जर खाते आधीच बंद झाले असेल आणि व्यवहार नसेल, तर दाखवू नका
     if (borrower.accountStatus === 'closed') {
-      const closedYm = String((borrower.settlement && borrower.settlement.date) || '').slice(0, 7);
-      if (closedYm && closedYm < targetYm && !hasPayInMonth && !hasPrinChangeInMonth) {
+      const closedYm = extractValidYm(borrower.settlement && borrower.settlement.date);
+      if (closedYm && closedYm < targetYm && !hasTx) {
         return false;
       }
     }
@@ -235,7 +269,9 @@
     const monthlySeries = {}, recentPayments = [], dueCustomers = [], allActiveRows = [], monthLedgerRows = [];
 
     allBorrowers.forEach(b => {
-      const c = br.computeLedgerUpToMonth(b, activeYm);
+      const effStart = getEffectiveStartYm(b);
+      const bForCalc = b.startYm ? b : { ...b, startYm: effStart };
+      const c = br.computeLedgerUpToMonth(bForCalc, activeYm);
       const origP = Number(b.originalPrincipal || b.principal || 0);
 
       (b.principalReductions || []).forEach(r => { principalRecovered += Number(r.amount || 0); });
@@ -272,12 +308,15 @@
         if (c.totalPayable > 0) dueCustomers.push(row);
       }
 
+      // फक्त निवडलेल्या महिन्यात खरोखर सक्रिय असलेलीच खाती जोडणे
       if (isAccountActiveInMonth(b, activeYm)) {
         totalPrincipal += b.accountStatus === 'closed' ? 0 : c.principal;
         monthLedgerRows.push({
           id: b.id,
           name: b.name,
           mobile: b.mobile || '',
+          startYm: effStart,
+          hasTx: hasTransactionInMonth(b, activeYm),
           principal: b.accountStatus === 'closed' ? 0 : c.principal,
           monthlyInterest: c.monthlyInterest,
           paidThisMonth: c.paidThisMonth,
@@ -474,7 +513,7 @@
         try { await firebase.auth().sendPasswordResetEmail(u.email); showToast(`✅ ${u.email} वर Password Reset लिंक पाठवली.`); }
         catch (err) { showToast(`एरर: ${err.message}`, true); }
       }
-      else if (act === 'about') showToast('व्याज हिशोब वही V13.2 — Secure Loan Ledger');
+      else if (act === 'about') showToast('व्याज हिशोब वही V13.4 — Secure Loan Ledger');
       else if (act === 'logout') document.getElementById('lockBtn')?.click();
     });
   }
@@ -568,6 +607,9 @@
   let archiveSelectedYear = getTodayIso().slice(0, 4);
   let archiveSelectedMonth = getTodayIso().slice(5, 7);
   let hasClickedShowMonthLedger = false;
+  let archiveViewMode = 'all';      // 'all' | 'tx'
+  let archiveStatusFilter = 'all';  // 'all' | 'paid' | 'partial' | 'pending'
+  let archiveSearchQuery = '';
 
   function ensureV3Overlay() {
     if (document.getElementById('v3Overlay')) return;
@@ -707,18 +749,31 @@
     if (v3Tab === 'archive') {
       const selYm = `${archiveSelectedYear}-${archiveSelectedMonth}`;
       const mData = computeV3Data(selYm) || d;
-      const rows = mData.monthLedgerRows || [];
-      const mPrincipal = rows.reduce((s, r) => s + r.principal, 0);
-      const mExpected = rows.reduce((s, r) => s + r.monthlyInterest, 0);
-      const mPaid = rows.reduce((s, r) => s + r.paidThisMonth, 0);
-      const mPastDue = rows.reduce((s, r) => s + r.pastDue, 0);
-      const mTotalOut = rows.reduce((s, r) => s + r.outstanding, 0);
+      const baseRows = mData.monthLedgerRows || [];
+
+      // व्ह्यू मोड, स्थिती फिल्टर व सर्च लागू करणे
+      const filteredRows = baseRows.filter(r => {
+        if (archiveViewMode === 'tx' && !r.hasTx) return false;
+        if (archiveStatusFilter !== 'all' && r.status !== archiveStatusFilter) return false;
+        if (archiveSearchQuery) {
+          const q = archiveSearchQuery.toLowerCase();
+          const txt = `${r.name || ''} ${r.mobile || ''}`.toLowerCase();
+          if (!txt.includes(q)) return false;
+        }
+        return true;
+      });
+
+      const mPrincipal = filteredRows.reduce((s, r) => s + r.principal, 0);
+      const mExpected = filteredRows.reduce((s, r) => s + r.monthlyInterest, 0);
+      const mPaid = filteredRows.reduce((s, r) => s + r.paidThisMonth, 0);
+      const mPastDue = filteredRows.reduce((s, r) => s + r.pastDue, 0);
+      const mTotalOut = filteredRows.reduce((s, r) => s + r.outstanding, 0);
       const years = ['2024', '2025', '2026', '2027', '2028', '2029', '2030'];
 
       body.innerHTML = `
         <div class="v3-panel">
           <div class="row" style="justify-content:space-between; margin-bottom:10px;">
-            <h3 style="margin:0;">📅 महिना निहाय खरा हिशोब</h3>
+            <h3 style="margin:0;">📅 महिना निहाय खरा हिशोब (V13.4)</h3>
             <button id="v3ApplyMainYmBtn" class="sm">📂 मुख्य स्क्रीनवर सेट करा</button>
           </div>
 
@@ -748,10 +803,25 @@
               📌 निवडलेला महिना: ${esc(fmtYmMarathi(selYm))} (${esc(selYm)})
             </div>
 
+            <!-- २ व्ह्यू मोड Toggle -->
+            <div class="v3-seg-wrap">
+              <button type="button" class="v3-seg-btn ${archiveViewMode === 'all' ? 'active' : ''}" data-archmode="all">📋 सर्व सक्रिय हिशोब (${baseRows.length})</button>
+              <button type="button" class="v3-seg-btn ${archiveViewMode === 'tx' ? 'active' : ''}" data-archmode="tx">💸 फक्त व्यवहार (${baseRows.filter(x => x.hasTx).length})</button>
+            </div>
+
+            <!-- स्थिती फिल्टर व सर्च -->
+            <div class="v3-seg-wrap">
+              <button type="button" class="v3-seg-btn ${archiveStatusFilter === 'all' ? 'active' : ''}" data-archst="all">सर्व</button>
+              <button type="button" class="v3-seg-btn ${archiveStatusFilter === 'paid' ? 'active' : ''}" data-archst="paid">🟢 पूर्ण जमा</button>
+              <button type="button" class="v3-seg-btn ${archiveStatusFilter === 'partial' ? 'active' : ''}" data-archst="partial">🟡 अर्धवट</button>
+              <button type="button" class="v3-seg-btn ${archiveStatusFilter === 'pending' ? 'active' : ''}" data-archst="pending">🔴 बाकी</button>
+            </div>
+            <input type="text" id="v3ArchSearchInp" value="${esc(archiveSearchQuery)}" placeholder="🔍 या महिन्यातील ग्राहक शोधा..." style="width:100%; margin-bottom:12px;" />
+
             <div class="v3-kpi-row">
               <div class="v3-wave-card">
                 <div class="v3-kpi-title">या महिन्यातील खाती / मुद्दल</div>
-                <div class="v3-kpi-num">${rows.length} खाती</div>
+                <div class="v3-kpi-num">${filteredRows.length} खाती</div>
                 <div class="v3-kpi-sub">मुद्दल: ${fmt(mPrincipal)}</div>
               </div>
               <div class="v3-wave-card">
@@ -766,7 +836,7 @@
               </div>
             </div>
 
-            <h4 style="margin:10px 0 6px;">📋 ${esc(fmtYmMarathi(selYm))} मधील नोंदी (${rows.length})</h4>
+            <h4 style="margin:10px 0 6px;">📋 ${esc(fmtYmMarathi(selYm))} मधील नोंदी (${filteredRows.length})</h4>
             <div style="overflow-x:auto;">
               <table class="passbook-table">
                 <thead>
@@ -781,7 +851,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  ${rows.length ? rows.map((r, i) => `
+                  ${filteredRows.length ? filteredRows.map((r, i) => `
                     <tr>
                       <td>${i + 1}</td>
                       <td><strong>${esc(r.name)}</strong></td>
@@ -791,7 +861,7 @@
                       <td class="warn-text">${fmt(r.pastDue)}</td>
                       <td class="err"><strong>${fmt(r.outstanding)}</strong></td>
                     </tr>
-                  `).join('') : '<tr><td colspan="7" class="muted" style="text-align:center;">या महिन्यात कोणताही हिशोब किंवा व्यवहार नोंदवलेला नाही.</td></tr>'}
+                  `).join('') : '<tr><td colspan="7" class="muted" style="text-align:center; padding:14px;">या महिन्यात कोणताही हिशोब किंवा व्यवहार नोंदवलेला नाही.</td></tr>'}
                 </tbody>
               </table>
             </div>
@@ -823,6 +893,24 @@
         showToast(`📅 ${fmtYmMarathi(selYm)} चा हिशोब उघडला!`);
       });
 
+      body.querySelectorAll('button[data-archmode]').forEach(b => b.addEventListener('click', () => {
+        archiveViewMode = b.getAttribute('data-archmode');
+        renderV3Body();
+      }));
+      body.querySelectorAll('button[data-archst]').forEach(b => b.addEventListener('click', () => {
+        archiveStatusFilter = b.getAttribute('data-archst');
+        renderV3Body();
+      }));
+      const sInp = document.getElementById('v3ArchSearchInp');
+      if (sInp) {
+        sInp.addEventListener('input', (e) => {
+          archiveSearchQuery = e.target.value;
+          renderV3Body();
+          const refreshed = document.getElementById('v3ArchSearchInp');
+          if (refreshed) { refreshed.focus(); refreshed.setSelectionRange(refreshed.value.length, refreshed.value.length); }
+        });
+      }
+
       document.getElementById('v3ApplyMainYmBtn')?.addEventListener('click', () => {
         const mainYmInp = document.getElementById('activeYm');
         if (mainYmInp) {
@@ -834,8 +922,12 @@
       });
 
       document.getElementById('v3DownloadIndepExcelBtn')?.addEventListener('click', () => {
+        if (!filteredRows.length) {
+          showToast('या महिन्यात डाउनलोड करण्यासाठी कोणतीही नोंद नाही.', true);
+          return;
+        }
         const header = ['क्र.', 'महिना', 'ग्राहक नाव', 'मोबाईल', 'मुद्दल (₹)', 'मासिक व्याज (₹)', 'जमा रक्कम (₹)', 'मागील व्याज बाकी (₹)', 'एकूण बाकी (₹)'].map(csvCell).join(',');
-        const bodyLines = rows.map((r, i) => [
+        const bodyLines = filteredRows.map((r, i) => [
           i + 1, selYm, r.name, r.mobile || '-', r.principal, r.monthlyInterest, r.paidThisMonth, r.pastDue, r.outstanding
         ].map(csvCell).join(','));
         downloadCsvFile(`Hishob_${selYm}.csv`, [header, ...bodyLines]);
