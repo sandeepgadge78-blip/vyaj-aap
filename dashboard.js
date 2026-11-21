@@ -1,6 +1,6 @@
 // =========================================================================
-// Hishob Premium Fintech Dashboard V3 + Clean Categorized Menu (☰ & ⋮)
-// V14.1: Clickable Dashboard Drill-Downs (Principal / Interest / Pending)
+// Hishob Ultra-Pro Obsidian Glass Dashboard V14.2
+// + Frosted Glass Bottom Bar & Menus + Neon Glow UI + Clickable Drill-Downs
 // + Unified Mobile Back-Button Controller + Zero Duplicate Menu Items + Call Everywhere
 // =========================================================================
 
@@ -89,18 +89,15 @@
   try { history.replaceState({ hishobRoot: true }, ''); history.pushState({ hishobGuard: true }, ''); } catch (_) {}
 
   window.addEventListener('popstate', () => {
-    // १. Three-Dot मेन्यू उघडा असल्यास बंद करा
     const tdMenu = document.getElementById('threeDotDropdown');
     if (tdMenu && !tdMenu.classList.contains('hidden')) {
       tdMenu.classList.add('hidden');
       return;
     }
-    // २. Hamburger मेन्यू उघडा असल्यास बंद करा
     if (isDrawerOpen) {
       setDrawerState(false, true);
       return;
     }
-    // ३. कोणताही Modal उघडा असल्यास बंद करा
     for (const id of MODAL_IDS) {
       const m = document.getElementById(id);
       if (m && !m.classList.contains('hidden')) {
@@ -108,7 +105,6 @@
         return;
       }
     }
-    // ४. V3 फुलस्क्रीन डॅशबोर्ड उघडा असल्यास आधीच्या टॅबवर किंवा Home वर जा
     const v3Ov = document.getElementById('v3Overlay');
     if (v3Ov && !v3Ov.classList.contains('hidden')) {
       if (v3TabHistory.length > 1) {
@@ -121,7 +117,6 @@
       }
       return;
     }
-    // ५. Home स्क्रीनवर Double-Back to Exit
     const now = Date.now();
     if (now - lastBackPressTime < 2000) {
       history.back();
@@ -132,7 +127,7 @@
     }
   });
 
-  // १. Premium CSS (V14.1)
+  // १. Ultra-Pro Obsidian Glass + Neon CSS (V14.2)
   const styleEl = document.createElement('style');
   styleEl.textContent = `
     .hm-btn {
@@ -141,58 +136,65 @@
       display: inline-flex; align-items: center; justify-content: center;
       cursor: pointer; transition: 0.2s; flex-shrink: 0; padding: 0;
     }
-    .hm-btn:hover { border-color: var(--accent); background: rgba(56,189,248,0.14); }
-    .hm-btn.open { background: #991b1b; border-color: #ef4444; color: #fff; }
+    .hm-btn:hover { border-color: var(--accent); box-shadow: 0 0 12px rgba(56,189,248,0.3); }
+    .hm-btn.open { background: linear-gradient(135deg, #be123c, #e11d48); border-color: #fb7185; color: #fff; }
 
     .hm-backdrop {
-      position: fixed; inset: 0; background: rgba(2, 6, 23, 0.72);
+      position: fixed; inset: 0; background: rgba(2, 6, 23, 0.72); backdrop-filter: blur(4px);
       z-index: 88; opacity: 0; pointer-events: none; transition: opacity 0.24s ease;
     }
     .hm-backdrop.open { opacity: 1; pointer-events: auto; }
     .hm-drawer {
       position: fixed; top: 0; left: 0; bottom: 0; width: 300px; max-width: 86vw;
-      background: var(--card); border-right: 1px solid var(--border);
+      background: rgba(9, 14, 28, 0.94); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+      border-right: 1px solid rgba(56, 189, 248, 0.28);
       z-index: 90; transform: translateX(-105%); transition: transform 0.26s cubic-bezier(.22,1,.36,1);
-      display: flex; flex-direction: column; box-shadow: 10px 0 32px rgba(0,0,0,0.45);
+      display: flex; flex-direction: column; box-shadow: 12px 0 36px rgba(0,0,0,0.6);
     }
+    body.light-mode .hm-drawer { background: #ffffff; border-right-color: #cbd5e1; }
     .hm-drawer.open { transform: translateX(0); }
     .hm-head {
-      padding: 13px 14px; border-bottom: 1px solid var(--border);
-      background: linear-gradient(135deg, #0284c7, #1d4ed8); color: #fff;
+      padding: 14px; border-bottom: 1px solid var(--border);
+      background: linear-gradient(135deg, #6366f1, #0ea5e9); color: #fff;
     }
     .hm-profile { display: flex; align-items: center; gap: 10px; }
     .hm-avatar {
       width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
-      background: rgba(255,255,255,0.22); color: #fff; border: 1px solid rgba(255,255,255,0.4);
+      background: rgba(255,255,255,0.22); color: #fff; border: 1px solid rgba(255,255,255,0.45);
       display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1rem;
       overflow: hidden;
     }
     .hm-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .hm-wa-bar {
-      padding: 10px 12px; background: rgba(34, 197, 94, 0.12);
+      padding: 10px 12px; background: rgba(16, 185, 129, 0.12);
       border-bottom: 1px solid var(--border);
     }
-    .hm-wa-bar label { display: block; font-size: 0.74rem; font-weight: 700; color: #22c55e; margin-bottom: 5px; }
+    .hm-wa-bar label { display: block; font-size: 0.74rem; font-weight: 700; color: #34d399; margin-bottom: 5px; }
     .hm-wa-row { display: flex; gap: 6px; }
     .hm-wa-row input { flex: 1; min-width: 0; padding: 6px 8px; font-size: 0.8rem; }
     .hm-sec-lbl {
       font-size: 0.72rem; font-weight: 800; color: var(--muted); text-transform: uppercase;
-      padding: 10px 10px 4px; letter-spacing: 0.4px;
+      padding: 10px 10px 4px; letter-spacing: 0.5px;
     }
     .hm-body { flex: 1; overflow-y: auto; padding: 6px 8px 16px; display: flex; flex-direction: column; gap: 2px; }
     .hm-item {
       display: flex; align-items: center; justify-content: space-between; width: 100%;
-      padding: 9px 10px; border-radius: 9px; border: 1px solid transparent;
+      padding: 9px 10px; border-radius: 10px; border: 1px solid transparent;
       background: transparent; color: var(--text); font-size: 0.85rem; text-align: left; cursor: pointer;
     }
-    .hm-item:hover, .hm-item.active { background: var(--card-2); border-color: var(--border); color: var(--accent); }
+    .hm-item:hover, .hm-item.active {
+      background: rgba(56, 189, 248, 0.12); border-color: rgba(56, 189, 248, 0.35); color: var(--accent);
+    }
     .hm-item-left { display: flex; align-items: center; gap: 9px; }
-    .hm-badge { background: var(--danger); color: #fff; font-size: 0.7rem; font-weight: 700; padding: 1px 6px; border-radius: 999px; }
+    .hm-badge {
+      background: linear-gradient(135deg, #f43f5e, #e11d48); color: #fff; font-size: 0.7rem;
+      font-weight: 700; padding: 1px 7px; border-radius: 999px; box-shadow: 0 0 8px rgba(244,63,94,0.45);
+    }
     .hm-div { height: 1px; background: var(--border); margin: 5px 4px; }
 
     /* डॅशबोर्ड ड्रिल-डाऊन यादी कार्ड */
     .sd-row-card {
-      background: var(--meta-bg); border: 1px solid var(--border); border-radius: 10px;
+      background: var(--meta-bg); border: 1px solid var(--border); border-radius: 12px;
       padding: 10px 12px; margin-bottom: 8px;
     }
     .sd-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -209,7 +211,7 @@
     }
     .cs-big-btn.purple { background: linear-gradient(135deg, #9333ea, #7e22ce) !important; }
     .cs-big-btn.blue { background: linear-gradient(135deg, #0284c7, #0369a1) !important; }
-    .cs-big-btn.green { background: linear-gradient(135deg, #16a34a, #15803d) !important; }
+    .cs-big-btn.green { background: linear-gradient(135deg, #059669, #10b981) !important; }
     .cs-big-btn.teal { background: linear-gradient(135deg, #0d9488, #0f766e) !important; }
     .cs-vault-btn {
       width: 100%; border: none !important; border-radius: 12px !important; padding: 12px !important;
@@ -221,36 +223,47 @@
     .td-btn { font-size: 1.15rem; padding: 4px 10px; line-height: 1; }
     .td-menu {
       position: fixed; right: 14px; top: 64px; min-width: 220px; z-index: 95;
-      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
-      box-shadow: 0 12px 32px rgba(0,0,0,0.5); padding: 6px; display: flex; flex-direction: column; gap: 4px;
+      background: rgba(11, 17, 32, 0.94); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 14px;
+      box-shadow: 0 14px 36px rgba(0,0,0,0.6); padding: 6px; display: flex; flex-direction: column; gap: 4px;
     }
-    .td-menu button { text-align: left; width: 100%; background: transparent; border: 1px solid transparent; padding: 9px 11px; font-size: 0.85rem; border-radius: 8px; }
-    .td-menu button:hover { background: var(--card-2); border-color: var(--border); }
+    body.light-mode .td-menu { background: #ffffff; border-color: #cbd5e1; }
+    .td-menu button { text-align: left; width: 100%; background: transparent; border: 1px solid transparent; padding: 9px 11px; font-size: 0.85rem; border-radius: 9px; }
+    .td-menu button:hover { background: rgba(56,189,248,0.12); border-color: var(--border); }
     .td-divider { height: 1px; background: var(--border); margin: 4px 0; }
 
+    /* Frosted Glass Bottom Bar + Neon FAB */
     .v3-bottom-nav {
       position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
-      background: var(--card); border-top: 1px solid var(--border);
+      background: rgba(8, 12, 24, 0.82); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border-top: 1px solid rgba(56, 189, 248, 0.22);
       display: flex; justify-content: space-around; align-items: center; padding: 6px 4px;
-      box-shadow: 0 -4px 18px rgba(0,0,0,0.28);
+      box-shadow: 0 -6px 24px rgba(0,0,0,0.45);
     }
+    body.light-mode .v3-bottom-nav { background: rgba(255, 255, 255, 0.92); border-top-color: #cbd5e1; }
     .v3-bottom-nav button {
       background: transparent; border: none; color: var(--muted); font-size: 0.72rem;
       display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 10px;
     }
-    .v3-bottom-nav button.active, .v3-bottom-nav button:hover { color: var(--accent); }
+    .v3-bottom-nav button.active, .v3-bottom-nav button:hover { color: var(--accent); text-shadow: 0 0 10px rgba(56,189,248,0.45); }
     .v3-fab {
-      position: fixed; right: 16px; bottom: 68px; z-index: 42;
-      width: 50px; height: 50px; border-radius: 50%; border: none;
-      background: linear-gradient(135deg, #6366f1, #0ea5e9); color: #fff;
-      font-size: 1.5rem; font-weight: 700; box-shadow: 0 8px 20px rgba(99,102,241,0.45);
+      position: fixed; right: 16px; bottom: 70px; z-index: 42;
+      width: 52px; height: 52px; border-radius: 50%; border: 1px solid rgba(56,189,248,0.65);
+      background: linear-gradient(135deg, #a855f7, #6366f1, #0ea5e9); color: #fff;
+      font-size: 1.6rem; font-weight: 700; box-shadow: 0 0 22px rgba(99,102,241,0.6);
       display: flex; align-items: center; justify-content: center; cursor: pointer;
     }
 
     .v3-overlay { position: fixed; inset: 0; z-index: 70; background: var(--bg); display: flex; overflow: hidden; }
-    .v3-overlay.v3-gradient-theme { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 55%, #0f172a 100%); }
+    .v3-overlay.v3-gradient-theme {
+      background-color: #05070e;
+      background-image:
+        radial-gradient(circle at 15% 10%, rgba(168, 85, 247, 0.16), transparent 40%),
+        radial-gradient(circle at 85% 20%, rgba(56, 189, 248, 0.14), transparent 42%);
+    }
     .v3-sidebar {
-      width: 230px; background: rgba(17, 24, 39, 0.94); border-right: 1px solid var(--border);
+      width: 230px; background: rgba(10, 15, 30, 0.92); backdrop-filter: blur(14px);
+      border-right: 1px solid var(--border);
       display: flex; flex-direction: column; padding: 14px 10px; gap: 6px; overflow-y: auto; flex-shrink: 0;
     }
     .v3-sidebar.collapsed { width: 64px; }
@@ -261,8 +274,8 @@
       font-size: 0.86rem; text-align: left; width: 100%; cursor: pointer;
     }
     .v3-nav-item.active, .v3-nav-item:hover {
-      background: linear-gradient(90deg, rgba(99,102,241,0.22), rgba(14,165,233,0.14));
-      border-color: rgba(99,102,241,0.45); color: var(--text);
+      background: linear-gradient(90deg, rgba(168,85,247,0.22), rgba(56,189,248,0.14));
+      border-color: rgba(56,189,248,0.45); color: var(--text);
     }
     .v3-main { flex: 1; overflow-y: auto; padding: 16px; padding-bottom: 84px; }
     .v3-topbar {
@@ -271,11 +284,11 @@
     }
     .v3-kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-bottom: 14px; }
     .v3-wave-card {
-      position: relative; overflow: hidden; border-radius: 14px; padding: 14px;
-      background: var(--card); border: 1px solid var(--border); box-shadow: 0 6px 18px rgba(0,0,0,0.18);
-      cursor: pointer; transition: transform 0.15s;
+      position: relative; overflow: hidden; border-radius: 15px; padding: 14px;
+      background: var(--card); backdrop-filter: blur(12px); border: 1px solid var(--border);
+      box-shadow: var(--glass-shadow); cursor: pointer; transition: transform 0.15s;
     }
-    .v3-wave-card:hover { transform: translateY(-2px); }
+    .v3-wave-card:hover { transform: translateY(-2px); border-color: rgba(56,189,248,0.45); }
     .v3-wave-card svg.wave { position: absolute; left: 0; bottom: 0; width: 100%; height: 44px; opacity: 0.25; pointer-events: none; }
     .v3-kpi-title { font-size: 0.78rem; color: var(--muted); }
     .v3-kpi-num { font-size: 1.4rem; font-weight: 800; margin: 4px 0; }
@@ -286,28 +299,28 @@
       .v3-layout-2 { grid-template-columns: 1fr; }
     }
     .v3-panel {
-      background: var(--card); border: 1px solid var(--border); border-radius: 14px;
-      padding: 14px; margin-bottom: 14px; box-shadow: 0 4px 14px rgba(0,0,0,0.14);
+      background: var(--card); backdrop-filter: blur(12px); border: 1px solid var(--border);
+      border-radius: 15px; padding: 14px; margin-bottom: 14px; box-shadow: var(--glass-shadow);
     }
     .v3-loan-card {
-      border: 1px solid var(--border); border-left: 5px solid #6366f1;
+      border: 1px solid var(--border); border-left: 5px solid #a855f7;
       border-radius: 12px; padding: 10px 12px; margin-top: 8px; background: var(--card-2);
     }
     .v3-toast {
-      position: fixed; left: 50%; bottom: 76px; transform: translateX(-50%) translateY(20px);
+      position: fixed; left: 50%; bottom: 78px; transform: translateX(-50%) translateY(20px);
       padding: 10px 16px; border-radius: 999px; font-size: 0.84rem; font-weight: 600;
       z-index: 120; opacity: 0; pointer-events: none; transition: 0.25s; color: #fff;
-      white-space: nowrap;
+      white-space: nowrap; box-shadow: 0 8px 24px rgba(0,0,0,0.45);
     }
-    .v3-toast.ok { background: #15803d; }
-    .v3-toast.err { background: #b91c1c; }
+    .v3-toast.ok { background: linear-gradient(135deg, #059669, #10b981); }
+    .v3-toast.err { background: linear-gradient(135deg, #be123c, #e11d48); }
     .v3-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     .v3-seg-wrap { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
     .v3-seg-btn {
       padding: 6px 11px; border-radius: 999px; font-size: 0.78rem; font-weight: 600;
       background: var(--card-2); border: 1px solid var(--border); color: var(--muted); cursor: pointer;
     }
-    .v3-seg-btn.active { background: #0284c7; border-color: #38bdf8; color: #fff; }
+    .v3-seg-btn.active { background: linear-gradient(135deg, #6366f1, #0ea5e9); border-color: #38bdf8; color: #fff; }
     .v3-pay-summary {
       background: var(--card-2); border: 1px solid var(--border); border-radius: 12px;
       padding: 12px; display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem;
@@ -316,7 +329,7 @@
     .v3-pay-cell { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 7px 9px; }
     .v3-month-pill {
       display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.74rem; font-weight: 600;
-      background: rgba(239, 68, 68, 0.16); border: 1px solid rgba(239, 68, 68, 0.45); color: #fca5a5;
+      background: rgba(244, 63, 94, 0.16); border: 1px solid rgba(244, 63, 94, 0.45); color: #fda4af;
       margin: 2px 4px 2px 0;
     }
     .v3-month-pill.partial {
@@ -488,7 +501,7 @@
       const rows = d.allActiveRows.filter(matchQ).sort((a, b) => b.principal - a.principal);
       const total = rows.reduce((s, r) => s + r.principal, 0);
       titleEl.textContent = `💰 एकूण मुद्दल यादी (${rows.length} खाती)`;
-      sumEl.innerHTML = `एकूण सक्रिय मुद्दल: <span class="ok">${fmt(total)}</span>`;
+      sumEl.innerHTML = `एकूण सक्रिय मुद्दल: <span style="color:var(--gold);">${fmt(total)}</span>`;
       listEl.innerHTML = rows.length ? rows.map((r, i) => {
         const mob = String(r.mobile || '').replace(/\D/g, '');
         return `
@@ -496,7 +509,7 @@
             <div class="sd-top">
               <div><strong>${i + 1}. ${esc(r.name)}</strong><div class="muted" style="font-size:0.75rem;">दर: ${Number((r.raw && r.raw.rate) || 0)}% | मासिक व्याज: ${fmt(r.monthlyInterest)}</div></div>
               <div class="sd-actions">
-                <strong style="font-size:1rem;">${fmt(r.principal)}</strong>
+                <strong style="font-size:1rem; color:var(--gold);">${fmt(r.principal)}</strong>
                 ${mob.length >= 10 ? `<button type="button" class="success sm" onclick="window.location.href='tel:${esc(mob)}'">📞 Call</button>` : ''}
               </div>
             </div>
@@ -508,7 +521,7 @@
       const rows = d.allActiveRows.filter(matchQ).sort((a, b) => b.monthlyInterest - a.monthlyInterest);
       const total = rows.reduce((s, r) => s + r.monthlyInterest, 0);
       titleEl.textContent = `📈 मासिक व्याज यादी — ${fmtYmMarathi(d.activeYm)}`;
-      sumEl.innerHTML = `एकूण अपेक्षित व्याज: <span style="color:#38bdf8;">${fmt(total)}</span> (${rows.length} खाती)`;
+      sumEl.innerHTML = `एकूण अपेक्षित व्याज: <span style="color:var(--accent);">${fmt(total)}</span> (${rows.length} खाती)`;
       listEl.innerHTML = rows.length ? rows.map((r, i) => {
         const mob = String(r.mobile || '').replace(/\D/g, '');
         const stBadge = r.status === 'paid'
@@ -521,7 +534,7 @@
             <div class="sd-top">
               <div><strong>${i + 1}. ${esc(r.name)}</strong> ${stBadge}<div class="muted" style="font-size:0.75rem;">मुद्दल: ${fmt(r.principal)}</div></div>
               <div class="sd-actions">
-                <strong style="color:#38bdf8; font-size:1rem;">${fmt(r.monthlyInterest)}</strong>
+                <strong style="color:var(--accent); font-size:1rem;">${fmt(r.monthlyInterest)}</strong>
                 ${mob.length >= 10 ? `<button type="button" class="success sm" onclick="window.location.href='tel:${esc(mob)}'">📞 Call</button>` : ''}
               </div>
             </div>
@@ -570,7 +583,7 @@
     pushNavHistory(`drill:${mode}`);
   }
 
-  // ३. नवीन स्वच्छ Three-Line Hamburger Menu (☰) — रिपीट न झालेले फक्त मुख्य कामकाज
+  // ३. स्वच्छ Three-Line Hamburger Menu (☰)
   let isDrawerOpen = false;
   let touchStartX = 0;
 
@@ -619,7 +632,6 @@
   }
 
   function initHamburgerDrawer() {
-    // डॅशबोर्ड कार्ड्स क्लिक इव्हेंट्स
     document.querySelectorAll('[data-stat-drill]').forEach(tile => {
       tile.addEventListener('click', () => openStatDrillModal(tile.getAttribute('data-stat-drill')));
     });
@@ -748,7 +760,7 @@
     });
   }
 
-  // ४. Three-Dot (⋮) Menu (फक्त सेटिंग्जसाठी — कोणतेही रिपीट नाही) + Bottom Nav + FAB
+  // ४. Three-Dot (⋮) Menu (फक्त सेटिंग्जसाठी) + Frosted Glass Bottom Nav + Neon FAB
   function initNavigationChrome() {
     initHamburgerDrawer();
 
@@ -762,7 +774,7 @@
             <button data-td="hide-amt">👁️ रकमा Hide / Show</button>
             <button data-td="theme">☀️ Dark / Light Mode</button>
             <button data-td="reset-pass">🔑 Password Reset Email</button>
-            <button data-td="about">ℹ️ About Hishob (V14.1)</button>
+            <button data-td="about">ℹ️ About Hishob (V14.2)</button>
             <div class="td-divider"></div>
             <button data-td="logout" style="color:var(--danger);">🔒 अ‍ॅप लॉक करा (Logout)</button>
           </div>
@@ -789,7 +801,7 @@
           try { await firebase.auth().sendPasswordResetEmail(u.email); showToast(`✅ ${u.email} वर Password Reset लिंक पाठवली.`); }
           catch (err) { showToast(`एरर: ${err.message}`, true); }
         }
-        else if (act === 'about') showToast('व्याज हिशोब वही V14.1 — Pro Clean Edition');
+        else if (act === 'about') showToast('व्याज हिशोब वही V14.2 — Ultra-Pro Obsidian Glass');
         else if (act === 'logout') document.getElementById('lockBtn')?.click();
       });
     }
@@ -823,7 +835,7 @@
     }
   }
 
-  // ५. Premium V3 Fullscreen Dashboard Shell (✕ बंद करा बटण काढले — फोनच्या Back ने बंद होईल)
+  // ५. Premium V3 Fullscreen Dashboard Shell
   let v3Tab = 'overview';
   let v3Gradient = localStorage.getItem('hishob_v3_grad') !== '0';
   let isSavingPay = false;
@@ -843,7 +855,7 @@
     ov.innerHTML = `
       <aside id="v3Sidebar" class="v3-sidebar">
         <div class="row" style="justify-content:space-between; padding:4px 6px 10px;">
-          <strong class="v3-nav-lbl" style="font-size:1.05rem;">💎 Hishob V14</strong>
+          <strong class="v3-nav-lbl" style="font-size:1.05rem;">💎 Hishob V14.2</strong>
           <button id="v3ToggleSideBtn" class="sm" title="Sidebar लहान/मोठा">☰</button>
         </div>
         <button class="v3-nav-item active" data-v3tab="overview"><span>📊</span><span class="v3-nav-lbl">Dashboard</span></button>
@@ -933,7 +945,7 @@
         <defs><linearGradient id="v3AreaG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#38bdf8" stop-opacity="0.45"/><stop offset="100%" stop-color="#38bdf8" stop-opacity="0.02"/></linearGradient></defs>
         <path d="${areaPath}" fill="url(#v3AreaG)" />
         <path d="${linePath}" fill="none" stroke="#38bdf8" stroke-width="2.5" />
-        ${pts.map(p => `<circle cx="${p.x}" cy="${p.y}" r="4" fill="#22c55e"><title>${esc(p.k)}: ₹${p.v}</title></circle>`).join('')}
+        ${pts.map(p => `<circle cx="${p.x}" cy="${p.y}" r="4" fill="#10b981"><title>${esc(p.k)}: ₹${p.v}</title></circle>`).join('')}
       </svg>
       <div class="row" style="justify-content:space-between; font-size:0.75rem;">
         ${pts.map(p => `<span>${esc(p.k)}: <strong>${fmt(p.v)}</strong></span>`).join('')}
@@ -948,9 +960,9 @@
       <div class="row" style="gap:16px; align-items:center;">
         <svg viewBox="0 0 36 36" style="width:110px; height:110px; transform:rotate(-90deg);">
           <circle cx="18" cy="18" r="15.9" fill="none" stroke="#334155" stroke-width="3.6" />
-          <circle cx="18" cy="18" r="15.9" fill="none" stroke="#22c55e" stroke-width="3.6" stroke-dasharray="${p1} ${100 - p1}" stroke-dashoffset="0" />
+          <circle cx="18" cy="18" r="15.9" fill="none" stroke="#10b981" stroke-width="3.6" stroke-dasharray="${p1} ${100 - p1}" stroke-dashoffset="0" />
           <circle cx="18" cy="18" r="15.9" fill="none" stroke="#f59e0b" stroke-width="3.6" stroke-dasharray="${p2} ${100 - p2}" stroke-dashoffset="${-p1}" />
-          <circle cx="18" cy="18" r="15.9" fill="none" stroke="#ef4444" stroke-width="3.6" stroke-dasharray="${p3} ${100 - p3}" stroke-dashoffset="${-(p1 + p2)}" />
+          <circle cx="18" cy="18" r="15.9" fill="none" stroke="#f43f5e" stroke-width="3.6" stroke-dasharray="${p3} ${100 - p3}" stroke-dashoffset="${-(p1 + p2)}" />
         </svg>
         <div style="font-size:0.84rem; line-height:1.8;">
           <div>🟢 पूर्ण जमा: <strong>${paid}</strong> (${Math.round(p1)}%)</div>
@@ -1068,8 +1080,8 @@
           <h3 style="margin-top:0;">💰 आजची वसुली — Daily Cashbook (${esc(d.todayIso)})</h3>
           <div class="v3-kpi-row">
             <div class="v3-wave-card"><div class="v3-kpi-title">आजची एकूण वसुली</div><div class="v3-kpi-num ok">${fmt(d.todayCollected)}</div><div class="v3-kpi-sub">नोंदी: ${d.todayPaymentsList.length}</div></div>
-            <div class="v3-wave-card"><div class="v3-kpi-title">💵 रोख (Cash)</div><div class="v3-kpi-num">${fmt(d.todayCash)}</div></div>
-            <div class="v3-wave-card"><div class="v3-kpi-title">📱 UPI / 🏦 Bank</div><div class="v3-kpi-num" style="color:#38bdf8;">${fmt(d.todayUpi + d.todayBank)}</div><div class="v3-kpi-sub">UPI: ${fmt(d.todayUpi)} | Bank: ${fmt(d.todayBank)}</div></div>
+            <div class="v3-wave-card"><div class="v3-kpi-title">💵 रोख (Cash)</div><div class="v3-kpi-num" style="color:var(--gold);">${fmt(d.todayCash)}</div></div>
+            <div class="v3-wave-card"><div class="v3-kpi-title">📱 UPI / 🏦 Bank</div><div class="v3-kpi-num" style="color:var(--accent);">${fmt(d.todayUpi + d.todayBank)}</div><div class="v3-kpi-sub">UPI: ${fmt(d.todayUpi)} | Bank: ${fmt(d.todayBank)}</div></div>
           </div>
 
           <h4 style="margin:10px 0 6px;">📋 आजच्या सर्व जमा नोंदी</h4>
@@ -1098,7 +1110,7 @@
                 <span class="muted">📱 ${esc(cur.mobile)}</span>
               </div>
               <div style="font-size:1.15rem; font-weight:800; margin-bottom:6px;">${esc(cur.name)}</div>
-              <div style="margin-bottom:10px;">मुद्दल: <strong>${fmt(cur.principal)}</strong> | एकूण बाकी: <strong class="err">${fmt(cur.outstanding)}</strong></div>
+              <div style="margin-bottom:10px;">मुद्दल: <strong style="color:var(--gold);">${fmt(cur.principal)}</strong> | एकूण बाकी: <strong class="err">${fmt(cur.outstanding)}</strong></div>
               <div class="row">
                 <button type="button" id="bwaCallBtn" class="success sm">📞 Call</button>
                 <button type="button" id="bwaSendBtn" class="success" style="flex:1;">💬 WhatsApp पाठवा</button>
@@ -1139,7 +1151,7 @@
             <div class="v3-loan-card">
               <div class="row" style="justify-content:space-between; margin-bottom:6px;">
                 <strong>🤝 ${esc(g.name)} (${g.count} खाती)</strong>
-                <div>मुद्दल: <strong>${fmt(g.principal)}</strong> | बाकी: <strong class="err">${fmt(g.outstanding)}</strong></div>
+                <div>मुद्दल: <strong style="color:var(--gold);">${fmt(g.principal)}</strong> | बाकी: <strong class="err">${fmt(g.outstanding)}</strong></div>
               </div>
               <div style="display:flex; flex-direction:column; gap:5px;">
                 ${g.customers.map(c => {
@@ -1181,7 +1193,7 @@
       body.innerHTML = `
         <div class="v3-panel">
           <div class="row" style="justify-content:space-between; margin-bottom:10px;">
-            <h3 style="margin:0;">📅 महिना निहाय खरा हिशोब (V14.1)</h3>
+            <h3 style="margin:0;">📅 महिना निहाय खरा हिशोब (V14.2)</h3>
             <button id="v3ApplyMainYmBtn" class="sm">📂 मुख्य स्क्रीनवर सेट करा</button>
           </div>
           <div class="row" style="margin-bottom:12px; align-items:flex-end;">
@@ -1222,8 +1234,8 @@
             <input type="text" id="v3ArchSearchInp" value="${esc(archiveSearchQuery)}" placeholder="🔍 या महिन्यातील ग्राहक शोधा..." style="width:100%; margin-bottom:12px;" />
 
             <div class="v3-kpi-row">
-              <div class="v3-wave-card"><div class="v3-kpi-title">या महिन्यातील खाती / मुद्दल</div><div class="v3-kpi-num">${filteredRows.length} खाती</div><div class="v3-kpi-sub">मुद्दल: ${fmt(mPrincipal)}</div></div>
-              <div class="v3-wave-card"><div class="v3-kpi-title">महिन्याचे व्याज / जमा</div><div class="v3-kpi-num" style="color:#38bdf8;">${fmt(mExpected)}</div><div class="v3-kpi-sub ok">जमा: ${fmt(mPaid)}</div></div>
+              <div class="v3-wave-card"><div class="v3-kpi-title">या महिन्यातील खाती / मुद्दल</div><div class="v3-kpi-num" style="color:var(--gold);">${filteredRows.length} खाती</div><div class="v3-kpi-sub">मुद्दल: ${fmt(mPrincipal)}</div></div>
+              <div class="v3-wave-card"><div class="v3-kpi-title">महिन्याचे व्याज / जमा</div><div class="v3-kpi-num" style="color:var(--accent);">${fmt(mExpected)}</div><div class="v3-kpi-sub ok">जमा: ${fmt(mPaid)}</div></div>
               <div class="v3-wave-card"><div class="v3-kpi-title">मागील व्याज बाकी + एकूण बाकी</div><div class="v3-kpi-num err">${fmt(mTotalOut)}</div><div class="v3-kpi-sub warn-text">मागील व्याज बाकी: ${fmt(mPastDue)}</div></div>
             </div>
 
@@ -1269,21 +1281,21 @@
         <div class="v3-kpi-row">
           <div class="v3-wave-card" data-jump="daily-cash">
             <div class="v3-kpi-title">शिल्लक सक्रिय मुद्दल</div>
-            <div class="v3-kpi-num">${fmt(d.remainingPrincipal)}</div>
+            <div class="v3-kpi-num" style="color:var(--gold);">${fmt(d.remainingPrincipal)}</div>
             <div class="v3-kpi-sub ok">सक्रिय कर्जे: ${d.activeLoans} | बंद: ${d.closedLoans}</div>
-            <svg class="wave" viewBox="0 0 200 44" preserveAspectRatio="none"><path d="M0,25 Q50,5 100,25 T200,20 L200,44 L0,44 Z" fill="#38bdf8"/></svg>
+            <svg class="wave" viewBox="0 0 200 44" preserveAspectRatio="none"><path d="M0,25 Q50,5 100,25 T200,20 L200,44 L0,44 Z" fill="#fbbf24"/></svg>
           </div>
           <div class="v3-wave-card" data-jump="daily-cash">
             <div class="v3-kpi-title">महिन्याची वसुली (${esc(fmtYmMarathi(d.activeYm))})</div>
             <div class="v3-kpi-num ok">${fmt(d.monthlyCollected)}</div>
             <div class="v3-kpi-sub">आज जमा: ${fmt(d.todayCollected)} | Target: ${pct}%</div>
-            <svg class="wave" viewBox="0 0 200 44" preserveAspectRatio="none"><path d="M0,30 Q60,10 120,28 T200,15 L200,44 L0,44 Z" fill="#22c55e"/></svg>
+            <svg class="wave" viewBox="0 0 200 44" preserveAspectRatio="none"><path d="M0,30 Q60,10 120,28 T200,15 L200,44 L0,44 Z" fill="#10b981"/></svg>
           </div>
           <div class="v3-wave-card" data-jump="bulk-wa">
             <div class="v3-kpi-title">एकूण थकबाकी (Outstanding)</div>
             <div class="v3-kpi-num err">${fmt(d.totalOutstanding)}</div>
             <div class="v3-kpi-sub warn-text">Overdue: ${fmt(d.totalOverdue)}</div>
-            <svg class="wave" viewBox="0 0 200 44" preserveAspectRatio="none"><path d="M0,20 Q50,38 110,18 T200,26 L200,44 L0,44 Z" fill="#f97316"/></svg>
+            <svg class="wave" viewBox="0 0 200 44" preserveAspectRatio="none"><path d="M0,20 Q50,38 110,18 T200,26 L200,44 L0,44 Z" fill="#f43f5e"/></svg>
           </div>
         </div>
         <div class="v3-layout-2">
@@ -1342,8 +1354,8 @@
             ${cleanMob ? `<button type="button" id="v3QuickPayCallBtn" class="success sm">📞 Call</button>` : `<span class="muted" style="font-size:0.75rem;">नंबर नाही</span>`}
           </div>
           <div class="v3-pay-grid">
-            <div class="v3-pay-cell"><div class="muted" style="font-size:0.74rem;">एकूण मुद्दल</div><strong>${fmt(row.principal)}</strong></div>
-            <div class="v3-pay-cell"><div class="muted" style="font-size:0.74rem;">मासिक व्याज</div><strong style="color:#38bdf8;">${fmt(row.monthlyInterest)}</strong></div>
+            <div class="v3-pay-cell"><div class="muted" style="font-size:0.74rem;">एकूण मुद्दल</div><strong style="color:var(--gold);">${fmt(row.principal)}</strong></div>
+            <div class="v3-pay-cell"><div class="muted" style="font-size:0.74rem;">मासिक व्याज</div><strong style="color:var(--accent);">${fmt(row.monthlyInterest)}</strong></div>
             <div class="v3-pay-cell"><div class="muted" style="font-size:0.74rem;">आधीची बाकी</div><strong class="warn-text">${fmt(row.pastDue)}</strong></div>
             <div class="v3-pay-cell"><div class="muted" style="font-size:0.74rem;">एकूण थकबाकी</div><strong class="err">${fmt(row.outstanding)}</strong></div>
           </div>
@@ -1388,7 +1400,7 @@
         <div class="v3-panel"><h4 style="margin:0 0 8px;">📈 Monthly Collection Trend</h4>${buildSvgAreaChart(d.monthlySeries)}</div>
         <div class="v3-panel"><h4 style="margin:0 0 8px;">🍩 Payment Status Breakdown</h4>${buildSvgDonut(d.paidCnt, d.partialCnt, d.unpaidCnt)}</div>
         <div class="v3-kpi-row">
-          <div class="v3-wave-card"><div class="v3-kpi-title">एकूण दिलेले मुद्दल</div><div class="v3-kpi-num">${fmt(d.totalPrincipal)}</div></div>
+          <div class="v3-wave-card"><div class="v3-kpi-title">एकूण दिलेले मुद्दल</div><div class="v3-kpi-num" style="color:var(--gold);">${fmt(d.totalPrincipal)}</div></div>
           <div class="v3-wave-card"><div class="v3-kpi-title">परत आलेले मुद्दल</div><div class="v3-kpi-num ok">${fmt(d.principalRecovered)}</div></div>
           <div class="v3-wave-card"><div class="v3-kpi-title">एकूण मिळालेले व्याज</div><div class="v3-kpi-num ok">${fmt(d.totalInterestReceived)}</div></div>
         </div>
