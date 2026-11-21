@@ -1,7 +1,7 @@
 // =========================================================================
-// Hishob Premium Fintech Dashboard V3 + Gmail-Style Hamburger Menu (☰)
-// V13.8: Clean Home Screen (All 6 Bottom Tools Moved to ☰ Menu Modal)
-// + Quick Payment Full Summary Card + Smart Mobile Back-Button + Strict Month Ledger
+// Hishob Premium Fintech Dashboard V3 + Advanced Hamburger Menu (☰)
+// V14.0: Categorized Menu + Direct WA Box + Cloud Sync/Backup UI
+// + Daily Cashbook + Bulk WA Queue + Guarantor Report + Smart Back Nav
 // =========================================================================
 
 (function () {
@@ -53,7 +53,7 @@
   }
 
   // =========================================================================
-  // ☰ मेन्यूमधील ६ फीचर्स उघडण्याचे पॉपअप कंट्रोलर
+  // ☰ मेन्यूमधील साधने उघडण्याचे पॉपअप कंट्रोलर
   // =========================================================================
   function openToolSection(sectionId, titleText) {
     const modal = document.getElementById('toolSectionModal');
@@ -73,7 +73,7 @@
   }
 
   // =========================================================================
-  // स्मार्ट मोबाईल Back-Button कंट्रोलर (History Stack + Double-Back to Exit)
+  // स्मार्ट मोबाईल Back-Button कंट्रोलर
   // =========================================================================
   const MODAL_IDS = ['toolSectionModal', 'smartInfoModal', 'pnlModal', 'securityModal', 'versionModal', 'notifModal', 'docsModal', 'editModal', 'passbookModal'];
   let v3TabHistory = [];
@@ -124,7 +124,7 @@
     }
   });
 
-  // १. Premium CSS
+  // १. Premium CSS (V14.0)
   const styleEl = document.createElement('style');
   styleEl.textContent = `
     .hm-btn {
@@ -142,38 +142,67 @@
     }
     .hm-backdrop.open { opacity: 1; pointer-events: auto; }
     .hm-drawer {
-      position: fixed; top: 0; left: 0; bottom: 0; width: 290px; max-width: 84vw;
+      position: fixed; top: 0; left: 0; bottom: 0; width: 300px; max-width: 86vw;
       background: var(--card); border-right: 1px solid var(--border);
       z-index: 90; transform: translateX(-105%); transition: transform 0.26s cubic-bezier(.22,1,.36,1);
       display: flex; flex-direction: column; box-shadow: 10px 0 32px rgba(0,0,0,0.45);
     }
     .hm-drawer.open { transform: translateX(0); }
     .hm-head {
-      padding: 14px; border-bottom: 1px solid var(--border);
-      background: linear-gradient(135deg, rgba(99,102,241,0.18), rgba(14,165,233,0.12));
+      padding: 13px 14px; border-bottom: 1px solid var(--border);
+      background: linear-gradient(135deg, #0284c7, #1d4ed8); color: #fff;
     }
     .hm-profile { display: flex; align-items: center; gap: 10px; }
     .hm-avatar {
-      width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
-      background: linear-gradient(135deg, #6366f1, #0ea5e9); color: #fff;
-      display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.05rem;
+      width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+      background: rgba(255,255,255,0.22); color: #fff; border: 1px solid rgba(255,255,255,0.4);
+      display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1rem;
       overflow: hidden;
     }
     .hm-avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .hm-mini-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; }
-    .hm-mini-box { background: var(--card-2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; font-size: 0.74rem; }
-    .hm-body { flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 3px; }
+    .hm-wa-bar {
+      padding: 10px 12px; background: rgba(34, 197, 94, 0.12);
+      border-bottom: 1px solid var(--border);
+    }
+    .hm-wa-bar label { display: block; font-size: 0.74rem; font-weight: 700; color: #22c55e; margin-bottom: 5px; }
+    .hm-wa-row { display: flex; gap: 6px; }
+    .hm-wa-row input { flex: 1; min-width: 0; padding: 6px 8px; font-size: 0.8rem; }
+    .hm-sec-lbl {
+      font-size: 0.72rem; font-weight: 800; color: var(--muted); text-transform: uppercase;
+      padding: 10px 10px 4px; letter-spacing: 0.4px;
+    }
+    .hm-body { flex: 1; overflow-y: auto; padding: 6px 8px; display: flex; flex-direction: column; gap: 2px; }
     .hm-item {
       display: flex; align-items: center; justify-content: space-between; width: 100%;
-      padding: 9px 11px; border-radius: 9px; border: 1px solid transparent;
-      background: transparent; color: var(--text); font-size: 0.86rem; text-align: left; cursor: pointer;
+      padding: 9px 10px; border-radius: 9px; border: 1px solid transparent;
+      background: transparent; color: var(--text); font-size: 0.85rem; text-align: left; cursor: pointer;
     }
     .hm-item:hover, .hm-item.active { background: var(--card-2); border-color: var(--border); color: var(--accent); }
-    .hm-item-left { display: flex; align-items: center; gap: 10px; }
+    .hm-item-left { display: flex; align-items: center; gap: 9px; }
     .hm-badge { background: var(--danger); color: #fff; font-size: 0.7rem; font-weight: 700; padding: 1px 6px; border-radius: 999px; }
-    .hm-sub { padding-left: 24px; display: flex; flex-direction: column; gap: 3px; margin: 2px 0 6px; }
-    .hm-div { height: 1px; background: var(--border); margin: 6px 4px; }
+    .hm-div { height: 1px; background: var(--border); margin: 5px 4px; }
     .hm-foot { padding: 10px; border-top: 1px solid var(--border); display: flex; gap: 6px; }
+
+    /* Cloud Sync, Backup & Restore रंगीत कार्ड बटणे */
+    .cs-grid-4 {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 12px 0;
+    }
+    @media (max-width: 560px) { .cs-grid-4 { grid-template-columns: repeat(2, 1fr); } }
+    .cs-big-btn {
+      border: none !important; border-radius: 12px !important; padding: 14px 8px !important;
+      color: #fff !important; font-weight: 700 !important; font-size: 0.82rem !important;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 6px; text-align: center; line-height: 1.3; min-height: 88px; cursor: pointer;
+    }
+    .cs-big-btn.purple { background: linear-gradient(135deg, #9333ea, #7e22ce) !important; }
+    .cs-big-btn.blue { background: linear-gradient(135deg, #0284c7, #0369a1) !important; }
+    .cs-big-btn.green { background: linear-gradient(135deg, #16a34a, #15803d) !important; }
+    .cs-big-btn.teal { background: linear-gradient(135deg, #0d9488, #0f766e) !important; }
+    .cs-vault-btn {
+      width: 100%; border: none !important; border-radius: 12px !important; padding: 12px !important;
+      background: linear-gradient(90deg, #ea580c, #f97316) !important; color: #fff !important;
+      font-weight: 800 !important; font-size: 0.9rem !important; margin-top: 6px;
+    }
 
     .td-wrap { position: relative; display: inline-block; }
     .td-btn { font-size: 1.15rem; padding: 4px 10px; line-height: 1; }
@@ -363,9 +392,10 @@
 
     let activeLoans = 0, closedLoans = 0, totalPrincipal = 0, remainingPrincipal = 0;
     let principalRecovered = 0, monthlyExpected = 0, monthlyCollected = 0, todayCollected = 0;
+    let todayCash = 0, todayUpi = 0, todayBank = 0;
     let totalInterestReceived = 0, totalOutstanding = 0, totalOverdue = 0;
     let paidCnt = 0, partialCnt = 0, unpaidCnt = 0;
-    const monthlySeries = {}, recentPayments = [], dueCustomers = [], allActiveRows = [], monthLedgerRows = [];
+    const monthlySeries = {}, recentPayments = [], todayPaymentsList = [], dueCustomers = [], allActiveRows = [], monthLedgerRows = [];
 
     allBorrowers.forEach(b => {
       const effStart = getEffectiveStartYm(b);
@@ -376,11 +406,18 @@
       (b.principalReductions || []).forEach(r => { principalRecovered += Number(r.amount || 0); });
       (b.paymentHistory || []).forEach(p => {
         const amt = Number(p.amount || 0), dt = String(p.date || '').slice(0, 10), ym = dt.slice(0, 7);
+        const mode = p.mode || 'Cash';
         totalInterestReceived += amt;
-        if (dt === todayIso) todayCollected += amt;
+        if (dt === todayIso) {
+          todayCollected += amt;
+          if (mode === 'UPI') todayUpi += amt;
+          else if (mode === 'Bank') todayBank += amt;
+          else todayCash += amt;
+          todayPaymentsList.push({ name: b.name, amount: amt, mode, note: p.note || p.type || 'जमा', time: String(p.date || '').slice(11, 16) });
+        }
         if (ym === activeYm) monthlyCollected += amt;
         if (ym) monthlySeries[ym] = (monthlySeries[ym] || 0) + amt;
-        recentPayments.push({ name: b.name, amount: amt, date: dt, note: p.note || p.type || 'जमा' });
+        recentPayments.push({ name: b.name, amount: amt, date: dt, mode, note: p.note || p.type || 'जमा' });
       });
 
       if (b.accountStatus === 'closed') {
@@ -424,13 +461,13 @@
 
     return {
       activeYm, todayIso, tomorrowIso, activeLoans, closedLoans, totalPrincipal, remainingPrincipal,
-      principalRecovered, monthlyExpected, monthlyCollected, todayCollected, totalInterestReceived,
-      totalOutstanding, totalOverdue, paidCnt, partialCnt, unpaidCnt,
+      principalRecovered, monthlyExpected, monthlyCollected, todayCollected, todayCash, todayUpi, todayBank,
+      todayPaymentsList, totalInterestReceived, totalOutstanding, totalOverdue, paidCnt, partialCnt, unpaidCnt,
       monthlySeries, recentPayments: recentPayments.slice(0, 12), dueCustomers, allActiveRows, monthLedgerRows
     };
   }
 
-  // ३. Gmail-Style Three-Line Hamburger Menu (☰) + सर्व ६ साधने
+  // ३. नवीन विभागवार Three-Line Hamburger Menu (☰) + थेट WhatsApp सेव्ह बॉक्स
   let isDrawerOpen = false;
   let touchStartX = 0;
 
@@ -469,25 +506,21 @@
       emailEl.textContent = user.email || 'Authorized Admin';
       avEl.innerHTML = user.photoURL ? `<img src="${esc(user.photoURL)}" alt="Admin" />` : esc(disp[0].toUpperCase());
     }
+    const waInp = document.getElementById('hmDirectWaInput');
+    if (waInp) waInp.value = localStorage.getItem('hishob_self_wa') || document.getElementById('selfWaNumber')?.value || '';
     const d = computeV3Data();
     if (d) {
-      const todayEl = document.getElementById('hmMiniToday');
-      const pendEl = document.getElementById('hmMiniPending');
       const dueBadge = document.getElementById('hmDueBadge');
-      if (todayEl) todayEl.textContent = fmt(d.todayCollected);
-      if (pendEl) pendEl.textContent = fmt(d.totalOutstanding);
       if (dueBadge) dueBadge.textContent = String(d.dueCustomers.length);
     }
   }
 
   function initHamburgerDrawer() {
-    // पॉपअप बंद करण्याचे बटण
     document.getElementById('closeToolSectionModalBtn')?.addEventListener('click', closeToolSectionModal);
     document.getElementById('toolSectionModal')?.addEventListener('click', (e) => {
       if (e.target.id === 'toolSectionModal') closeToolSectionModal();
     });
 
-    // ग्राहक कार्डवरील '➕ नवीन कर्ज' क्लिक केल्यावर नवीन ग्राहक पॉपअप उघडावा
     document.getElementById('borrowersList')?.addEventListener('click', (e) => {
       if (e.target.closest('button[data-action="add-loan-same"]')) {
         openToolSection('addBorrowerSection', '➕ नवीन ग्राहक / कर्ज नोंद');
@@ -517,52 +550,73 @@
           <div id="hmAvatar" class="hm-avatar">H</div>
           <div style="overflow:hidden;">
             <div id="hmUserName" style="font-weight:700; font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Hishob Admin</div>
-            <div id="hmUserEmail" class="muted" style="font-size:0.75rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Secure Account</div>
+            <div id="hmUserEmail" style="font-size:0.75rem; opacity:0.9; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Secure Account</div>
           </div>
         </div>
-        <div class="hm-mini-stats">
-          <div class="hm-mini-box"><div class="muted">आजची वसुली</div><strong id="hmMiniToday" class="ok">₹0</strong></div>
-          <div class="hm-mini-box"><div class="muted">एकूण बाकी</div><strong id="hmMiniPending" class="err">₹0</strong></div>
+      </div>
+
+      <!-- थेट WhatsApp रिमाइंडर नंबर सेव्ह बॉक्स -->
+      <div class="hm-wa-bar">
+        <label>📲 माझा WhatsApp रिमाइंडर नंबर सेव्ह करा:</label>
+        <div class="hm-wa-row">
+          <input type="tel" id="hmDirectWaInput" placeholder="उदा. 919876543210" />
+          <button type="button" id="hmDirectWaSaveBtn" class="success sm">सेव्ह</button>
         </div>
       </div>
 
       <div class="hm-body">
+        <div class="hm-sec-lbl">मुख्य मेनू</div>
         <button class="hm-item active" data-hm="home"><span class="hm-item-left"><span>🏠</span><span>मुख्य Dashboard</span></span></button>
-        <button class="hm-item" data-hm="archive"><span class="hm-item-left"><span>📅</span><span>महिना निहाय हिशोब</span></span></button>
-        <button class="hm-item" data-hm="v3-dash"><span class="hm-item-left"><span>🚀</span><span>Premium Dashboard V3</span></span></button>
+        <button class="hm-item" data-hm="add-cust"><span class="hm-item-left"><span>➕</span><span>नवीन नाव जोडा (Compose)</span></span></button>
+        <button class="hm-item" data-hm="archive"><span class="hm-item-left"><span>📅</span><span>मागील महिन्यांचा हिशोब (Months)</span></span></button>
         <button class="hm-item" data-hm="quick-pay"><span class="hm-item-left"><span>⚡</span><span>Quick Add Payment</span></span></button>
-        <button class="hm-item" data-hm="due-list">
-          <span class="hm-item-left"><span>⏳</span><span>Pending / Overdue खाती</span></span>
+        <button class="hm-item" data-hm="notifs">
+          <span class="hm-item-left"><span>🔔</span><span>आजचे वायदे व थकबाकी</span></span>
           <span id="hmDueBadge" class="hm-badge">0</span>
         </button>
+        <button class="hm-item" data-hm="v3-dash"><span class="hm-item-left"><span>🚀</span><span>Premium Dashboard V3</span></span></button>
 
         <div class="hm-div"></div>
-        <!-- मुख्य स्क्रीनवरून हलवलेली सर्व ६ फीचर्स -->
-        <button class="hm-item" data-hm="add-cust"><span class="hm-item-left"><span>➕</span><span>नवीन ग्राहक / कर्ज नोंद</span></span></button>
-        <button class="hm-item" data-hm="tool-rem"><span class="hm-item-left"><span>📲</span><span>WhatsApp, UPI QR व Notification</span></span></button>
-        <button class="hm-item" data-hm="tool-reports"><span class="hm-item-left"><span>📑</span><span>रिपोर्ट्स, CSV, Backup व Webhook</span></span></button>
+        <div class="hm-sec-lbl">अ‍ॅडव्हान्स रिपोर्ट्स व साधने</div>
+        <button class="hm-item" data-hm="daily-cash"><span class="hm-item-left"><span>💰</span><span>आजची वसुली (Daily Cashbook)</span></span></button>
+        <button class="hm-item" data-hm="bulk-wa"><span class="hm-item-left"><span>📲</span><span>Bulk WhatsApp रिमाइंडर रांग</span></span></button>
+        <button class="hm-item" data-hm="guarantor-rep"><span class="hm-item-left"><span>🤝</span><span>जमीनदार निहाय कर्ज यादी</span></span></button>
+        <button class="hm-item" data-hm="gmail-rep"><span class="hm-item-left"><span>📧</span><span>Gmail वर मास्टर रिपोर्ट पाठवा</span></span></button>
+        <button class="hm-item" data-hm="tool-reports"><span class="hm-item-left"><span>📥</span><span>हिशोब डाउनलोड (PDF/Excel) & Sheet</span></span></button>
         <button class="hm-item" data-hm="tool-emi"><span class="hm-item-left"><span>🧮</span><span>EMI Simulator</span></span></button>
-        <button class="hm-item" data-hm="tool-recycle"><span class="hm-item-left"><span>🗑️</span><span>Recycle Bin</span></span></button>
-        <button class="hm-item" data-hm="tool-audit"><span class="hm-item-left"><span>📜</span><span>Audit Log</span></span></button>
-
-        <div class="hm-div"></div>
         <button class="hm-item" data-hm="analytics"><span class="hm-item-left"><span>📈</span><span>Analytics & Charts</span></span></button>
-        <button class="hm-item" data-hm="goals"><span class="hm-item-left"><span>🎯</span><span>Goals & Targets</span></span></button>
         <button class="hm-item" data-hm="pnl"><span class="hm-item-left"><span>💹</span><span>Profit & Loss Report</span></span></button>
-        <button class="hm-item" data-hm="security"><span class="hm-item-left"><span>🛡️</span><span>Security Dashboard</span></span></button>
 
         <div class="hm-div"></div>
+        <div class="hm-sec-lbl">सुरक्षा, अ‍ॅडमिन व मेंटेनन्स</div>
+        <button class="hm-item" data-hm="cloud-sync"><span class="hm-item-left"><span>☁️</span><span>Cloud Sync, Backup & Restore</span></span></button>
+        <button class="hm-item" data-hm="security"><span class="hm-item-left"><span>🛡️</span><span>Admin Security Dashboard & Threats</span></span></button>
+        <button class="hm-item" data-hm="tool-recycle"><span class="hm-item-left"><span>🗑️</span><span>Recycle Bin (डिलीट झालेली नावे)</span></span></button>
+        <button class="hm-item" data-hm="tool-audit"><span class="hm-item-left"><span>📜</span><span>Audit Log</span></span></button>
+        <button class="hm-item" data-hm="tool-rem"><span class="hm-item-left"><span>⚙️</span><span>UPI QR व Notification सेटिंग</span></span></button>
+
+        <div class="hm-div"></div>
+        <div class="hm-sec-lbl">इतर</div>
         <button class="hm-item" data-hm="hide-amt"><span class="hm-item-left"><span>👁️</span><span>रकमा Hide / Show</span></span></button>
         <button class="hm-item" data-hm="theme"><span class="hm-item-left"><span>☀️</span><span>Dark / Light Theme</span></span></button>
         <button class="hm-item" data-hm="reset-pass"><span class="hm-item-left"><span>🔑</span><span>Password Reset Email</span></span></button>
-        <button class="hm-item" data-hm="about"><span class="hm-item-left"><span>ℹ️</span><span>About Hishob App</span></span></button>
+        <button class="hm-item" data-hm="about"><span class="hm-item-left"><span>ℹ️</span><span>About Hishob App (V14.0)</span></span></button>
       </div>
 
       <div class="hm-foot">
-        <button class="danger sm" data-hm="logout" style="width:100%;">🔒 लॉक / लॉगआउट</button>
+        <button class="danger sm" data-hm="logout" style="width:100%;">🔒 अ‍ॅप लॉक करा (Logout)</button>
       </div>
     `;
     document.body.appendChild(drawer);
+
+    // थेट WhatsApp नंबर सेव्ह
+    document.getElementById('hmDirectWaSaveBtn').addEventListener('click', () => {
+      const val = document.getElementById('hmDirectWaInput').value.trim();
+      const mainInp = document.getElementById('selfWaNumber');
+      if (mainInp) mainInp.value = val;
+      document.getElementById('saveWaNumberBtn')?.click();
+      showToast('✅ WhatsApp रिमाइंडर नंबर सेव्ह झाला!');
+    });
 
     backdrop.addEventListener('click', () => setDrawerState(false));
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && isDrawerOpen) setDrawerState(false); });
@@ -579,15 +633,19 @@
       else if (act === 'archive') openV3Dashboard('archive');
       else if (act === 'v3-dash') openV3Dashboard('overview');
       else if (act === 'quick-pay') openV3Dashboard('payments');
-      else if (act === 'due-list') openV3Dashboard('customers');
-      else if (act === 'add-cust') openToolSection('addBorrowerSection', '➕ नवीन ग्राहक / कर्ज नोंद');
-      else if (act === 'tool-rem') openToolSection('remSection', '📲 WhatsApp, UPI QR व Notification');
-      else if (act === 'tool-reports') openToolSection('reportsSection', '📑 रिपोर्ट्स, CSV, Share, Backup व Webhook');
+      else if (act === 'notifs') document.getElementById('notifBellBtn')?.click();
+      else if (act === 'daily-cash') openV3Dashboard('daily-cash');
+      else if (act === 'bulk-wa') openV3Dashboard('bulk-wa');
+      else if (act === 'guarantor-rep') openV3Dashboard('guarantor-rep');
+      else if (act === 'cloud-sync') openV3Dashboard('cloud-sync');
+      else if (act === 'gmail-rep') document.getElementById('gmailReportBtn')?.click();
+      else if (act === 'add-cust') openToolSection('addBorrowerSection', '➕ नवीन नाव जोडा (Compose)');
+      else if (act === 'tool-rem') openToolSection('remSection', '⚙️ UPI QR व Notification सेटिंग');
+      else if (act === 'tool-reports') openToolSection('reportsSection', '📥 हिशोब डाउनलोड (PDF/Excel) & Sheet');
       else if (act === 'tool-emi') openToolSection('emiSection', '🧮 EMI Simulator');
       else if (act === 'tool-recycle') openToolSection('recycleSection', '🗑️ Recycle Bin');
       else if (act === 'tool-audit') openToolSection('auditSection', '📜 Audit Log');
       else if (act === 'analytics') openV3Dashboard('analytics');
-      else if (act === 'goals') openV3Dashboard('goals');
       else if (act === 'pnl') document.getElementById('openPnlBtn')?.click();
       else if (act === 'security') document.getElementById('openSecurityDashBtn')?.click();
       else if (act === 'hide-amt') document.getElementById('toggleHideAmtBtn')?.click();
@@ -598,7 +656,7 @@
         try { await firebase.auth().sendPasswordResetEmail(u.email); showToast(`✅ ${u.email} वर Password Reset लिंक पाठवली.`); }
         catch (err) { showToast(`एरर: ${err.message}`, true); }
       }
-      else if (act === 'about') showToast('व्याज हिशोब वही V13.8 — Clean Dashboard');
+      else if (act === 'about') showToast('व्याज हिशोब वही V14.0 — Pro Edition');
       else if (act === 'logout') document.getElementById('lockBtn')?.click();
     });
   }
@@ -615,15 +673,10 @@
           <button id="threeDotBtn" class="sm td-btn" title="अधिक पर्याय (Menu)">⋮</button>
           <div id="threeDotDropdown" class="td-menu hidden">
             <button data-td="add-cust">➕ नवीन ग्राहक जोडा</button>
-            <button data-td="archive">📅 महिना निहाय हिशोब</button>
-            <button data-td="v3-dash">🚀 Premium Dashboard V3</button>
-            <button data-td="v3-pay">⚡ Quick Add Payment</button>
-            <button data-td="pnl">📈 Profit & Loss Report</button>
-            <button data-td="security">🛡️ Security Dashboard</button>
-            <div class="td-divider"></div>
-            <button data-td="pdf">🖨️ महिन्याचा PDF / Print</button>
-            <button data-td="csv">📊 महिन्याची Excel CSV</button>
-            <button data-td="cloud-bkp">☁️ Cloud Backup सेव्ह</button>
+            <button data-td="daily-cash">💰 आजची वसुली</button>
+            <button data-td="bulk-wa">📲 Bulk WhatsApp रांग</button>
+            <button data-td="cloud-sync">☁️ Cloud Sync & Backup</button>
+            <button data-td="pnl">💹 Profit & Loss Report</button>
             <div class="td-divider"></div>
             <button data-td="hide-amt">👁️ रकमा Hide / Show</button>
             <button data-td="theme">☀️ Dark / Light Mode</button>
@@ -644,15 +697,11 @@
         const item = e.target.closest('button[data-td]'); if (!item) return;
         menu.classList.add('hidden');
         const act = item.getAttribute('data-td');
-        if (act === 'add-cust') openToolSection('addBorrowerSection', '➕ नवीन ग्राहक / कर्ज नोंद');
-        else if (act === 'archive') openV3Dashboard('archive');
-        else if (act === 'v3-dash') openV3Dashboard('overview');
-        else if (act === 'v3-pay') openV3Dashboard('payments');
+        if (act === 'add-cust') openToolSection('addBorrowerSection', '➕ नवीन नाव जोडा');
+        else if (act === 'daily-cash') openV3Dashboard('daily-cash');
+        else if (act === 'bulk-wa') openV3Dashboard('bulk-wa');
+        else if (act === 'cloud-sync') openV3Dashboard('cloud-sync');
         else if (act === 'pnl') document.getElementById('openPnlBtn')?.click();
-        else if (act === 'security') document.getElementById('openSecurityDashBtn')?.click();
-        else if (act === 'pdf') document.getElementById('printMonthlyPdfBtn')?.click();
-        else if (act === 'csv') document.getElementById('exportMonthlyCsvBtn')?.click();
-        else if (act === 'cloud-bkp') document.getElementById('saveCloudBackupBtn')?.click();
         else if (act === 'hide-amt') document.getElementById('toggleHideAmtBtn')?.click();
         else if (act === 'theme') document.getElementById('toggleThemeBtn')?.click();
         else if (act === 'logout') document.getElementById('lockBtn')?.click();
@@ -665,7 +714,7 @@
       nav.innerHTML = `
         <button data-bnav="home" class="active"><span>🏠</span><span>Home</span></button>
         <button data-bnav="archive"><span>📅</span><span>Months</span></button>
-        <button data-bnav="v3"><span>🚀</span><span>V3 Dash</span></button>
+        <button data-bnav="daily"><span>💰</span><span>आजची वसुली</span></button>
         <button data-bnav="pay"><span>⚡</span><span>Pay</span></button>
         <button data-bnav="drawer"><span>☰</span><span>Menu</span></button>
       `;
@@ -681,7 +730,7 @@
         const t = b.getAttribute('data-bnav');
         if (t === 'home') { v3TabHistory = []; closeToolSectionModal(); document.getElementById('v3Overlay')?.classList.add('hidden'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
         else if (t === 'archive') openV3Dashboard('archive');
-        else if (t === 'v3') openV3Dashboard('overview');
+        else if (t === 'daily') openV3Dashboard('daily-cash');
         else if (t === 'pay') openV3Dashboard('payments');
         else if (t === 'drawer') setDrawerState(true);
       });
@@ -698,6 +747,7 @@
   let archiveViewMode = 'all';
   let archiveStatusFilter = 'all';
   let archiveSearchQuery = '';
+  let bulkWaIdx = 0;
 
   function ensureV3Overlay() {
     if (document.getElementById('v3Overlay')) return;
@@ -707,15 +757,17 @@
     ov.innerHTML = `
       <aside id="v3Sidebar" class="v3-sidebar">
         <div class="row" style="justify-content:space-between; padding:4px 6px 10px;">
-          <strong class="v3-nav-lbl" style="font-size:1.05rem;">💎 Hishob V3</strong>
+          <strong class="v3-nav-lbl" style="font-size:1.05rem;">💎 Hishob V14</strong>
           <button id="v3ToggleSideBtn" class="sm" title="Sidebar लहान/मोठा">☰</button>
         </div>
         <button class="v3-nav-item active" data-v3tab="overview"><span>📊</span><span class="v3-nav-lbl">Dashboard</span></button>
         <button class="v3-nav-item" data-v3tab="archive"><span>📅</span><span class="v3-nav-lbl">महिना निहाय हिशोब</span></button>
         <button class="v3-nav-item" data-v3tab="payments"><span>⚡</span><span class="v3-nav-lbl">Quick Payment</span></button>
-        <button class="v3-nav-item" data-v3tab="customers"><span>👥</span><span class="v3-nav-lbl">Due Customers</span></button>
+        <button class="v3-nav-item" data-v3tab="daily-cash"><span>💰</span><span class="v3-nav-lbl">आजची वसुली</span></button>
+        <button class="v3-nav-item" data-v3tab="bulk-wa"><span>📲</span><span class="v3-nav-lbl">Bulk WhatsApp</span></button>
+        <button class="v3-nav-item" data-v3tab="guarantor-rep"><span>🤝</span><span class="v3-nav-lbl">जमीनदार यादी</span></button>
+        <button class="v3-nav-item" data-v3tab="cloud-sync"><span>☁️</span><span class="v3-nav-lbl">Cloud & Backup</span></button>
         <button class="v3-nav-item" data-v3tab="analytics"><span>📈</span><span class="v3-nav-lbl">Analytics & Charts</span></button>
-        <button class="v3-nav-item" data-v3tab="goals"><span>🎯</span><span class="v3-nav-lbl">Goals & Targets</span></button>
         <div style="margin-top:auto; padding-top:10px; border-top:1px solid var(--border);">
           <button id="v3GradThemeBtn" class="v3-nav-item"><span>🎨</span><span class="v3-nav-lbl">Gradient Theme</span></button>
           <button id="v3CloseBtn" class="v3-nav-item" style="color:var(--danger);"><span>⬅️</span><span class="v3-nav-lbl">मुख्य अ‍ॅपवर जा</span></button>
@@ -731,7 +783,6 @@
             <button id="v3MobOverviewBtn" class="sm primary">📊 Dash</button>
             <button id="v3MobArchiveBtn" class="sm warn">📅 Months</button>
             <button id="v3MobPayBtn" class="sm success">⚡ Pay</button>
-            <button id="v3MobChartsBtn" class="sm">📈 Charts</button>
             <button id="v3TopRefreshBtn" class="sm">🔄</button>
             <button id="v3TopCloseBtn" class="danger sm">✕ बंद करा</button>
           </div>
@@ -744,7 +795,7 @@
     document.getElementById('v3ToggleSideBtn').addEventListener('click', () => document.getElementById('v3Sidebar').classList.toggle('collapsed'));
     document.getElementById('v3CloseBtn').addEventListener('click', () => { v3TabHistory = []; ov.classList.add('hidden'); });
     document.getElementById('v3TopCloseBtn').addEventListener('click', () => { v3TabHistory = []; ov.classList.add('hidden'); });
-    document.getElementById('v3TopRefreshBtn').addEventListener('click', () => { renderV3Body(); showToast('Dashboard रिफ्रेश झाले!'); });
+    document.getElementById('v3TopRefreshBtn').addEventListener('click', () => { renderV3Body(); showToast('रिफ्रेश झाले!'); });
     document.getElementById('v3GradThemeBtn').addEventListener('click', () => {
       v3Gradient = !v3Gradient; localStorage.setItem('hishob_v3_grad', v3Gradient ? '1' : '0');
       ov.classList.toggle('v3-gradient-theme', v3Gradient);
@@ -752,7 +803,6 @@
     document.getElementById('v3MobOverviewBtn').addEventListener('click', () => switchV3Tab('overview', true));
     document.getElementById('v3MobArchiveBtn').addEventListener('click', () => switchV3Tab('archive', true));
     document.getElementById('v3MobPayBtn').addEventListener('click', () => switchV3Tab('payments', true));
-    document.getElementById('v3MobChartsBtn').addEventListener('click', () => switchV3Tab('analytics', true));
     document.getElementById('v3Sidebar').addEventListener('click', (e) => {
       const btn = e.target.closest('button[data-v3tab]'); if (!btn) return;
       switchV3Tab(btn.getAttribute('data-v3tab'), true);
@@ -841,7 +891,199 @@
     const target = Number(localStorage.getItem('hishob_monthly_target') || d.monthlyExpected || 0);
     const pct = target > 0 ? Math.min(100, Math.round((d.monthlyCollected / target) * 100)) : 0;
 
-    if (v3Tab === 'archive') {
+    // -----------------------------------------------------------------------
+    // नवीन स्क्रीन १: Cloud Sync, Backup & Restore (फोटोप्रमाणे रंगीत कार्ड)
+    // -----------------------------------------------------------------------
+    if (v3Tab === 'cloud-sync') {
+      const user = (window.firebase && firebase.auth) ? firebase.auth().currentUser : null;
+      const savedGmail = localStorage.getItem('hishob_report_gmail') || (user && user.email) || '';
+      const savedHook = localStorage.getItem('hishob_webhook_url') || document.getElementById('webhookUrlInput')?.value || '';
+
+      body.innerHTML = `
+        <div class="v3-panel" style="max-width:620px; margin:0 auto;">
+          <div class="row" style="justify-content:space-between; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border);">
+            <h3 style="margin:0; color:#38bdf8;">☁️ Update-Safe Cloud Sync, Backup & Restore</h3>
+            <button type="button" id="csBackBtn" class="sm">← मागे जा</button>
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <label class="muted" style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:5px;">🔗 कनेक्टेड Gmail खाते:</label>
+            <div class="row">
+              <input type="email" id="csGmailInp" value="${esc(savedGmail)}" placeholder="tumcha@gmail.com" style="flex:1;" />
+              <button type="button" id="csSaveGmailBtn" class="success sm">Gmail सेव्ह करा</button>
+            </div>
+          </div>
+
+          <div style="margin-bottom:14px;">
+            <label class="muted" style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:5px;">⚙️ Google Apps Script Webhook URL (ऐच्छिक):</label>
+            <div class="row">
+              <input type="url" id="csWebhookInp" value="${esc(savedHook)}" placeholder="https://script.google.com/macros/s/.../exe" style="flex:1;" />
+              <button type="button" id="csSaveHookBtn" class="primary sm">सेव्ह</button>
+            </div>
+          </div>
+
+          <div class="meta-box" style="padding:12px;">
+            <div style="font-weight:800; margin-bottom:8px; font-size:0.9rem;">🛡️ डेटा सुरक्षा व बॅकअप पर्याय:</div>
+            <div class="row" style="margin-bottom:8px;">
+              <input type="password" id="csPasskeyInp" placeholder="Encrypted बॅकअपसाठी Passkey (किमान ६ अक्षरे)" style="flex:1;" />
+            </div>
+
+            <div class="cs-grid-4">
+              <button type="button" id="csCloudSyncBtn" class="cs-big-btn purple"><span>🔄</span><span>क्लाउड डेटा सिंक करा</span></button>
+              <button type="button" id="csShaBackupBtn" class="cs-big-btn blue"><span>💾</span><span>SHA-256 बॅकअप (.JSON)</span></button>
+              <button type="button" id="csShaRestoreBtn" class="cs-big-btn green"><span>📂</span><span>सुरक्षित रिस्टोअर (.JSON)</span></button>
+              <button type="button" id="csGmailRepBtn" class="cs-big-btn teal"><span>📧</span><span>Gmail वर रिपोर्ट पाठवा</span></button>
+            </div>
+
+            <button type="button" id="csLocalVaultBtn" class="cs-vault-btn">🛟 लोकल सेफ्टी व्हॉल्टमधून परत आणा</button>
+            <div id="csStatusMsg" class="muted" style="margin-top:8px; text-align:center;"></div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('csBackBtn').addEventListener('click', () => { v3TabHistory = []; document.getElementById('v3Overlay')?.classList.add('hidden'); });
+      document.getElementById('csSaveGmailBtn').addEventListener('click', () => {
+        const g = document.getElementById('csGmailInp').value.trim();
+        localStorage.setItem('hishob_report_gmail', g);
+        showToast('✅ Gmail खाते सेव्ह झाले!');
+      });
+      document.getElementById('csSaveHookBtn').addEventListener('click', () => {
+        const u = document.getElementById('csWebhookInp').value.trim();
+        const mainHook = document.getElementById('webhookUrlInput');
+        if (mainHook) mainHook.value = u;
+        document.getElementById('saveWebhookBtn')?.click();
+        showToast('✅ Webhook URL सेव्ह झाले!');
+      });
+      document.getElementById('csCloudSyncBtn').addEventListener('click', () => {
+        document.getElementById('saveCloudBackupBtn')?.click();
+        showToast('☁️ क्लाउड डेटा सिंक सुरू झाले!');
+      });
+      document.getElementById('csShaBackupBtn').addEventListener('click', () => {
+        const pk = document.getElementById('csPasskeyInp').value;
+        if (!pk || pk.length < 6) { showToast('आधी किमान ६ अक्षरांची Passkey टाका.', true); return; }
+        const mainPk = document.getElementById('backupPasskey');
+        if (mainPk) mainPk.value = pk;
+        document.getElementById('exportEncBtn')?.click();
+        showToast('💾 SHA-256 Encrypted बॅकअप डाउनलोड सुरू!');
+      });
+      document.getElementById('csShaRestoreBtn').addEventListener('click', () => {
+        const pk = document.getElementById('csPasskeyInp').value;
+        if (!pk || pk.length < 6) { showToast('आधी किमान ६ अक्षरांची Passkey टाका.', true); return; }
+        const mainPk = document.getElementById('backupPasskey');
+        if (mainPk) mainPk.value = pk;
+        const fileInp = document.getElementById('importEncFile');
+        if (fileInp) {
+          fileInp.onchange = () => { document.getElementById('importEncBtn')?.click(); showToast('🔓 रिस्टोअर प्रक्रिया सुरू!'); };
+          fileInp.click();
+        }
+      });
+      document.getElementById('csGmailRepBtn').addEventListener('click', () => {
+        document.getElementById('gmailReportBtn')?.click();
+      });
+      document.getElementById('csLocalVaultBtn').addEventListener('click', () => {
+        const pk = document.getElementById('csPasskeyInp').value;
+        if (!pk || pk.length < 6) { showToast('व्हॉल्ट रिस्टोअरसाठी Passkey टाका.', true); return; }
+        const mainPk = document.getElementById('backupPasskey');
+        if (mainPk) mainPk.value = pk;
+        document.getElementById('restoreLocalVaultBtn')?.click();
+        showToast('🛟 लोकल व्हॉल्टमधून डेटा रिस्टोअर सुरू!');
+      });
+
+    // -----------------------------------------------------------------------
+    // नवीन स्क्रीन २: आजची वसुली (Daily Cashbook)
+    // -----------------------------------------------------------------------
+    } else if (v3Tab === 'daily-cash') {
+      body.innerHTML = `
+        <div class="v3-panel">
+          <h3 style="margin-top:0;">💰 आजची वसुली — Daily Cashbook (${esc(d.todayIso)})</h3>
+          <div class="v3-kpi-row">
+            <div class="v3-wave-card"><div class="v3-kpi-title">आजची एकूण वसुली</div><div class="v3-kpi-num ok">${fmt(d.todayCollected)}</div><div class="v3-kpi-sub">नोंदी: ${d.todayPaymentsList.length}</div></div>
+            <div class="v3-wave-card"><div class="v3-kpi-title">💵 रोख (Cash)</div><div class="v3-kpi-num">${fmt(d.todayCash)}</div></div>
+            <div class="v3-wave-card"><div class="v3-kpi-title">📱 UPI / 🏦 Bank</div><div class="v3-kpi-num" style="color:#38bdf8;">${fmt(d.todayUpi + d.todayBank)}</div><div class="v3-kpi-sub">UPI: ${fmt(d.todayUpi)} | Bank: ${fmt(d.todayBank)}</div></div>
+          </div>
+
+          <h4 style="margin:10px 0 6px;">📋 आजच्या सर्व जमा नोंदी</h4>
+          ${d.todayPaymentsList.length ? d.todayPaymentsList.map((p, i) => `
+            <div class="row" style="justify-content:space-between; padding:8px 10px; border-bottom:1px solid var(--border); font-size:0.86rem;">
+              <div><strong>${i + 1}. ${esc(p.name)}</strong> <span class="badge">${esc(p.mode)}</span><div class="muted" style="font-size:0.75rem;">${esc(p.note)}</div></div>
+              <strong class="ok">+${fmt(p.amount)}</strong>
+            </div>
+          `).join('') : '<div class="meta-box" style="text-align:center;">आज अद्याप कोणतीही जमा नोंद झालेली नाही.</div>'}
+        </div>
+      `;
+
+    // -----------------------------------------------------------------------
+    // नवीन स्क्रीन ३: Bulk WhatsApp रिमाइंडर रांग (Queue)
+    // -----------------------------------------------------------------------
+    } else if (v3Tab === 'bulk-wa') {
+      const queue = d.dueCustomers.filter(c => String(c.mobile || '').replace(/\D/g, '').length >= 10);
+      if (bulkWaIdx >= queue.length) bulkWaIdx = 0;
+      const cur = queue[bulkWaIdx];
+
+      body.innerHTML = `
+        <div class="v3-panel" style="max-width:560px; margin:0 auto;">
+          <h3 style="margin-top:0;">📲 Bulk WhatsApp रिमाइंडर रांग (${queue.length} ग्राहक)</h3>
+          ${cur ? `
+            <div class="meta-box" style="padding:14px;">
+              <div class="row" style="justify-content:space-between; margin-bottom:8px;">
+                <span class="badge">क्र. ${bulkWaIdx + 1} / ${queue.length}</span>
+                <span class="muted">📱 ${esc(cur.mobile)}</span>
+              </div>
+              <div style="font-size:1.15rem; font-weight:800; margin-bottom:6px;">${esc(cur.name)}</div>
+              <div style="margin-bottom:10px;">मुद्दल: <strong>${fmt(cur.principal)}</strong> | एकूण बाकी: <strong class="err">${fmt(cur.outstanding)}</strong></div>
+              <div class="row">
+                <button type="button" id="bwaSendBtn" class="success" style="flex:1;">💬 WhatsApp पाठवा</button>
+                <button type="button" id="bwaNextBtn" class="primary">पुढचा ग्राहक →</button>
+              </div>
+            </div>
+          ` : '<div class="meta-box" style="text-align:center;">मोबाईल नंबर असलेला कोणताही बाकी ग्राहक नाही!</div>'}
+        </div>
+      `;
+
+      document.getElementById('bwaSendBtn')?.addEventListener('click', () => {
+        const m = String(cur.mobile || '').replace(/\D/g, '');
+        const target = m.length === 10 ? `91${m}` : m;
+        const msg = `नमस्कार *${cur.name}*,\nआपली *${fmtYmMarathi(d.activeYm)}* पर्यंतची एकूण व्याज/बाकी रक्कम *₹${cur.outstanding}* देय आहे. कृपया लवकर जमा करावी. धन्यवाद!`;
+        window.open(`https://wa.me/${target}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener,noreferrer');
+      });
+      document.getElementById('bwaNextBtn')?.addEventListener('click', () => {
+        bulkWaIdx = (bulkWaIdx + 1) % Math.max(1, queue.length);
+        renderV3Body();
+      });
+
+    // -----------------------------------------------------------------------
+    // नवीन स्क्रीन ४: जमीनदार निहाय कर्ज यादी (Guarantor Report)
+    // -----------------------------------------------------------------------
+    } else if (v3Tab === 'guarantor-rep') {
+      const gMap = {};
+      d.allActiveRows.forEach(r => {
+        const gName = String((r.raw && r.raw.guarantor) || '').trim() || 'जमीनदार नोंद नाही';
+        if (!gMap[gName]) gMap[gName] = { name: gName, count: 0, principal: 0, outstanding: 0, customers: [] };
+        gMap[gName].count++;
+        gMap[gName].principal += r.principal;
+        gMap[gName].outstanding += r.outstanding;
+        gMap[gName].customers.push(r);
+      });
+      const gList = Object.values(gMap).sort((a, b) => b.principal - a.principal);
+
+      body.innerHTML = `
+        <div class="v3-panel">
+          <h3 style="margin-top:0;">🤝 जमीनदार निहाय कर्ज यादी (${gList.length} जमीनदार)</h3>
+          ${gList.map(g => `
+            <div class="v3-loan-card">
+              <div class="row" style="justify-content:space-between;">
+                <strong>🤝 ${esc(g.name)} (${g.count} खाती)</strong>
+                <div>मुद्दल: <strong>${fmt(g.principal)}</strong> | बाकी: <strong class="err">${fmt(g.outstanding)}</strong></div>
+              </div>
+              <div class="muted" style="font-size:0.78rem; margin-top:5px;">
+                ${g.customers.map(c => `${esc(c.name)} (${fmt(c.principal)})`).join(' • ')}
+              </div>
+            </div>
+          `).join('') || '<p class="muted">कोणतीही सक्रिय खाती नाहीत.</p>'}
+        </div>
+      `;
+
+    } else if (v3Tab === 'archive') {
       const selYm = `${archiveSelectedYear}-${archiveSelectedMonth}`;
       const mData = computeV3Data(selYm) || d;
       const baseRows = mData.monthLedgerRows || [];
@@ -867,10 +1109,9 @@
       body.innerHTML = `
         <div class="v3-panel">
           <div class="row" style="justify-content:space-between; margin-bottom:10px;">
-            <h3 style="margin:0;">📅 महिना निहाय खरा हिशोब (V13.8)</h3>
+            <h3 style="margin:0;">📅 महिना निहाय खरा हिशोब (V14.0)</h3>
             <button id="v3ApplyMainYmBtn" class="sm">📂 मुख्य स्क्रीनवर सेट करा</button>
           </div>
-
           <div class="row" style="margin-bottom:12px; align-items:flex-end;">
             <div style="flex:1; min-width:115px;">
               <label class="muted" style="font-size:0.75rem; display:block; margin-bottom:4px;">वर्ष निवडा (Year):</label>
@@ -896,12 +1137,10 @@
             <div style="margin-bottom:10px; padding:8px 10px; border-radius:10px; background:var(--card-2); border:1px solid var(--border); font-weight:700; color:#38bdf8;">
               📌 निवडलेला महिना: ${esc(fmtYmMarathi(selYm))} (${esc(selYm)})
             </div>
-
             <div class="v3-seg-wrap">
               <button type="button" class="v3-seg-btn ${archiveViewMode === 'all' ? 'active' : ''}" data-archmode="all">📋 सर्व सक्रिय हिशोब (${baseRows.length})</button>
               <button type="button" class="v3-seg-btn ${archiveViewMode === 'tx' ? 'active' : ''}" data-archmode="tx">💸 फक्त व्यवहार (${baseRows.filter(x => x.hasTx).length})</button>
             </div>
-
             <div class="v3-seg-wrap">
               <button type="button" class="v3-seg-btn ${archiveStatusFilter === 'all' ? 'active' : ''}" data-archst="all">सर्व</button>
               <button type="button" class="v3-seg-btn ${archiveStatusFilter === 'paid' ? 'active' : ''}" data-archst="paid">🟢 पूर्ण जमा</button>
@@ -911,114 +1150,63 @@
             <input type="text" id="v3ArchSearchInp" value="${esc(archiveSearchQuery)}" placeholder="🔍 या महिन्यातील ग्राहक शोधा..." style="width:100%; margin-bottom:12px;" />
 
             <div class="v3-kpi-row">
-              <div class="v3-wave-card">
-                <div class="v3-kpi-title">या महिन्यातील खाती / मुद्दल</div>
-                <div class="v3-kpi-num">${filteredRows.length} खाती</div>
-                <div class="v3-kpi-sub">मुद्दल: ${fmt(mPrincipal)}</div>
-              </div>
-              <div class="v3-wave-card">
-                <div class="v3-kpi-title">महिन्याचे व्याज / जमा</div>
-                <div class="v3-kpi-num" style="color:#38bdf8;">${fmt(mExpected)}</div>
-                <div class="v3-kpi-sub ok">जमा: ${fmt(mPaid)}</div>
-              </div>
-              <div class="v3-wave-card">
-                <div class="v3-kpi-title">मागील व्याज बाकी + एकूण बाकी</div>
-                <div class="v3-kpi-num err">${fmt(mTotalOut)}</div>
-                <div class="v3-kpi-sub warn-text">मागील व्याज बाकी: ${fmt(mPastDue)}</div>
-              </div>
+              <div class="v3-wave-card"><div class="v3-kpi-title">या महिन्यातील खाती / मुद्दल</div><div class="v3-kpi-num">${filteredRows.length} खाती</div><div class="v3-kpi-sub">मुद्दल: ${fmt(mPrincipal)}</div></div>
+              <div class="v3-wave-card"><div class="v3-kpi-title">महिन्याचे व्याज / जमा</div><div class="v3-kpi-num" style="color:#38bdf8;">${fmt(mExpected)}</div><div class="v3-kpi-sub ok">जमा: ${fmt(mPaid)}</div></div>
+              <div class="v3-wave-card"><div class="v3-kpi-title">मागील व्याज बाकी + एकूण बाकी</div><div class="v3-kpi-num err">${fmt(mTotalOut)}</div><div class="v3-kpi-sub warn-text">मागील व्याज बाकी: ${fmt(mPastDue)}</div></div>
             </div>
 
-            <h4 style="margin:10px 0 6px;">📋 ${esc(fmtYmMarathi(selYm))} मधील नोंदी (${filteredRows.length})</h4>
             <div style="overflow-x:auto;">
               <table class="passbook-table">
-                <thead>
-                  <tr>
-                    <th>क्र.</th>
-                    <th>ग्राहक</th>
-                    <th>मुद्दल</th>
-                    <th>मासिक व्याज</th>
-                    <th>जमा</th>
-                    <th>मागील बाकी</th>
-                    <th>एकूण बाकी</th>
-                  </tr>
-                </thead>
+                <thead><tr><th>क्र.</th><th>ग्राहक</th><th>मुद्दल</th><th>मासिक व्याज</th><th>जमा</th><th>मागील बाकी</th><th>एकूण बाकी</th></tr></thead>
                 <tbody>
                   ${filteredRows.length ? filteredRows.map((r, i) => `
-                    <tr>
-                      <td>${i + 1}</td>
-                      <td><strong>${esc(r.name)}</strong></td>
-                      <td>${fmt(r.principal)}</td>
-                      <td>${fmt(r.monthlyInterest)}</td>
-                      <td class="ok">${fmt(r.paidThisMonth)}</td>
-                      <td class="warn-text">${fmt(r.pastDue)}</td>
-                      <td class="err"><strong>${fmt(r.outstanding)}</strong></td>
-                    </tr>
-                  `).join('') : '<tr><td colspan="7" class="muted" style="text-align:center; padding:14px;">या महिन्यात कोणताही हिशोब किंवा व्यवहार नोंदवलेला नाही.</td></tr>'}
+                    <tr><td>${i + 1}</td><td><strong>${esc(r.name)}</strong></td><td>${fmt(r.principal)}</td><td>${fmt(r.monthlyInterest)}</td><td class="ok">${fmt(r.paidThisMonth)}</td><td class="warn-text">${fmt(r.pastDue)}</td><td class="err"><strong>${fmt(r.outstanding)}</strong></td></tr>
+                  `).join('') : '<tr><td colspan="7" class="muted" style="text-align:center; padding:14px;">नोंद नाही.</td></tr>'}
                 </tbody>
               </table>
             </div>
-
-            <div style="margin-top:14px;">
-              <button id="v3DownloadIndepExcelBtn" class="success" style="width:100%;">📊 ${esc(fmtYmMarathi(selYm))} (${esc(selYm)}) ची स्वतंत्र Excel डाउनलोड करा</button>
-            </div>
-          ` : `
-            <div class="meta-box" style="text-align:center; padding:16px;">
-              वर <strong>वर्ष</strong> आणि <strong>महिना</strong> निवडून <strong>🔍 हिशोब पहा</strong> या बटणावर क्लिक करा.
-            </div>
-          `}
+            <div style="margin-top:14px;"><button id="v3DownloadIndepExcelBtn" class="success" style="width:100%;">📊 ${esc(fmtYmMarathi(selYm))} ची स्वतंत्र Excel डाउनलोड करा</button></div>
+          ` : `<div class="meta-box" style="text-align:center; padding:16px;">वर <strong>वर्ष</strong> आणि <strong>महिना</strong> निवडून <strong>🔍 हिशोब पहा</strong> दाबा.</div>`}
         </div>
       `;
 
       document.getElementById('v3ArchYearSel')?.addEventListener('change', (e) => { archiveSelectedYear = e.target.value; hasClickedShowMonthLedger = false; renderV3Body(); });
       document.getElementById('v3ArchMonthSel')?.addEventListener('change', (e) => { archiveSelectedMonth = e.target.value; hasClickedShowMonthLedger = false; renderV3Body(); });
-      document.getElementById('v3ShowMonthLedgerBtn')?.addEventListener('click', () => { hasClickedShowMonthLedger = true; renderV3Body(); showToast(`📅 ${fmtYmMarathi(selYm)} चा हिशोब उघडला!`); });
-
+      document.getElementById('v3ShowMonthLedgerBtn')?.addEventListener('click', () => { hasClickedShowMonthLedger = true; renderV3Body(); });
       body.querySelectorAll('button[data-archmode]').forEach(b => b.addEventListener('click', () => { archiveViewMode = b.getAttribute('data-archmode'); renderV3Body(); }));
       body.querySelectorAll('button[data-archst]').forEach(b => b.addEventListener('click', () => { archiveStatusFilter = b.getAttribute('data-archst'); renderV3Body(); }));
       const sInp = document.getElementById('v3ArchSearchInp');
-      if (sInp) {
-        sInp.addEventListener('input', (e) => {
-          archiveSearchQuery = e.target.value;
-          renderV3Body();
-          const refreshed = document.getElementById('v3ArchSearchInp');
-          if (refreshed) { refreshed.focus(); refreshed.setSelectionRange(refreshed.value.length, refreshed.value.length); }
-        });
-      }
-
+      if (sInp) sInp.addEventListener('input', (e) => { archiveSearchQuery = e.target.value; renderV3Body(); const r = document.getElementById('v3ArchSearchInp'); if (r) { r.focus(); r.setSelectionRange(r.value.length, r.value.length); } });
       document.getElementById('v3ApplyMainYmBtn')?.addEventListener('click', () => {
         const mainYmInp = document.getElementById('activeYm');
         if (mainYmInp) { mainYmInp.value = selYm; mainYmInp.dispatchEvent(new Event('change')); }
-        v3TabHistory = [];
-        document.getElementById('v3Overlay')?.classList.add('hidden');
+        v3TabHistory = []; document.getElementById('v3Overlay')?.classList.add('hidden');
         showToast(`📅 मुख्य स्क्रीनवर ${fmtYmMarathi(selYm)} सेट केले!`);
       });
-
       document.getElementById('v3DownloadIndepExcelBtn')?.addEventListener('click', () => {
-        if (!filteredRows.length) { showToast('या महिन्यात डाउनलोड करण्यासाठी कोणतीही नोंद नाही.', true); return; }
+        if (!filteredRows.length) { showToast('नोंद नाही.', true); return; }
         const header = ['क्र.', 'महिना', 'ग्राहक नाव', 'मोबाईल', 'मुद्दल (₹)', 'मासिक व्याज (₹)', 'जमा रक्कम (₹)', 'मागील व्याज बाकी (₹)', 'एकूण बाकी (₹)'].map(csvCell).join(',');
-        const bodyLines = filteredRows.map((r, i) => [
-          i + 1, selYm, r.name, r.mobile || '-', r.principal, r.monthlyInterest, r.paidThisMonth, r.pastDue, r.outstanding
-        ].map(csvCell).join(','));
+        const bodyLines = filteredRows.map((r, i) => [i + 1, selYm, r.name, r.mobile || '-', r.principal, r.monthlyInterest, r.paidThisMonth, r.pastDue, r.outstanding].map(csvCell).join(','));
         downloadCsvFile(`Hishob_${selYm}.csv`, [header, ...bodyLines]);
-        showToast(`✅ ${selYm} ची स्वतंत्र Excel फाईल डाउनलोड झाली!`);
+        showToast(`✅ ${selYm} ची Excel डाउनलोड झाली!`);
       });
 
     } else if (v3Tab === 'overview') {
       body.innerHTML = `
         <div class="v3-kpi-row">
-          <div class="v3-wave-card" data-jump="customers">
+          <div class="v3-wave-card" data-jump="daily-cash">
             <div class="v3-kpi-title">शिल्लक सक्रिय मुद्दल</div>
             <div class="v3-kpi-num">${fmt(d.remainingPrincipal)}</div>
             <div class="v3-kpi-sub ok">सक्रिय कर्जे: ${d.activeLoans} | बंद: ${d.closedLoans}</div>
             <svg class="wave" viewBox="0 0 200 44" preserveAspectRatio="none"><path d="M0,25 Q50,5 100,25 T200,20 L200,44 L0,44 Z" fill="#38bdf8"/></svg>
           </div>
-          <div class="v3-wave-card" data-jump="analytics">
+          <div class="v3-wave-card" data-jump="daily-cash">
             <div class="v3-kpi-title">महिन्याची वसुली (${esc(fmtYmMarathi(d.activeYm))})</div>
             <div class="v3-kpi-num ok">${fmt(d.monthlyCollected)}</div>
             <div class="v3-kpi-sub">आज जमा: ${fmt(d.todayCollected)} | Target: ${pct}%</div>
             <svg class="wave" viewBox="0 0 200 44" preserveAspectRatio="none"><path d="M0,30 Q60,10 120,28 T200,15 L200,44 L0,44 Z" fill="#22c55e"/></svg>
           </div>
-          <div class="v3-wave-card" data-jump="customers">
+          <div class="v3-wave-card" data-jump="bulk-wa">
             <div class="v3-kpi-title">एकूण थकबाकी (Outstanding)</div>
             <div class="v3-kpi-num err">${fmt(d.totalOutstanding)}</div>
             <div class="v3-kpi-sub warn-text">Overdue: ${fmt(d.totalOverdue)}</div>
@@ -1032,18 +1220,6 @@
           </div>
           <div>
             <div class="v3-panel">
-              <h4 style="margin:0 0 8px;">📞 Top Due Contacts (१-क्लिक संपर्क)</h4>
-              <div class="v3-avatar-strip">
-                ${d.dueCustomers.slice(0, 8).map(c => `
-                  <div class="v3-avatar-chip" data-callmob="${esc(c.mobile.replace(/\D/g, ''))}">
-                    <div class="v3-avatar-circle">${esc(String(c.name || '?')[0].toUpperCase())}</div>
-                    <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(c.name)}</div>
-                    <div class="err" style="font-weight:700;">${fmt(c.outstanding)}</div>
-                  </div>
-                `).join('') || '<div class="muted">कोणतीही बाकी नाही!</div>'}
-              </div>
-            </div>
-            <div class="v3-panel">
               <h4 style="margin:0 0 8px;">🕒 Recent Payments</h4>
               ${d.recentPayments.slice(0, 6).map(p => `
                 <div class="row" style="justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border); font-size:0.83rem;">
@@ -1056,10 +1232,6 @@
         </div>
       `;
       body.querySelectorAll('.v3-wave-card[data-jump]').forEach(c => c.addEventListener('click', () => switchV3Tab(c.getAttribute('data-jump'), true)));
-      body.querySelectorAll('.v3-avatar-chip[data-callmob]').forEach(c => c.addEventListener('click', () => {
-        const m = c.getAttribute('data-callmob');
-        if (m) window.location.href = `tel:${m}`; else showToast('मोबाईल नंबर सेव्ह नाही.', true);
-      }));
 
     } else if (v3Tab === 'payments') {
       body.innerHTML = `
@@ -1071,9 +1243,7 @@
               <option value="">-- ग्राहक निवडा --</option>
               ${d.allActiveRows.map(r => `<option value="${r.id}">${esc(r.name)} (बाकी: ₹${r.outstanding})</option>`).join('')}
             </select>
-
             <div id="v3PayBalInfo" class="meta-box">ग्राहक निवडल्यावर मुद्दल, आधीची बाकी, बाकी महिने, जामीनदार आणि Call बटण दिसेल.</div>
-
             <input type="number" id="v3PayAmount" placeholder="जमा रक्कम (₹)" min="1" />
             <select id="v3PayMode">
               <option value="Cash">💵 रोख (Cash)</option>
@@ -1085,58 +1255,32 @@
           </div>
         </div>
       `;
-      const sel = document.getElementById('v3PayCustomer');
-      const amtInp = document.getElementById('v3PayAmount');
-      const infoBox = document.getElementById('v3PayBalInfo');
-
+      const sel = document.getElementById('v3PayCustomer'), amtInp = document.getElementById('v3PayAmount'), infoBox = document.getElementById('v3PayBalInfo');
       sel.addEventListener('change', () => {
-        const bId = sel.value;
-        const row = d.allActiveRows.find(x => x.id === bId);
-        if (!row) {
-          infoBox.className = 'meta-box';
-          infoBox.innerHTML = 'ग्राहक निवडल्यावर मुद्दल, आधीची बाकी, बाकी महिने, जामीनदार आणि Call बटण दिसेल.';
-          amtInp.value = '';
-          return;
-        }
-        const raw = row.raw || {};
-        const cleanMob = String(row.mobile || '').replace(/\D/g, '');
+        const bId = sel.value, row = d.allActiveRows.find(x => x.id === bId);
+        if (!row) { infoBox.className = 'meta-box'; infoBox.innerHTML = 'ग्राहक निवडल्यावर संपूर्ण माहिती दिसेल.'; amtInp.value = ''; return; }
+        const raw = row.raw || {}, cleanMob = String(row.mobile || '').replace(/\D/g, '');
         const guarantors = [raw.guarantor, raw.extraGuarantors].filter(Boolean).join(', ') || 'नोंद नाही';
         const pendMonths = getPendingMonthsList(raw, d.activeYm);
-
         infoBox.className = 'v3-pay-summary';
         infoBox.innerHTML = `
           <div class="row" style="justify-content:space-between; align-items:center;">
-            <div>
-              <strong style="font-size:0.98rem;">${esc(row.name)}</strong>
-              <div class="muted" style="font-size:0.78rem;">📱 ${esc(row.mobile || 'नंबर नाही')}</div>
-            </div>
+            <div><strong style="font-size:0.98rem;">${esc(row.name)}</strong><div class="muted" style="font-size:0.78rem;">📱 ${esc(row.mobile || 'नंबर नाही')}</div></div>
             ${cleanMob ? `<button type="button" id="v3QuickPayCallBtn" class="success sm">📞 Call</button>` : `<span class="muted" style="font-size:0.75rem;">नंबर नाही</span>`}
           </div>
-
           <div class="v3-pay-grid">
             <div class="v3-pay-cell"><div class="muted" style="font-size:0.74rem;">एकूण मुद्दल</div><strong>${fmt(row.principal)}</strong></div>
             <div class="v3-pay-cell"><div class="muted" style="font-size:0.74rem;">मासिक व्याज</div><strong style="color:#38bdf8;">${fmt(row.monthlyInterest)}</strong></div>
-            <div class="v3-pay-cell"><div class="muted" style="font-size:0.74rem;">आधीची बाकी (मागील)</div><strong class="warn-text">${fmt(row.pastDue)}</strong></div>
+            <div class="v3-pay-cell"><div class="muted" style="font-size:0.74rem;">आधीची बाकी</div><strong class="warn-text">${fmt(row.pastDue)}</strong></div>
             <div class="v3-pay-cell"><div class="muted" style="font-size:0.74rem;">एकूण थकबाकी</div><strong class="err">${fmt(row.outstanding)}</strong></div>
           </div>
-
           <div>
             <div class="muted" style="font-size:0.75rem; margin-bottom:3px;">📅 बाकी असलेले महिने (${pendMonths.length}):</div>
-            <div>
-              ${pendMonths.length
-                ? pendMonths.map(pm => `<span class="v3-month-pill ${pm.isPartial ? 'partial' : ''}">${esc(pm.label)}${pm.isPartial ? ` (अर्धवट ₹${pm.partAmt})` : ''}</span>`).join('')
-                : '<span class="ok" style="font-weight:600;">🟢 सर्व महिने पूर्ण जमा आहेत!</span>'}
-            </div>
+            <div>${pendMonths.length ? pendMonths.map(pm => `<span class="v3-month-pill ${pm.isPartial ? 'partial' : ''}">${esc(pm.label)}${pm.isPartial ? ` (अर्धवट ₹${pm.partAmt})` : ''}</span>`).join('') : '<span class="ok" style="font-weight:600;">🟢 सर्व महिने पूर्ण जमा!</span>'}</div>
           </div>
-
-          <div style="border-top:1px solid var(--border); padding-top:6px; font-size:0.82rem;">
-            🤝 <span class="muted">जामीनदार:</span> <strong>${esc(guarantors)}</strong>
-          </div>
+          <div style="border-top:1px solid var(--border); padding-top:6px; font-size:0.82rem;">🤝 <span class="muted">जामीनदार:</span> <strong>${esc(guarantors)}</strong></div>
         `;
-
-        document.getElementById('v3QuickPayCallBtn')?.addEventListener('click', () => {
-          window.location.href = `tel:${cleanMob}`;
-        });
+        document.getElementById('v3QuickPayCallBtn')?.addEventListener('click', () => { window.location.href = `tel:${cleanMob}`; });
         amtInp.value = row.monthlyInterest > 0 ? row.monthlyInterest : row.outstanding;
       });
 
@@ -1166,29 +1310,6 @@
         finally { isSavingPay = false; }
       });
 
-    } else if (v3Tab === 'customers') {
-      const colors = ['', 'teal', 'pink'];
-      body.innerHTML = `
-        <h3 style="margin-top:0;">👥 बाकी असलेली ग्राहक खाती (${d.dueCustomers.length})</h3>
-        ${d.dueCustomers.map((c, idx) => `
-          <div class="v3-loan-card ${colors[idx % 3]}">
-            <div class="row" style="justify-content:space-between;">
-              <div><strong>${esc(c.name)}</strong> <span class="muted">(${esc(c.mobile || '-')})</span></div>
-              <div class="row">
-                ${c.mobile ? `<button data-v3call="${esc(c.mobile.replace(/\D/g, ''))}" class="success sm">📞 Call</button>` : ''}
-                ${c.mobile ? `<button data-v3wa="${esc(c.mobile.replace(/\D/g, ''))}" data-v3name="${esc(c.name)}" data-v3amt="${c.outstanding}" class="primary sm">💬 WhatsApp</button>` : ''}
-              </div>
-            </div>
-            <div style="font-size:0.84rem; margin-top:4px;">मुद्दल: <strong>${fmt(c.principal)}</strong> | मासिक व्याज: ${fmt(c.monthlyInterest)} | एकूण बाकी: <strong class="err">${fmt(c.outstanding)}</strong></div>
-          </div>
-        `).join('') || '<p class="muted">सर्व खात्यांचे व्याज जमा आहे!</p>'}
-      `;
-      body.querySelectorAll('button[data-v3call]').forEach(b => b.addEventListener('click', () => { window.location.href = `tel:${b.getAttribute('data-v3call')}`; }));
-      body.querySelectorAll('button[data-v3wa]').forEach(b => b.addEventListener('click', () => {
-        const m = b.getAttribute('data-v3wa'), target = m.length === 10 ? `91${m}` : m;
-        window.open(`https://wa.me/${target}?text=${encodeURIComponent(`नमस्कार ${b.getAttribute('data-v3name')}, आपली ₹${b.getAttribute('data-v3amt')} व्याज/बाकी रक्कम देय आहे. कृपया लवकर जमा करावी.`)}`, '_blank', 'noopener,noreferrer');
-      }));
-
     } else if (v3Tab === 'analytics') {
       body.innerHTML = `
         <div class="v3-panel"><h4 style="margin:0 0 8px;">📈 Monthly Collection Trend</h4>${buildSvgAreaChart(d.monthlySeries)}</div>
@@ -1199,28 +1320,6 @@
           <div class="v3-wave-card"><div class="v3-kpi-title">एकूण मिळालेले व्याज</div><div class="v3-kpi-num ok">${fmt(d.totalInterestReceived)}</div></div>
         </div>
       `;
-
-    } else if (v3Tab === 'goals') {
-      const rem = Math.max(0, target - d.monthlyCollected);
-      body.innerHTML = `
-        <div class="v3-panel" style="max-width:560px; margin:0 auto;">
-          <h3 style="margin-top:0;">🎯 Monthly Collection Goal (${esc(fmtYmMarathi(d.activeYm))})</h3>
-          <div class="row" style="margin-bottom:12px;">
-            <input type="number" id="v3GoalInput" value="${target}" style="flex:1;" />
-            <button id="v3SaveGoalBtn" class="primary sm">Target सेव्ह करा</button>
-          </div>
-          <div style="font-size:1.1rem; font-weight:700; margin-bottom:6px;">पूर्ण: ${pct}% (${fmt(d.monthlyCollected)} / ${fmt(target)})</div>
-          <div style="height:14px; background:var(--bg); border-radius:999px; overflow:hidden; border:1px solid var(--border);">
-            <div style="height:100%; width:${pct}%; background:linear-gradient(90deg,#6366f1,#22c55e);"></div>
-          </div>
-          <div class="muted" style="margin-top:8px;">उरलेले लक्ष्य: <strong>${fmt(rem)}</strong></div>
-        </div>
-      `;
-      document.getElementById('v3SaveGoalBtn').addEventListener('click', () => {
-        localStorage.setItem('hishob_monthly_target', String(Number(document.getElementById('v3GoalInput').value || 0)));
-        showToast('🎯 Monthly Target सेव्ह झाले!');
-        renderV3Body();
-      });
     }
   }
 
