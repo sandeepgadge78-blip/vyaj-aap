@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#070c16" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://sandeepgadge78-blip.github.io; script-src 'self' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://*.googleusercontent.com https://api.qrserver.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://docs.google.com https://*.googleusercontent.com https://script.google.com https://script.googleusercontent.com; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com;" />
-  <title>व्याज हिशोब वही (V13.7)</title>
+  <title>व्याज हिशोब वही (V13.8)</title>
 
   <link rel="manifest" href="./manifest.json" />
 
@@ -98,7 +98,7 @@
       border-radius: 14px; padding: 14px; margin-bottom: 12px;
     }
 
-    /* नमुन्याप्रमाणे मोठे महिना कार्ड व २x२ डॅशबोर्ड */
+    /* चालू महिना कार्ड व २x२ डॅशबोर्ड */
     .month-hero-card {
       background: var(--card); border: 1px solid var(--border); border-radius: 16px;
       padding: 16px 14px; text-align: center; margin-bottom: 12px;
@@ -145,7 +145,7 @@
     .pill-btn.pill-partial.filter-active { background: #713f12; border-color: #eab308; color: #facc15; }
     .pill-btn.pill-pending.filter-active { background: #7f1d1d; border-color: #ef4444; color: #fca5a5; }
 
-    /* नमुन्याप्रमाणे स्वच्छ ग्राहक कार्ड */
+    /* स्वच्छ ग्राहक कार्ड */
     .borrower-item {
       border: 1px solid var(--border); border-radius: 16px; padding: 14px;
       margin-bottom: 12px; background: var(--default-item-bg);
@@ -184,7 +184,7 @@
     .ok { color: var(--accent-2); }
     .err { color: var(--danger); }
     .warn-text { color: var(--warn); }
-    .audit-box { max-height: 220px; overflow-y: auto; font-size: 0.82rem; background: var(--bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border); }
+    .audit-box { max-height: 320px; overflow-y: auto; font-size: 0.82rem; background: var(--bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border); }
     table.passbook-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-top: 8px; }
     table.passbook-table th, table.passbook-table td { border: 1px solid var(--border); padding: 6px 8px; text-align: left; }
     table.passbook-table th { background: var(--card-2); color: var(--accent); }
@@ -247,7 +247,7 @@
     </div>
   </div>
 
-  <!-- मुख्य अ‍ॅप स्क्रीन -->
+  <!-- मुख्य अ‍ॅप स्क्रीन (आता पूर्णपणे स्वच्छ) -->
   <main id="appScreen" class="container hidden">
 
     <div id="monthEndBanner" class="info-banner hidden"></div>
@@ -303,143 +303,6 @@
     <!-- ग्राहक यादी -->
     <section id="borrowersList"></section>
 
-    <!-- अतिरिक्त विभाग (☰ मेन्यूमधून उघडण्यासाठी) -->
-    <section class="card" id="addBorrowerSection">
-      <h3 id="tAddTitle" style="margin-top:0;">नवीन ग्राहक / कर्ज नोंद</h3>
-      <div class="grid-3">
-        <div class="field"><label>ग्राहकाचे नाव *</label><input type="text" id="bName" placeholder="पूर्ण नाव (कंसात जामीनदार)" /></div>
-        <div class="field"><label>कर्ज खाते नाव / क्रमांक (पर्यायी)</label><input type="text" id="bLoanLabel" placeholder="उदा. कर्ज #1 / सोने कर्ज" /></div>
-        <div class="field"><label>मोबाईल नंबर</label><input type="tel" id="bMobile" placeholder="10 अंकी नंबर" /></div>
-        <div class="field"><label>एकूण मुद्दल (₹) *</label><input type="number" id="bPrincipal" placeholder="उदा. 50000" min="0" /></div>
-        <div class="field"><label>मुद्दल दिल्याची तारीख</label><input type="date" id="bLoanDate" /></div>
-        <div class="field"><label>हिशोब सुरू महिना</label><input type="month" id="bStartYm" /></div>
-        <div class="field"><label>व्याज दर (% मासिक)</label><input type="number" id="bRate" step="0.01" value="2" /></div>
-        <div class="field"><label>महिन्याचे व्याज (₹ — ऑटो/निश्चित)</label><input type="number" id="bFixedInterest" min="0" placeholder="% नुसार आपोआप येईल" /></div>
-        <div class="field">
-          <label>व्याज पद्धत</label>
-          <select id="bInterestType">
-            <option value="reducing">Reducing Balance (उरलेल्या मुद्दलावर)</option>
-            <option value="flat">Flat Interest (मूळ मुद्दलावर)</option>
-          </select>
-        </div>
-        <div class="field"><label>दरमहा व्याजाची तारीख (1-31)</label><input type="number" id="bInterestDay" min="1" max="31" placeholder="उदा. 5" /></div>
-        <div class="field"><label>दररोजचा विलंब दंड (₹)</label><input type="number" id="bLateFee" min="0" value="0" /></div>
-        <div class="field"><label>सुरुवातीची मॅन्युअल मागील बाकी (₹)</label><input type="number" id="bCustomDue" min="0" placeholder="0" /></div>
-        <div class="field"><label>मुख्य जामीनदार</label><input type="text" id="bGuarantor" placeholder="जामीनदार १ नाव" /></div>
-        <div class="field"><label>अतिरिक्त जामीनदार (स्वल्पविरामाने)</label><input type="text" id="bExtraGuarantors" placeholder="उदा. रमेश (9822..), सुरेश" /></div>
-        <div class="field">
-          <label>नोकरीचा प्रकार</label>
-          <select id="bJobType">
-            <option value="">निवडा</option>
-            <option value="govt">सरकारी नोकरी</option>
-            <option value="private">खाजगी नोकरी</option>
-            <option value="business">व्यवसाय / इतर</option>
-          </select>
-        </div>
-        <div class="field"><label>कंपनी / डिपार्टमेंट</label><input type="text" id="bCompanyDept" placeholder="उदा. BMC / Police / TCS" /></div>
-        <div class="field"><label>Retirement Date</label><input type="date" id="bRetirementDate" /></div>
-        <div class="field"><label>वायदा तारीख १</label><input type="date" id="bPromise1" /></div>
-        <div class="field"><label>वायदा तारीख २</label><input type="date" id="bPromise2" /></div>
-        <div class="field"><label>वायदा तारीख ३</label><input type="date" id="bPromise3" /></div>
-      </div>
-      <div class="field" style="margin-top:10px;">
-        <label>ग्राहकाच्या खात्याला टीप (Note)</label>
-        <textarea id="bNote" rows="2" placeholder="महत्त्वाची टीप लिहा..."></textarea>
-      </div>
-      <div style="margin-top:10px;"><button id="addBorrowerBtn" class="primary">+ ग्राहक / कर्ज जोडा</button></div>
-    </section>
-
-    <section class="card">
-      <h3 id="tRemTitle" style="margin-top:0;">📲 WhatsApp, UPI QR व सकाळचे Notification रिमाइंडर</h3>
-      <div class="row" style="margin-bottom:8px;">
-        <input type="tel" id="selfWaNumber" placeholder="स्वतःचा WhatsApp नंबर (9198XXXXXXXX)" style="flex:1; min-width:200px;" />
-        <button id="saveWaNumberBtn" class="primary sm">नंबर सेव्ह करा</button>
-        <input type="text" id="selfUpiId" placeholder="UPI ID (name@okaxis)" style="flex:1; min-width:190px;" />
-        <button id="saveUpiBtn" class="success sm">UPI सेव्ह करा</button>
-      </div>
-      <div class="row" style="margin-bottom:8px;">
-        <button id="waTodayPromiseBtn" class="success sm">💬 आजचे वायदे (WA)</button>
-        <button id="waPendingListBtn" class="warn sm">💬 बाकी/अर्धवट (WA)</button>
-        <button id="enableNotifBtn" class="primary sm">🔔 सकाळचे Notification</button>
-        <button id="testNotifBtn" class="sm">🧪 Test</button>
-      </div>
-      <div id="notifStatusMsg" class="muted"></div>
-      <div id="tomorrowPromiseCard" class="hidden" style="margin-top:8px;"><div id="tomorrowPromiseList"></div></div>
-    </section>
-
-    <section class="card">
-      <h3 id="tReportsTitle" style="margin-top:0;">📑 रिपोर्ट्स, CSV, Share, Backup व Webhook</h3>
-      <div class="row" style="margin-bottom:10px;">
-        <button id="printMonthlyPdfBtn" class="primary sm">🖨️ महिन्याचा PDF</button>
-        <button id="exportMonthlyCsvBtn" class="success sm">📊 महिन्याची CSV</button>
-        <button id="shareMonthlyCsvBtn" class="primary sm">📤 Share CSV</button>
-        <button id="exportAllCsvBtn" class="success sm">📑 संपूर्ण CSV</button>
-        <button id="gmailReportBtn" class="warn sm">📧 Gmail Report</button>
-      </div>
-      <div class="row" style="margin-bottom:10px;">
-        <label class="muted">Scheduled Backup:</label>
-        <select id="scheduledBackupSelect">
-          <option value="off">बंद (Manual)</option>
-          <option value="daily">दररोज (Daily)</option>
-          <option value="weekly">दर आठवड्याला (Weekly)</option>
-          <option value="monthly">दर महिन्याला (Monthly)</option>
-        </select>
-        <span id="lastBackupBadge" class="muted"></span>
-      </div>
-      <div class="row" style="margin-bottom:10px;">
-        <input type="file" id="importCsvFile" accept=".csv,text/csv" />
-        <button id="importCsvBtn" class="primary sm">📥 CSV Import</button>
-      </div>
-      <div class="row" style="margin-bottom:10px;">
-        <input type="text" id="sheetUrlInput" placeholder="Google Sheet URL किंवा ID" style="flex:1; min-width:200px;" />
-        <button id="importSheetBtn" class="primary sm">Sheet Import</button>
-      </div>
-      <div class="row" style="margin-bottom:10px;">
-        <input type="url" id="webhookUrlInput" placeholder="Google Apps Script Webhook URL" style="flex:1; min-width:200px;" />
-        <button id="saveWebhookBtn" class="sm">URL सेव्ह</button>
-        <button id="sendWebhookBtn" class="primary sm">🚀 Webhook</button>
-      </div>
-      <div class="row" style="margin-bottom:10px;">
-        <input type="password" id="backupPasskey" placeholder="Passkey (किमान 6 अक्षरे)" />
-        <button id="exportEncBtn" class="success sm">🔐 Encrypted Backup</button>
-        <input type="file" id="importEncFile" accept=".json,.txt" />
-        <button id="importEncBtn" class="sm">🔓 Restore</button>
-      </div>
-      <div class="row">
-        <button id="saveLocalVaultBtn" class="warn sm">🛡️ Local Vault</button>
-        <button id="restoreLocalVaultBtn" class="sm">♻️ Vault Restore</button>
-        <button id="saveCloudBackupBtn" class="primary sm">☁️ Cloud Backup</button>
-        <button id="saveMonthlyArchiveBtn" class="primary sm">📦 Archive</button>
-      </div>
-      <div id="ioMsg" class="muted" style="margin-top:8px;"></div>
-      <div id="shaDigestBox" class="meta-box hidden"></div>
-    </section>
-
-    <section class="card">
-      <h3 style="margin-top:0;">🧮 EMI Simulator</h3>
-      <div class="grid-3">
-        <div class="field"><label>मुद्दल (₹)</label><input type="number" id="emiPrincipal" value="100000" min="1" /></div>
-        <div class="field"><label>व्याज दर (%)</label><input type="number" id="emiMonthlyRate" value="2" step="0.1" min="0" /></div>
-        <div class="field"><label>महिने</label><input type="number" id="emiMonths" value="12" min="1" /></div>
-        <div class="field"><label>पद्धत</label><select id="emiType"><option value="reducing">Reducing</option><option value="flat">Flat</option></select></div>
-      </div>
-      <div style="margin-top:10px;"><button id="calcEmiBtn" class="primary">EMI मोजा</button></div>
-      <div id="emiResult" class="meta-box" style="margin-top:10px;">'EMI मोजा' दाबा.</div>
-    </section>
-
-    <section class="card">
-      <div class="row" style="justify-content:space-between;">
-        <h3 style="margin:0;">🗑️ Recycle Bin</h3>
-        <span id="recycleCountBadge" class="badge">0</span>
-      </div>
-      <div id="recycleBinList" style="margin-top:8px;"></div>
-    </section>
-
-    <section class="card">
-      <h3 style="margin-top:0;">Audit Log</h3>
-      <div id="auditList" class="audit-box"></div>
-    </section>
-
     <span id="dashClosedCount" class="hidden"></span>
     <span id="dashCollectedMonth" class="hidden"></span>
     <span id="tDashTitle" class="hidden"></span>
@@ -454,7 +317,159 @@
 
   </main>
 
-  <!-- Modals -->
+  <!-- ☰ मेन्यूमधील ६ फीचर्ससाठी स्वतंत्र पॉपअप कंटेनर -->
+  <div id="toolSectionModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="row" style="justify-content:space-between; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border);">
+        <h3 id="toolSectionModalTitle" style="margin:0;">साधने</h3>
+        <button id="closeToolSectionModalBtn" class="danger sm">✕ बंद करा</button>
+      </div>
+
+      <!-- १. नवीन ग्राहक / कर्ज नोंद -->
+      <section class="tool-sec-pane hidden" id="addBorrowerSection">
+        <h3 id="tAddTitle" class="hidden">नवीन ग्राहक / कर्ज नोंद</h3>
+        <div class="grid-3">
+          <div class="field"><label>ग्राहकाचे नाव *</label><input type="text" id="bName" placeholder="पूर्ण नाव (कंसात जामीनदार)" /></div>
+          <div class="field"><label>कर्ज खाते नाव / क्रमांक (पर्यायी)</label><input type="text" id="bLoanLabel" placeholder="उदा. कर्ज #1 / सोने कर्ज" /></div>
+          <div class="field"><label>मोबाईल नंबर</label><input type="tel" id="bMobile" placeholder="10 अंकी नंबर" /></div>
+          <div class="field"><label>एकूण मुद्दल (₹) *</label><input type="number" id="bPrincipal" placeholder="उदा. 50000" min="0" /></div>
+          <div class="field"><label>मुद्दल दिल्याची तारीख</label><input type="date" id="bLoanDate" /></div>
+          <div class="field"><label>हिशोब सुरू महिना</label><input type="month" id="bStartYm" /></div>
+          <div class="field"><label>व्याज दर (% मासिक)</label><input type="number" id="bRate" step="0.01" value="2" /></div>
+          <div class="field"><label>महिन्याचे व्याज (₹ — ऑटो/निश्चित)</label><input type="number" id="bFixedInterest" min="0" placeholder="% नुसार आपोआप येईल" /></div>
+          <div class="field">
+            <label>व्याज पद्धत</label>
+            <select id="bInterestType">
+              <option value="reducing">Reducing Balance (उरलेल्या मुद्दलावर)</option>
+              <option value="flat">Flat Interest (मूळ मुद्दलावर)</option>
+            </select>
+          </div>
+          <div class="field"><label>दरमहा व्याजाची तारीख (1-31)</label><input type="number" id="bInterestDay" min="1" max="31" placeholder="उदा. 5" /></div>
+          <div class="field"><label>दररोजचा विलंब दंड (₹)</label><input type="number" id="bLateFee" min="0" value="0" /></div>
+          <div class="field"><label>सुरुवातीची मॅन्युअल मागील बाकी (₹)</label><input type="number" id="bCustomDue" min="0" placeholder="0" /></div>
+          <div class="field"><label>मुख्य जामीनदार</label><input type="text" id="bGuarantor" placeholder="जामीनदार १ नाव" /></div>
+          <div class="field"><label>अतिरिक्त जामीनदार (स्वल्पविरामाने)</label><input type="text" id="bExtraGuarantors" placeholder="उदा. रमेश (9822..), सुरेश" /></div>
+          <div class="field">
+            <label>नोकरीचा प्रकार</label>
+            <select id="bJobType">
+              <option value="">निवडा</option>
+              <option value="govt">सरकारी नोकरी</option>
+              <option value="private">खाजगी नोकरी</option>
+              <option value="business">व्यवसाय / इतर</option>
+            </select>
+          </div>
+          <div class="field"><label>कंपनी / डिपार्टमेंट</label><input type="text" id="bCompanyDept" placeholder="उदा. BMC / Police / TCS" /></div>
+          <div class="field"><label>Retirement Date</label><input type="date" id="bRetirementDate" /></div>
+          <div class="field"><label>वायदा तारीख १</label><input type="date" id="bPromise1" /></div>
+          <div class="field"><label>वायदा तारीख २</label><input type="date" id="bPromise2" /></div>
+          <div class="field"><label>वायदा तारीख ३</label><input type="date" id="bPromise3" /></div>
+        </div>
+        <div class="field" style="margin-top:10px;">
+          <label>ग्राहकाच्या खात्याला टीप (Note)</label>
+          <textarea id="bNote" rows="2" placeholder="महत्त्वाची टीप लिहा..."></textarea>
+        </div>
+        <div style="margin-top:12px;"><button id="addBorrowerBtn" class="primary" style="width:100%;">+ ग्राहक / कर्ज जोडा</button></div>
+      </section>
+
+      <!-- २. WhatsApp, UPI QR व सकाळचे Notification रिमाइंडर -->
+      <section class="tool-sec-pane hidden" id="remSection">
+        <h3 id="tRemTitle" class="hidden">📲 WhatsApp, UPI QR व सकाळचे Notification रिमाइंडर</h3>
+        <div class="row" style="margin-bottom:10px;">
+          <input type="tel" id="selfWaNumber" placeholder="स्वतःचा WhatsApp नंबर (9198XXXXXXXX)" style="flex:1; min-width:200px;" />
+          <button id="saveWaNumberBtn" class="primary sm">नंबर सेव्ह करा</button>
+        </div>
+        <div class="row" style="margin-bottom:10px;">
+          <input type="text" id="selfUpiId" placeholder="UPI ID (name@okaxis)" style="flex:1; min-width:190px;" />
+          <button id="saveUpiBtn" class="success sm">UPI सेव्ह करा</button>
+        </div>
+        <div class="row" style="margin-bottom:10px;">
+          <button id="waTodayPromiseBtn" class="success sm">💬 आजचे वायदे (WA)</button>
+          <button id="waPendingListBtn" class="warn sm">💬 बाकी/अर्धवट (WA)</button>
+          <button id="enableNotifBtn" class="primary sm">🔔 सकाळचे Notification</button>
+          <button id="testNotifBtn" class="sm">🧪 Test</button>
+        </div>
+        <div id="notifStatusMsg" class="muted"></div>
+        <div id="tomorrowPromiseCard" class="hidden" style="margin-top:8px;"><div id="tomorrowPromiseList"></div></div>
+      </section>
+
+      <!-- ३. रिपोर्ट्स, CSV, Share, Backup व Webhook -->
+      <section class="tool-sec-pane hidden" id="reportsSection">
+        <h3 id="tReportsTitle" class="hidden">📑 रिपोर्ट्स, CSV, Share, Backup व Webhook</h3>
+        <div class="row" style="margin-bottom:10px;">
+          <button id="printMonthlyPdfBtn" class="primary sm">🖨️ महिन्याचा PDF</button>
+          <button id="exportMonthlyCsvBtn" class="success sm">📊 महिन्याची CSV</button>
+          <button id="shareMonthlyCsvBtn" class="primary sm">📤 Share CSV</button>
+          <button id="exportAllCsvBtn" class="success sm">📑 संपूर्ण CSV</button>
+          <button id="gmailReportBtn" class="warn sm">📧 Gmail Report</button>
+        </div>
+        <div class="row" style="margin-bottom:10px;">
+          <label class="muted">Scheduled Backup:</label>
+          <select id="scheduledBackupSelect">
+            <option value="off">बंद (Manual)</option>
+            <option value="daily">दररोज (Daily)</option>
+            <option value="weekly">दर आठवड्याला (Weekly)</option>
+            <option value="monthly">दर महिन्याला (Monthly)</option>
+          </select>
+          <span id="lastBackupBadge" class="muted"></span>
+        </div>
+        <div class="row" style="margin-bottom:10px;">
+          <input type="file" id="importCsvFile" accept=".csv,text/csv" />
+          <button id="importCsvBtn" class="primary sm">📥 CSV Import</button>
+        </div>
+        <div class="row" style="margin-bottom:10px;">
+          <input type="text" id="sheetUrlInput" placeholder="Google Sheet URL किंवा ID" style="flex:1; min-width:200px;" />
+          <button id="importSheetBtn" class="primary sm">Sheet Import</button>
+        </div>
+        <div class="row" style="margin-bottom:10px;">
+          <input type="url" id="webhookUrlInput" placeholder="Google Apps Script Webhook URL" style="flex:1; min-width:200px;" />
+          <button id="saveWebhookBtn" class="sm">URL सेव्ह</button>
+          <button id="sendWebhookBtn" class="primary sm">🚀 Webhook</button>
+        </div>
+        <div class="row" style="margin-bottom:10px;">
+          <input type="password" id="backupPasskey" placeholder="Passkey (किमान 6 अक्षरे)" />
+          <button id="exportEncBtn" class="success sm">🔐 Encrypted Backup</button>
+          <input type="file" id="importEncFile" accept=".json,.txt" />
+          <button id="importEncBtn" class="sm">🔓 Restore</button>
+        </div>
+        <div class="row">
+          <button id="saveLocalVaultBtn" class="warn sm">🛡️ Local Vault</button>
+          <button id="restoreLocalVaultBtn" class="sm">♻️ Vault Restore</button>
+          <button id="saveCloudBackupBtn" class="primary sm">☁️ Cloud Backup</button>
+          <button id="saveMonthlyArchiveBtn" class="primary sm">📦 Archive</button>
+        </div>
+        <div id="ioMsg" class="muted" style="margin-top:8px;"></div>
+        <div id="shaDigestBox" class="meta-box hidden"></div>
+      </section>
+
+      <!-- ४. EMI Simulator -->
+      <section class="tool-sec-pane hidden" id="emiSection">
+        <div class="grid-3">
+          <div class="field"><label>मुद्दल (₹)</label><input type="number" id="emiPrincipal" value="100000" min="1" /></div>
+          <div class="field"><label>व्याज दर (%)</label><input type="number" id="emiMonthlyRate" value="2" step="0.1" min="0" /></div>
+          <div class="field"><label>महिने</label><input type="number" id="emiMonths" value="12" min="1" /></div>
+          <div class="field"><label>पद्धत</label><select id="emiType"><option value="reducing">Reducing</option><option value="flat">Flat</option></select></div>
+        </div>
+        <div style="margin-top:10px;"><button id="calcEmiBtn" class="primary">EMI मोजा</button></div>
+        <div id="emiResult" class="meta-box" style="margin-top:10px;">'EMI मोजा' दाबा.</div>
+      </section>
+
+      <!-- ५. Recycle Bin -->
+      <section class="tool-sec-pane hidden" id="recycleSection">
+        <div class="row" style="justify-content:space-between; margin-bottom:8px;">
+          <span class="muted">डिलीट केलेली खाती (Restore किंवा कायमचे डिलीट करा):</span>
+          <span id="recycleCountBadge" class="badge">0</span>
+        </div>
+        <div id="recycleBinList"></div>
+      </section>
+
+      <!-- ६. Audit Log -->
+      <section class="tool-sec-pane hidden" id="auditSection">
+        <div id="auditList" class="audit-box"></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- इतर Modals -->
   <div id="smartInfoModal" class="modal-backdrop hidden"><div class="modal-card" style="max-width:540px;"><div class="row" style="justify-content:space-between; margin-bottom:10px;"><h3 id="smartInfoTitle" style="margin:0;">माहिती</h3><div class="row"><button id="printSmartInfoBtn" class="primary sm">🖨️ प्रिंट</button><button id="closeSmartInfoBtn" class="danger sm">बंद करा</button></div></div><div id="smartInfoBody"></div></div></div>
   <div id="pnlModal" class="modal-backdrop hidden"><div class="modal-card"><div class="row" style="justify-content:space-between; margin-bottom:10px;"><h3 style="margin:0;">📈 Profit & Loss अहवाल</h3><button id="closePnlModalBtn" class="danger sm">बंद करा</button></div><div id="pnlContent"></div></div></div>
   <div id="securityModal" class="modal-backdrop hidden"><div class="modal-card"><div class="row" style="justify-content:space-between; margin-bottom:10px;"><h3 style="margin:0;">🛡️ Admin Security Dashboard</h3><button id="closeSecurityModalBtn" class="danger sm">बंद करा</button></div><div class="dash-grid"><div class="dash-box"><div class="dash-label">File Scans</div><div id="secScanCount" class="dash-val">0</div></div><div class="dash-box"><div class="dash-label">Quarantine</div><div id="secQuarantineCount" class="dash-val warn-text">0</div></div><div class="dash-box"><div class="dash-label">Blocked</div><div id="secBlockedCount" class="dash-val err">0</div></div><div class="dash-box"><div class="dash-label">Network</div><div id="secNetSync" class="dash-val ok" style="font-size:0.95rem;">Online</div></div></div><div class="row" style="margin-top:12px;"><button id="runDiagnosticsBtn" class="primary sm">🔍 Diagnostics</button></div><div id="diagnosticsResult" class="meta-box" style="margin-top:8px;"></div><h4 style="margin-bottom:6px;">🚨 Threat Log</h4><div id="threatLogBox" class="audit-box"></div></div></div>
@@ -495,8 +510,8 @@
 
   <div id="passbookModal" class="modal-backdrop hidden"><div class="modal-card"><div class="row" style="justify-content:space-between;"><h3 id="pbTitle" style="margin:0;">Passbook</h3><button id="closePassbookBtn" class="danger sm">बंद करा</button></div><div class="tab-bar"><button class="tab-btn active sm" data-pbtab="passbook">📖 Passbook</button><button class="tab-btn sm" data-pbtab="timeline">🕒 Timeline</button><button class="tab-btn sm" data-pbtab="payments">💰 Payments</button><button class="tab-btn sm" data-pbtab="principals">📊 मुद्दल</button></div><div id="pbContent"></div></div></div>
 
-  <!-- ब्राउझर कॅश रिफ्रेशसाठी V13.7 व्हर्जन -->
-  <script src="./app.js?v=13.7"></script>
-  <script src="./dashboard.js?v=13.7"></script>
+  <!-- ब्राउझर कॅश रिफ्रेशसाठी V13.8 व्हर्जन -->
+  <script src="./app.js?v=13.8"></script>
+  <script src="./dashboard.js?v=13.8"></script>
 </body>
 </html>
