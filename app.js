@@ -1,4 +1,4 @@
-// १. Hishob (hishob-4b548) साठी अचूक Firebase Configuration (V13.0)
+// १. Hishob (hishob-4b548) साठी अचूक Firebase Configuration (V13.7)
 const firebaseConfig = {
   apiKey: "AIzaSyDYpC1Pdm9jDtmNlT2J6BOPzk88QvBo8ds",
   authDomain: "hishob-4b548.firebaseapp.com",
@@ -18,6 +18,73 @@ async function ensurePersistenceEnabled() {
   try { await db.enablePersistence({ synchronizeTabs: true }); persistenceReady = true; } catch (_) {}
 }
 ensurePersistenceEnabled();
+
+// नवीन सुटसुटीत कार्ड डिझाईनसाठी CSS (Dark व Light दोन्ही मोडसाठी)
+(function injectStructuredCardStyles() {
+  if (document.getElementById('hishobStructuredCardCss')) return;
+  const st = document.createElement('style');
+  st.id = 'hishobStructuredCardCss';
+  st.textContent = `
+    .sc-wrap {
+      margin-top: 10px; border: 1px solid var(--border); border-radius: 12px;
+      background: var(--meta-bg); overflow: hidden; font-size: 0.85rem;
+    }
+    .sc-sec {
+      padding: 10px 12px; border-bottom: 1px solid var(--border);
+    }
+    .sc-sec:last-child { border-bottom: none; }
+    .sc-row {
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between;
+    }
+    .sc-left { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .sc-right { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .sc-pill {
+      display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px;
+      border-radius: 999px; font-size: 0.76rem; font-weight: 600; border: 1px solid var(--border);
+      background: var(--card-2); color: var(--text);
+    }
+    .sc-pill.blue { background: rgba(14,165,233,0.16); border-color: rgba(56,189,248,0.45); color: #38bdf8; }
+    .sc-pill.green { background: rgba(34,197,94,0.16); border-color: rgba(34,197,94,0.45); color: #4ade80; }
+    .sc-pill.orange { background: rgba(245,158,11,0.16); border-color: rgba(245,158,11,0.45); color: #fbbf24; }
+    .sc-pill.click { cursor: pointer; }
+    .sc-pill.click:hover { border-color: var(--accent); }
+    .sc-subbox {
+      margin-top: 8px; padding: 8px 10px; border-radius: 8px;
+      background: var(--card); border: 1px solid var(--border); font-size: 0.8rem;
+    }
+    .sc-pay-box {
+      margin-top: 8px; padding: 8px 10px; border-radius: 8px;
+      background: var(--card); border: 1px solid var(--border);
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between;
+    }
+    .sc-grid-2 {
+      display: grid; grid-template-columns: 1.15fr 1fr; gap: 10px; margin-top: 8px; align-items: start;
+    }
+    @media (max-width: 640px) { .sc-grid-2 { grid-template-columns: 1fr; } }
+    .sc-note-box {
+      background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.45);
+      border-radius: 10px; padding: 8px 10px;
+    }
+    .sc-note-box textarea {
+      width: 100%; margin-top: 6px; background: var(--card); border: 1px solid rgba(245,158,11,0.45);
+      border-radius: 8px; padding: 6px 8px; font-size: 0.82rem; color: var(--text); resize: vertical;
+    }
+    .sc-btn-purple { background: #7e22ce !important; border-color: #a855f7 !important; color: #fff !important; }
+    .sc-btn-teal { background: #0f766e !important; border-color: #14b8a6 !important; color: #fff !important; }
+    .sc-btn-orange { background: #c2410c !important; border-color: #f97316 !important; color: #fff !important; }
+    .sc-promise-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px;
+    }
+    @media (max-width: 560px) { .sc-promise-grid { grid-template-columns: 1fr; } }
+    .sc-promise-cell {
+      background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 7px 8px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .sc-promise-cell label { font-size: 0.74rem; color: var(--muted); text-align: center; font-weight: 600; }
+    .sc-promise-cell input[type="date"] { width: 100%; padding: 6px; font-size: 0.8rem; }
+  `;
+  document.head.appendChild(st);
+})();
 
 const MARATHI_MONTHS = ["जानेवारी", "फेब्रुवारी", "मार्च", "एप्रिल", "मे", "जून", "जुलै", "ऑगस्ट", "सप्टेंबर", "ऑक्टोबर", "नोव्हेंबर", "डिसेंबर"];
 function formatMonthMarathi(ym) {
@@ -308,7 +375,17 @@ function sendWaReceipt(borrowerId, ym, paidAmt, totalPending) {
   const mob = String(b.mobile || '').replace(/\D/g, '');
   if (mob.length < 10) { alert('या ग्राहकाचा वैध मोबाईल नंबर सेव्ह नाही.'); return; }
   const target = mob.length === 10 ? `91${mob}` : mob;
-  window.open(`https://wa.me/${target}?text=${encodeURIComponent(`🧾 *व्याज जमा पावती (Hishob)*\n• ग्राहक: *${b.name}*\n• महिना: *${ym}*\n• जमा रक्कम: *₹${paidAmt}*\n• एकूण बाकी: ₹${totalPending}\n• दिनांक: ${getLocalDateIso(0)}`)}`, '_blank', 'noopener,noreferrer');
+  window.open(`https://wa.me/${target}?text=${encodeURIComponent(`🧾 *व्याज हिशोब / पावती (Hishob)*\n• ग्राहक: *${b.name}*\n• महिना: *${formatMonthMarathi(ym)}*\n• जमा रक्कम: *₹${paidAmt}*\n• एकूण बाकी: *₹${totalPending}*\n• दिनांक: ${getLocalDateIso(0)}`)}`, '_blank', 'noopener,noreferrer');
+}
+
+function sendCustomerWaReminder(borrowerId, ym, totalPending) {
+  const b = state.borrowers.find(x => x.id === borrowerId); if (!b) return;
+  const mob = String(b.mobile || '').replace(/\D/g, '');
+  if (mob.length < 10) { alert('या ग्राहकाचा वैध मोबाईल नंबर सेव्ह नाही.'); return; }
+  const target = mob.length === 10 ? `91${mob}` : mob;
+  const promises = [b.promiseDate1, b.promiseDate2, b.promiseDate3].filter(Boolean).join(', ');
+  const msg = `नमस्कार *${b.name}*,\nआपली *${formatMonthMarathi(ym)}* पर्यंतची एकूण व्याज/बाकी रक्कम *₹${totalPending}* देय आहे.${promises ? `\nवायदा तारीख: ${promises}` : ''}\nकृपया लवकरात लवकर जमा करावी. धन्यवाद!`;
+  window.open(`https://wa.me/${target}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener,noreferrer');
 }
 
 // Hide/Show, Dark/Light
@@ -479,10 +556,10 @@ function computeLedgerUpToMonth(borrower, targetYm) {
 
 function getTrustBadgeHtml(calc) {
   if (calc.status === 'closed') return '';
-  if (calc.pastDue === 0 && calc.remainingThisMonth === 0) return `<span class="badge paid">⭐⭐⭐⭐⭐</span>`;
-  if (calc.pastDue === 0 && calc.remainingThisMonth > 0) return `<span class="badge partial">⭐⭐⭐⭐</span>`;
-  if (calc.monthlyInterest > 0 && calc.pastDue <= calc.monthlyInterest) return `<span class="badge partial">⭐⭐⭐</span>`;
-  return `<span class="badge pending">⭐ बाकी</span>`;
+  if (calc.pastDue === 0 && calc.remainingThisMonth === 0) return `<span class="badge paid">⭐⭐⭐⭐⭐ पूर्ण जमा</span>`;
+  if (calc.pastDue === 0 && calc.remainingThisMonth > 0) return `<span class="badge partial">⭐⭐⭐⭐ चालू बाकी</span>`;
+  if (calc.monthlyInterest > 0 && calc.pastDue <= calc.monthlyInterest) return `<span class="badge partial">⭐⭐⭐ मागील बाकी</span>`;
+  return `<span class="badge pending">⭐ जास्त बाकी</span>`;
 }
 function getRetirementBadgeHtml(retDateStr) {
   if (!retDateStr) return '';
@@ -491,19 +568,6 @@ function getRetirementBadgeHtml(retDateStr) {
   if (diffY <= 0) return `<span class="badge pending">⚠️ रिटायर्ड (${yr})</span>`;
   if (diffY <= 1.5) return `<span class="badge pending">⏳ Ret: ${yr}</span>`;
   return `<span class="badge">📅 Ret: ${yr}</span>`;
-}
-function getPromiseStatusHtml(borrower, totalPayable) {
-  const dates = [borrower.promiseDate1, borrower.promiseDate2, borrower.promiseDate3].filter(Boolean).sort();
-  if (!dates.length) return '';
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const parts = dates.map(dStr => {
-    const diffDays = Math.round((new Date(dStr + 'T00:00:00') - today) / 86400000);
-    if (totalPayable <= 0) return `${escapeHtml(dStr)} (पूर्ण जमा)`;
-    if (diffDays < 0) return `<span class="err">${escapeHtml(dStr)} (${Math.abs(diffDays)} दिवस उलटले | बाकी ${fmtAmt(totalPayable)})</span>`;
-    if (diffDays === 0) return `<span class="warn-text">${escapeHtml(dStr)} (आजचा वायदा | बाकी ${fmtAmt(totalPayable)})</span>`;
-    return `${escapeHtml(dStr)} (${diffDays} दिवस बाकी | ${fmtAmt(totalPayable)})`;
-  });
-  return `<div>📅 वायद्यानुसार बाकी: ${parts.join(' | ')}</div>`;
 }
 
 // ६. चक्रवाढ, खाते बंद, Follow-up, नवीन कर्ज
@@ -639,65 +703,109 @@ document.getElementById('uploadDocBtn').addEventListener('click', async () => {
 });
 document.getElementById('docGalleryGrid').addEventListener('click', async (e) => { const btn = e.target.closest('button[data-deldoc]'); if (!btn || !state.currentDocsBorrowerId || !confirm('डिलीट करायचे का?')) return; await getBorrowerDoc(state.currentDocsBorrowerId).collection('documents').doc(btn.getAttribute('data-deldoc')).delete(); loadBorrowerDocs(state.currentDocsBorrowerId); });
 
-// १०. ग्राहक अ‍ॅक्शन्स
+// १०. ग्राहक अ‍ॅक्शन्स (नवीन झटपट बटणांसह)
 function getBorrowerDoc(borrowerId) { return db.collection('users').doc(state.user.uid).collection('borrowers').doc(borrowerId); }
-async function markFullMonthPayment(borrowerId, ym, monthlyInterest) {
-  if (!state.user || !checkRateLimit('FULL_PAY')) return;
+
+// विभाग ४ मधील एकाच 'जमा करा' बटणातून पूर्ण किंवा अर्धवट व्याज जमा करणे
+async function smartCollectMonthPayment(borrowerId, ym, monthlyInterest, alreadyPaid) {
+  if (!state.user || !checkRateLimit('SMART_PAY')) return;
+  const inputEl = document.getElementById(`quickPayInput_${borrowerId}`);
+  const amt = Number(inputEl ? inputEl.value : 0);
+  if (!amt || amt <= 0) { alert('कृपया योग्य जमा रक्कम (₹) टाका.'); return; }
   const nowIso = new Date().toISOString();
-  await getBorrowerDoc(borrowerId).update({ [`paidMonths.${ym}`]: { paidAt: nowIso, amount: monthlyInterest }, [`partialPayments.${ym}`]: firebase.firestore.FieldValue.delete(), paymentHistory: firebase.firestore.FieldValue.arrayUnion({ date: nowIso, ym, type: 'FULL_INTEREST', amount: monthlyInterest, note: `${ym} पूर्ण व्याज जमा` }) });
-  await appendAuditLog('PAYMENT_MARKED', `${borrowerId} (${ym}) पूर्ण ₹${monthlyInterest}`);
+  const nextTotal = Number(alreadyPaid || 0) + amt;
+  const isNowFull = monthlyInterest > 0 && nextTotal >= monthlyInterest;
+  const updatePayload = {
+    paymentHistory: firebase.firestore.FieldValue.arrayUnion({
+      date: nowIso, ym, type: isNowFull ? 'FULL_INTEREST' : 'PARTIAL_INTEREST',
+      amount: amt, note: `${ym} ${isNowFull ? 'पूर्ण व्याज जमा' : 'अर्धवट जमा'}`
+    })
+  };
+  if (isNowFull) {
+    updatePayload[`paidMonths.${ym}`] = { paidAt: nowIso, amount: monthlyInterest };
+    updatePayload[`partialPayments.${ym}`] = firebase.firestore.FieldValue.delete();
+  } else {
+    updatePayload[`partialPayments.${ym}`] = nextTotal;
+  }
+  await getBorrowerDoc(borrowerId).update(updatePayload);
+  await appendAuditLog(isNowFull ? 'PAYMENT_MARKED' : 'PARTIAL_PAYMENT', `${borrowerId} (${ym}) ₹${amt}`);
 }
-async function addPartialPayment(borrowerId, ym, monthlyInterest, alreadyPaid) {
-  if (!state.user || !checkRateLimit('PARTIAL_PAY')) return;
-  const inputEl = document.getElementById(`partialPayInput_${borrowerId}`), amt = Number(inputEl ? inputEl.value : 0);
-  if (!amt || amt <= 0) { alert('अर्धवट रक्कम (₹) टाका.'); return; }
-  const nowIso = new Date().toISOString(), nextTotal = Number(alreadyPaid || 0) + amt;
-  const updatePayload = { paymentHistory: firebase.firestore.FieldValue.arrayUnion({ date: nowIso, ym, type: 'PARTIAL_INTEREST', amount: amt, note: `${ym} अर्धवट जमा` }) };
-  if (nextTotal >= monthlyInterest) { updatePayload[`paidMonths.${ym}`] = { paidAt: nowIso, amount: monthlyInterest }; updatePayload[`partialPayments.${ym}`] = firebase.firestore.FieldValue.delete(); }
-  else updatePayload[`partialPayments.${ym}`] = nextTotal;
-  await getBorrowerDoc(borrowerId).update(updatePayload); if (inputEl) inputEl.value = '';
-  await appendAuditLog('PARTIAL_PAYMENT', `${borrowerId} (${ym}) अर्धवट ₹${amt}`);
+
+async function resetMonthPayment(borrowerId, ym) {
+  if (!state.user || !checkRateLimit('RESET_PAY')) return;
+  if (!confirm(`${formatMonthMarathi(ym)} ची जमा नोंद Reset करायची का?`)) return;
+  await getBorrowerDoc(borrowerId).update({ [`paidMonths.${ym}`]: firebase.firestore.FieldValue.delete(), [`partialPayments.${ym}`]: firebase.firestore.FieldValue.delete() });
 }
-async function resetMonthPayment(borrowerId, ym) { if (!state.user || !checkRateLimit('RESET_PAY')) return; await getBorrowerDoc(borrowerId).update({ [`paidMonths.${ym}`]: firebase.firestore.FieldValue.delete(), [`partialPayments.${ym}`]: firebase.firestore.FieldValue.delete() }); }
+
 async function addManualPendingForMonth(borrowerId) {
   if (!state.user || !checkRateLimit('MANUAL_DUE')) return;
-  const ymInput = prompt('महिना (YYYY-MM):', document.getElementById('activeYm').value || currentYmDefault());
+  const ymInput = prompt('कोणत्या महिन्याची बाकी लिहायची? (YYYY-MM स्वरूपात):', document.getElementById('activeYm').value || currentYmDefault());
   if (!ymInput || !/^\d{4}-\d{2}$/.test(ymInput.trim())) return;
-  const amt = Number(prompt(`${ymInput.trim()} मॅन्युअल बाकी (₹):`, '0') || 0); if (!amt || amt <= 0) return;
+  const amt = Number(prompt(`${formatMonthMarathi(ymInput.trim())} ची बाकी रक्कम (₹) टाका:`, '0') || 0);
+  if (!amt || amt <= 0) return;
   const existing = state.borrowers.find(b => b.id === borrowerId) || {};
   await getBorrowerDoc(borrowerId).update({ [`customPastDues.${ymInput.trim()}`]: Number((existing.customPastDues && existing.customPastDues[ymInput.trim()]) || 0) + amt });
 }
-async function payCustomPastDue(borrowerId, ym, currentPastDue) {
+
+async function payCustomPastDuePrompt(borrowerId, ym, currentPastDue) {
   if (!state.user || !checkRateLimit('PAY_PAST')) return;
-  const inputEl = document.getElementById(`payPastInput_${borrowerId}`), amountToPay = Number(inputEl ? inputEl.value : 0);
-  if (!amountToPay || amountToPay <= 0) { alert('रक्कम टाका.'); return; }
-  const existing = state.borrowers.find(b => b.id === borrowerId) || {}, newPastDue = Math.max(0, Number(currentPastDue || 0) - amountToPay);
-  const updatePayload = { [`customCashPaid.${ym}`]: Number((existing.customCashPaid && existing.customCashPaid[ym]) || 0) + amountToPay, paymentHistory: firebase.firestore.FieldValue.arrayUnion({ date: new Date().toISOString(), ym, type: 'PAST_DUE_PAID', amount: amountToPay, note: `${ym} मागील बाकी जमा` }) };
-  if (newPastDue === 0 && existing.customPastDues && Object.prototype.hasOwnProperty.call(existing.customPastDues, ym)) updatePayload[`customPastDues.${ym}`] = firebase.firestore.FieldValue.delete();
-  await getBorrowerDoc(borrowerId).update(updatePayload); if (inputEl) inputEl.value = '';
+  const amt = Number(prompt(`मागील बाकी (₹${currentPastDue}) मधून किती रक्कम जमा झाली?`, String(currentPastDue)) || 0);
+  if (!amt || amt <= 0) return;
+  const existing = state.borrowers.find(b => b.id === borrowerId) || {};
+  const newPastDue = Math.max(0, Number(currentPastDue || 0) - amt);
+  const updatePayload = {
+    [`customCashPaid.${ym}`]: Number((existing.customCashPaid && existing.customCashPaid[ym]) || 0) + amt,
+    paymentHistory: firebase.firestore.FieldValue.arrayUnion({ date: new Date().toISOString(), ym, type: 'PAST_DUE_PAID', amount: amt, note: `${ym} मागील बाकी जमा` })
+  };
+  if (newPastDue === 0 && existing.customPastDues && Object.prototype.hasOwnProperty.call(existing.customPastDues, ym)) {
+    updatePayload[`customPastDues.${ym}`] = firebase.firestore.FieldValue.delete();
+  }
+  await getBorrowerDoc(borrowerId).update(updatePayload);
 }
-async function clearManualPastDueForMonth(borrowerId, ym) { if (!state.user || !checkRateLimit('CLEAR_PAST')) return; await getBorrowerDoc(borrowerId).update({ [`customPastDues.${ym}`]: firebase.firestore.FieldValue.delete(), [`customCashPaid.${ym}`]: firebase.firestore.FieldValue.delete() }); }
-async function reducePrincipal(borrowerId, currentPrincipal) {
+
+async function reducePrincipalPrompt(borrowerId, currentPrincipal) {
   if (!state.user || !checkRateLimit('REDUCE_P')) return;
-  const inputEl = document.getElementById(`principalAmtInput_${borrowerId}`), amt = Number(inputEl ? inputEl.value : 0);
-  if (!amt || amt <= 0) { alert('रक्कम टाका.'); return; }
+  const amt = Number(prompt(`सध्याचे मुद्दल ₹${currentPrincipal} मधून किती मुद्दल वजा (कमी) करायचे?`, '') || 0);
+  if (!amt || amt <= 0) return;
   const nextPrincipal = Math.max(0, Number(currentPrincipal || 0) - amt);
-  await getBorrowerDoc(borrowerId).update({ principal: nextPrincipal, principalReductions: firebase.firestore.FieldValue.arrayUnion({ date: new Date().toISOString(), amount: amt, balanceAfter: nextPrincipal }) });
-  if (inputEl) inputEl.value = '';
+  await getBorrowerDoc(borrowerId).update({
+    principal: nextPrincipal,
+    principalReductions: firebase.firestore.FieldValue.arrayUnion({ date: new Date().toISOString(), amount: amt, balanceAfter: nextPrincipal })
+  });
 }
-async function addExtraPrincipal(borrowerId, currentPrincipal, currentOriginal) {
+
+async function addExtraPrincipalPrompt(borrowerId, currentPrincipal, currentOriginal) {
   if (!state.user || !checkRateLimit('ADD_P')) return;
-  const inputEl = document.getElementById(`principalAmtInput_${borrowerId}`), amt = Number(inputEl ? inputEl.value : 0);
-  if (!amt || amt <= 0) { alert('रक्कम टाका.'); return; }
+  const amt = Number(prompt(`सध्याच्या मुद्दलात (₹${currentPrincipal}) किती अतिरिक्त मुद्दल वाढवायचे?`, '') || 0);
+  if (!amt || amt <= 0) return;
+  const note = prompt('टीप (पर्यायी):', 'अतिरिक्त मुद्दल') || 'अतिरिक्त मुद्दल';
   const nextPrincipal = Number(currentPrincipal || 0) + amt;
-  await getBorrowerDoc(borrowerId).update({ principal: nextPrincipal, originalPrincipal: Number(currentOriginal || currentPrincipal || 0) + amt, extraPrincipals: firebase.firestore.FieldValue.arrayUnion({ date: new Date().toISOString(), amount: amt, balanceAfter: nextPrincipal }) });
-  if (inputEl) inputEl.value = '';
+  await getBorrowerDoc(borrowerId).update({
+    principal: nextPrincipal,
+    originalPrincipal: Number(currentOriginal || currentPrincipal || 0) + amt,
+    extraPrincipals: firebase.firestore.FieldValue.arrayUnion({ date: new Date().toISOString(), amount: amt, balanceAfter: nextPrincipal, note: note.trim() })
+  });
 }
+
 async function quickEditField(borrowerId, fieldName, label, currentVal) {
   if (!state.user || !checkRateLimit('QUICK_EDIT')) return;
-  const nextVal = prompt(`${label} बदला:`, currentVal || ''); if (nextVal === null) return;
+  const nextVal = prompt(`${label} टाका/बदला:`, currentVal || '');
+  if (nextVal === null) return;
   await getBorrowerDoc(borrowerId).update({ [fieldName]: fieldName === 'interestDay' ? Number(nextVal || 0) : nextVal.trim() });
 }
+
+async function saveInlineNote(borrowerId, noteVal) {
+  if (!state.user || !checkRateLimit('INLINE_NOTE')) return;
+  const existing = state.borrowers.find(x => x.id === borrowerId);
+  if (existing && String(existing.note || '') === String(noteVal || '').trim()) return;
+  await getBorrowerDoc(borrowerId).update({ note: String(noteVal || '').trim() });
+}
+
+async function saveInlinePromiseDate(borrowerId, fieldName, dateVal) {
+  if (!state.user || !checkRateLimit('PROMISE_DATE')) return;
+  await getBorrowerDoc(borrowerId).update({ [fieldName]: dateVal || '' });
+}
+
 async function softDeleteBorrower(borrowerId, name) { if (!state.user || !confirm(`'${name}' Recycle Bin मध्ये पाठवायचे का?`)) return; await getBorrowerDoc(borrowerId).update({ isDeleted: true, deletedAt: new Date().toISOString() }); }
 async function restoreBorrower(borrowerId, name) { if (!state.user) return; await getBorrowerDoc(borrowerId).update({ isDeleted: false, deletedAt: firebase.firestore.FieldValue.delete() }); }
 async function permanentDeleteBorrower(borrowerId, name) { if (!state.user || !confirm(`'${name}' कायमचे डिलीट करायचे का?`)) return; await getBorrowerDoc(borrowerId).delete(); }
@@ -724,7 +832,13 @@ function renderPassbookContent() {
   else if (tab === 'payments') { const list = b.paymentHistory || []; content.innerHTML = list.length ? list.slice().reverse().map(p => `<div class="meta-box"><strong>${escapeHtml(String(p.date || '').slice(0, 10))}</strong> | <span class="ok">${fmtAmt(p.amount || 0)}</span> — ${escapeHtml(p.note || '')}</div>`).join('') : '<p class="muted">नोंद नाही.</p>'; }
   else if (tab === 'principals') { const extras = (b.extraPrincipals || []).map(x => `<div class="meta-box">➕ <strong>${escapeHtml(String(x.date || '').slice(0, 10))}</strong>: ${fmtAmt(x.amount)}</div>`).join(''); const reds = (b.principalReductions || []).map(x => `<div class="meta-box">➖ <strong>${escapeHtml(String(x.date || '').slice(0, 10))}</strong>: ${fmtAmt(x.amount)}</div>`).join(''); content.innerHTML = `<h4>अतिरिक्त मुद्दल</h4>${extras || '<p class="muted">नाही.</p>'}<h4>मुद्दल कपात</h4>${reds || '<p class="muted">नाही.</p>'}`; }
 }
-function openPassbookModal(borrowerId) { state.currentPassbookBorrowerId = borrowerId; state.currentPassbookTab = 'passbook'; document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.getAttribute('data-pbtab') === 'passbook')); renderPassbookContent(); openModalSafe('passbookModal'); }
+function openPassbookModal(borrowerId, initialTab = 'passbook') {
+  state.currentPassbookBorrowerId = borrowerId;
+  state.currentPassbookTab = initialTab;
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.getAttribute('data-pbtab') === initialTab));
+  renderPassbookContent();
+  openModalSafe('passbookModal');
+}
 document.getElementById('closePassbookBtn').addEventListener('click', () => document.getElementById('passbookModal').classList.add('hidden'));
 document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => { state.currentPassbookTab = btn.getAttribute('data-pbtab'); document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active')); btn.classList.add('active'); renderPassbookContent(); }));
 
@@ -755,7 +869,15 @@ function parseCsvLine(line) { const result = []; let current = '', inQuotes = fa
 function escapeHtml(str) { return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m])); }
 function jobLabel(jobType) { return jobType === 'govt' ? 'सरकारी' : jobType === 'private' ? 'खाजगी' : jobType === 'business' ? 'व्यवसाय' : '-'; }
 
-// १२. UI Render (नमुन्याप्रमाणे स्वच्छ कार्ड्स)
+// तारखेला DD/MM/YYYY फॉरमॅटमध्ये दाखवणे
+function formatDateShort(isoStr) {
+  const s = String(isoStr || '').slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return s || '-';
+  const [y, m, d] = s.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+// १२. UI Render (नवीन क्रमांक २ ते ८ सुटसुटीत कार्ड डिझाईन)
 function renderBorrowers() {
   const container = document.getElementById('borrowersList'), recycleContainer = document.getElementById('recycleBinList');
   const activeYm = document.getElementById('activeYm').value || currentYmDefault(), query = (document.getElementById('searchInput').value || '').trim();
@@ -817,14 +939,34 @@ function renderBorrowers() {
       const cardColorClass = isClosed ? 'status-closed' : calc.status === 'paid' ? 'status-paid' : calc.status === 'partial' ? 'status-partial' : '';
       const detailsHiddenClass = state.expandAllDetails ? '' : 'hidden';
       const cleanMobile = String(b.mobile || '').replace(/\D/g, '');
-      const lastFollowUp = (b.followUps && b.followUps.length) ? b.followUps[b.followUps.length - 1] : null;
       const partialPct = (calc.status === 'partial' && calc.monthlyInterest > 0) ? Math.min(100, Math.round((calc.paidThisMonth / calc.monthlyInterest) * 100)) : 0;
+      const startYmDisp = formatMonthMarathi(b.startYm || activeYm);
+      const activeYmDisp = formatMonthMarathi(activeYm);
+
+      // मुद्दल नोंदीची यादी तयार करणे
+      const principalEntries = [];
+      const initDate = formatDateShort(b.loanDate || b.createdAt);
+      principalEntries.push(`• ${initDate}: <strong>${fmtAmt(b.originalPrincipal || b.principal || 0)}</strong> (सुरुवातीचे मुद्दल)`);
+      (b.extraPrincipals || []).forEach(ep => {
+        principalEntries.push(`• ${formatDateShort(ep.date)}: <span class="ok">+${fmtAmt(ep.amount)}</span> (${escapeHtml(ep.note || 'अतिरिक्त')})`);
+      });
+      (b.principalReductions || []).forEach(pr => {
+        principalEntries.push(`• ${formatDateShort(pr.date)}: <span class="warn-text">-${fmtAmt(pr.amount)}</span> (वजा)`);
+      });
 
       const bottomLineText = isClosed
         ? `✓ खाते बंद (${fmtAmt((b.settlement && b.settlement.amount) || 0)})`
         : calc.status === 'paid'
           ? `<span class="ok">✓ जमा व्याज: ${fmtAmt(calc.paidThisMonth)}</span>`
           : `<span class="${calc.status === 'partial' ? 'warn-text' : 'err'}">• जमा: ${fmtAmt(calc.paidThisMonth)} | बाकी: ${fmtAmt(calc.totalPayable)}</span>`;
+
+      const monthStatusLine = calc.status === 'paid'
+        ? `<span class="ok" style="font-weight:700;">✅ ${escapeHtml(activeYmDisp)} - पूर्ण जमा: ${fmtAmt(calc.paidThisMonth)}</span>`
+        : calc.status === 'partial'
+          ? `<span class="warn-text" style="font-weight:700;">🟡 ${escapeHtml(activeYmDisp)} - जमा: ${fmtAmt(calc.paidThisMonth)} | बाकी: ${fmtAmt(calc.remainingThisMonth)}</span>`
+          : `<span class="err" style="font-weight:700;">❌ ${escapeHtml(activeYmDisp)} - बाकी: ${fmtAmt(calc.remainingThisMonth)}</span>`;
+
+      const suggestedPayAmt = calc.remainingThisMonth > 0 ? calc.remainingThisMonth : calc.monthlyInterest;
 
       return `
         <div class="borrower-item ${cardColorClass}">
@@ -844,58 +986,172 @@ function renderBorrowers() {
 
           <button type="button" class="b-detail-btn" data-action="toggle-card-details" data-id="${b.id}">खात्याचा तपशील पहा</button>
 
-          <div id="cardDetails_${b.id}" class="${detailsHiddenClass}" style="margin-top:10px;">
-            <div class="row" style="margin-bottom:8px;">
-              ${getTrustBadgeHtml(calc)}
-              ${getRetirementBadgeHtml(b.retirementDate)}
-              ${cleanMobile ? `<button data-action="call-borrower" data-mobile="${escapeHtml(cleanMobile)}" class="success sm">📞 Call</button>` : ''}
-              <button data-action="followup" data-id="${b.id}" data-name="${escapeHtml(b.name || '')}" class="warn sm">📝 Follow-up</button>
-              <button data-action="add-loan-same" data-id="${b.id}" class="sm">➕ नवीन कर्ज</button>
-              <button data-action="docs" data-id="${b.id}" class="sm">📎 Docs</button>
-              <button data-action="versions" data-id="${b.id}" class="sm">🕒 Versions</button>
-              <button data-action="passbook" data-id="${b.id}" class="primary sm">📖 Passbook</button>
-              <button data-action="full-edit" data-id="${b.id}" class="sm">✏️ Edit</button>
-              <button data-action="soft-delete" data-id="${b.id}" data-name="${escapeHtml(b.name || '')}" class="danger sm">🗑️</button>
+          <!-- नवीन फोटोप्रमाणे क्रमांक २ ते ८ सुटसुटीत तपशील कार्ड -->
+          <div id="cardDetails_${b.id}" class="${detailsHiddenClass}">
+            <div class="sc-wrap">
+
+              <!-- वरचा अ‍ॅक्शन बार -->
+              <div class="sc-sec">
+                <div class="sc-row">
+                  <div class="sc-left">
+                    <button type="button" class="sc-pill blue click" data-action="quick-edit-guarantor" data-id="${b.id}" data-val="${escapeHtml(b.guarantor || '')}">
+                      🤝 जामीनदार: ${escapeHtml(b.guarantor || 'नाव जोडा')} ✏️
+                    </button>
+                    ${getTrustBadgeHtml(calc)}
+                    ${getRetirementBadgeHtml(b.retirementDate)}
+                  </div>
+                  <div class="sc-right">
+                    <button type="button" data-action="full-edit" data-id="${b.id}" class="primary sm">✏️ सर्व एडिट (नोकरी/माहिती)</button>
+                    <button type="button" data-action="docs" data-id="${b.id}" class="sc-btn-purple sm">📁 डॉक्युमेंट्स</button>
+                    <button type="button" data-action="soft-delete" data-id="${b.id}" data-name="${escapeHtml(b.name || '')}" class="danger sm" title="डिलीट">🗑️</button>
+                  </div>
+                </div>
+                ${b.jobType || b.companyDept ? `<div class="muted" style="margin-top:6px; font-size:0.78rem;">💼 नोकरी: ${jobLabel(b.jobType)} ${b.companyDept ? `(${escapeHtml(b.companyDept)})` : ''}</div>` : ''}
+              </div>
+
+              ${isClosed && b.settlement ? `
+                <div class="sc-sec">
+                  <div class="sc-row">
+                    <div><strong>✅ खाते बंद (Final Settlement):</strong> ${fmtAmt(b.settlement.amount)} (${escapeHtml(b.settlement.date || '-')})</div>
+                    <button type="button" data-action="reopen-acc" data-id="${b.id}" data-name="${escapeHtml(b.name || '')}" class="primary sm">🔓 Re-open</button>
+                  </div>
+                </div>
+              ` : `
+                <!-- 2) एकूण मुद्दल व मुद्दल नोंदी -->
+                <div class="sc-sec">
+                  <div class="sc-row">
+                    <div class="sc-left">
+                      <strong>2) एकूण मुद्दल: ${fmtAmt(calc.principal)}</strong>
+                      <span class="sc-pill green">${escapeHtml(startYmDisp)} मध्ये दिलेले: ${fmtAmt(b.originalPrincipal || calc.principal)}</span>
+                      <span class="sc-pill orange">सुरू: ${escapeHtml(startYmDisp)}</span>
+                    </div>
+                    <div class="sc-right">
+                      <button type="button" data-action="add-principal-prompt" data-id="${b.id}" data-principal="${calc.principal}" data-original="${calc.originalPrincipal}" class="success sm">+ अतिरिक्त</button>
+                      <button type="button" data-action="reduce-principal-prompt" data-id="${b.id}" data-principal="${calc.principal}" class="primary sm">▼ वजा</button>
+                    </div>
+                  </div>
+                  <div class="sc-subbox">
+                    <strong>📌 मुद्दल नोंदी:</strong>
+                    <div style="margin-top:4px; line-height:1.5;">${principalEntries.join('<br/>')}</div>
+                  </div>
+                </div>
+
+                <!-- 3) महिन्याचे व्याज -->
+                <div class="sc-sec">
+                  <div class="sc-left">
+                    <strong>3) महिन्याचे व्याज: ${fmtAmt(calc.monthlyInterest)} प्रति महिना</strong>
+                    <span class="sc-pill blue">${Number(b.rate || 0)}% दराने</span>
+                  </div>
+                </div>
+
+                <!-- 4) निवडलेला महिना नोंद व झटपट जमा -->
+                <div class="sc-sec">
+                  <div><strong>4) निवडलेला महिना (${escapeHtml(activeYmDisp)}) नोंद:</strong></div>
+                  <div class="sc-pay-box">
+                    <div>${monthStatusLine}</div>
+                    <div class="sc-right">
+                      <input type="number" id="quickPayInput_${b.id}" value="${suggestedPayAmt}" min="1" style="width:95px; padding:6px 8px;" />
+                      <button type="button" data-action="smart-collect" data-id="${b.id}" data-ym="${activeYm}" data-interest="${calc.monthlyInterest}" data-paidamt="${calc.paidThisMonth}" class="success sm">जमा करा</button>
+                      ${calc.paidThisMonth > 0 ? `<button type="button" data-action="reset-pay" data-id="${b.id}" data-ym="${activeYm}" class="danger sm" title="Reset">↺</button>` : ''}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 5) मागील बाकी महिने व रक्कम + माझी टीप/प्रॉब्लेम -->
+                <div class="sc-sec">
+                  <div><strong>5) मागील बाकी महिने व रक्कम + टीप:</strong></div>
+                  <div class="sc-grid-2">
+                    <div>
+                      <div class="sc-row" style="margin-bottom:6px;">
+                        <div>
+                          ${calc.pastDue > 0
+                            ? `<span class="err" style="font-weight:700;">⚠️ मागील व्याज बाकी: ${fmtAmt(calc.pastDue)}</span>`
+                            : `<span class="ok" style="font-weight:700;">✅ मागील कोणत्याही महिन्याचे व्याज बाकी नाही.</span>`}
+                        </div>
+                        <button type="button" data-action="add-manual-month" data-id="${b.id}" class="primary sm">+/✏️ बाकी लिहा</button>
+                      </div>
+                      ${calc.pastDue > 0 ? `
+                        <div class="sc-left" style="margin-top:6px;">
+                          <button type="button" data-action="pay-past-prompt" data-id="${b.id}" data-ym="${activeYm}" data-past="${calc.pastDue}" class="success sm">💰 बाकी कपात</button>
+                          <button type="button" data-action="compound-past" data-id="${b.id}" data-ym="${activeYm}" data-past="${calc.pastDue}" class="danger sm">+ चक्रवाढ</button>
+                        </div>
+                      ` : ''}
+                    </div>
+
+                    <div class="sc-note-box">
+                      <div style="font-weight:700; color:#fbbf24; font-size:0.8rem;">📝 माझी टीप / प्रॉब्लेम:</div>
+                      <textarea rows="2" placeholder="टीप लिहा..." data-inline-note="${b.id}">${escapeHtml(b.note || '')}</textarea>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- कागदपत्रे -->
+                <div class="sc-sec">
+                  <div class="sc-row">
+                    <div>📁 <strong>कागदपत्रे:</strong> <span class="muted">डॉक्युमेंट गॅलरी पहा किंवा जोडा</span></div>
+                    <button type="button" data-action="docs" data-id="${b.id}" class="sc-btn-purple sm">+ जोडा</button>
+                  </div>
+                </div>
+
+                <!-- 6) मोबाईल नंबर -->
+                <div class="sc-sec">
+                  <div class="sc-row">
+                    <div class="sc-left">
+                      <strong>6) मोबाईल नंबर:</strong> <span>${escapeHtml(b.mobile || 'नाही')}</span>
+                      <button type="button" data-action="quick-edit-mobile" data-id="${b.id}" data-val="${escapeHtml(b.mobile || '')}" class="sm">✏️ नंबर</button>
+                      ${cleanMobile ? `<button type="button" data-action="call-borrower" data-mobile="${escapeHtml(cleanMobile)}" class="success sm">📞 Call</button>` : ''}
+                    </div>
+                    <button type="button" data-action="wa-receipt" data-id="${b.id}" data-ym="${activeYm}" data-paidamt="${calc.paidThisMonth}" data-pending="${calc.totalPayable}" class="success sm">💬 ग्राहक WA</button>
+                  </div>
+                </div>
+
+                <!-- 7) व्याजाची तारीख + QR, वचनचिट्ठी, Timeline -->
+                <div class="sc-sec">
+                  <div class="sc-row">
+                    <div><strong>7) व्याजाची तारीख:</strong> ${b.interestDay ? `दर महिन्याची ${b.interestDay} तारीख` : 'ठरवलेली नाही'}</div>
+                    <div class="sc-right">
+                      <button type="button" data-action="quick-edit-day" data-id="${b.id}" data-val="${b.interestDay || ''}" class="sm">✏️ तारीख</button>
+                      <button type="button" data-action="upi-qr" data-id="${b.id}" data-pending="${calc.totalPayable}" class="sc-btn-purple sm">📱 QR</button>
+                      <button type="button" data-action="vachan" data-id="${b.id}" class="sc-btn-orange sm">📄 वचनचिट्ठी</button>
+                      <button type="button" data-action="timeline" data-id="${b.id}" class="sc-btn-teal sm">📋 Timeline</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 8) वायद्याच्या ३ तारखा + WA रिमाइंडर -->
+                <div class="sc-sec">
+                  <div class="sc-row">
+                    <strong>8) वायद्याच्या ३ तारखा:</strong>
+                    <button type="button" data-action="wa-reminder" data-id="${b.id}" data-ym="${activeYm}" data-pending="${calc.totalPayable}" class="success sm">🔔 WA रिमाइंडर</button>
+                  </div>
+                  <div class="sc-promise-grid">
+                    <div class="sc-promise-cell">
+                      <label>वायदा १</label>
+                      <input type="date" value="${escapeHtml(b.promiseDate1 || '')}" data-promise-field="promiseDate1" data-id="${b.id}" />
+                    </div>
+                    <div class="sc-promise-cell">
+                      <label>वायदा २</label>
+                      <input type="date" value="${escapeHtml(b.promiseDate2 || '')}" data-promise-field="promiseDate2" data-id="${b.id}" />
+                    </div>
+                    <div class="sc-promise-cell">
+                      <label>वायदा ३</label>
+                      <input type="date" value="${escapeHtml(b.promiseDate3 || '')}" data-promise-field="promiseDate3" data-id="${b.id}" />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- अतिरिक्त उपयुक्त साधने (Passbook, नवीन कर्ज, Versions, खाते बंद) -->
+                <div class="sc-sec">
+                  <div class="sc-left">
+                    <button type="button" data-action="passbook" data-id="${b.id}" class="primary sm">📖 Passbook</button>
+                    <button type="button" data-action="followup" data-id="${b.id}" data-name="${escapeHtml(b.name || '')}" class="warn sm">📝 Follow-up</button>
+                    <button type="button" data-action="add-loan-same" data-id="${b.id}" class="sm">➕ नवीन कर्ज</button>
+                    <button type="button" data-action="versions" data-id="${b.id}" class="sm">🕒 Versions</button>
+                    <button type="button" data-action="close-acc" data-id="${b.id}" data-name="${escapeHtml(b.name || '')}" data-principal="${calc.principal}" data-pending="${calc.totalPayable}" class="danger sm">✅ खाते बंद</button>
+                  </div>
+                </div>
+              `}
             </div>
-            <div class="meta-box">
-              <div>📱 मोबाईल: ${escapeHtml(b.mobile || '-')} | 🤝 जामीनदार: ${escapeHtml(b.guarantor || '-')}</div>
-              ${b.extraGuarantors ? `<div>🤝 अतिरिक्त जामीनदार: ${escapeHtml(b.extraGuarantors)}</div>` : ''}
-              <div>💼 नोकरी: ${jobLabel(b.jobType)} ${b.companyDept ? `(${escapeHtml(b.companyDept)})` : ''} ${b.retirementDate ? `| Ret: ${escapeHtml(b.retirementDate)}` : ''}</div>
-              ${!isClosed ? getPromiseStatusHtml(b, calc.totalPayable) : ''}
-              ${b.note ? `<div>📝 टीप: ${escapeHtml(b.note)}</div>` : ''}
-              ${lastFollowUp ? `<div>🕒 शेवटचा Follow-up (${escapeHtml(lastFollowUp.date)}): ${escapeHtml(lastFollowUp.note)}</div>` : ''}
-            </div>
-            ${isClosed && b.settlement ? `
-              <div class="meta-box">
-                <strong>✅ Final Settlement:</strong> ${fmtAmt(b.settlement.amount)} (${escapeHtml(b.settlement.date || '-')})
-                <button data-action="reopen-acc" data-id="${b.id}" data-name="${escapeHtml(b.name || '')}" class="primary sm" style="margin-left:8px;">🔓 Re-open</button>
-              </div>
-            ` : `
-              <div style="margin-top:8px;" class="row">
-                <button data-action="wa-receipt" data-id="${b.id}" data-ym="${activeYm}" data-paidamt="${calc.paidThisMonth}" data-pending="${calc.totalPayable}" class="success sm">🧾 WA पावती</button>
-                <button data-action="upi-qr" data-id="${b.id}" data-pending="${calc.totalPayable}" class="primary sm">📲 UPI QR</button>
-                <button data-action="vachan" data-id="${b.id}" class="warn sm">📄 वचनचिट्ठी</button>
-                ${calc.pastDue > 0 ? `<button data-action="compound-past" data-id="${b.id}" data-ym="${activeYm}" data-past="${calc.pastDue}" class="danger sm">+ चक्रवाढ (${fmtAmt(calc.pastDue)})</button>` : ''}
-                <button data-action="close-acc" data-id="${b.id}" data-name="${escapeHtml(b.name || '')}" data-principal="${calc.principal}" data-pending="${calc.totalPayable}" class="danger sm">✅ खाते बंद</button>
-              </div>
-              <div style="margin-top:8px;" class="row">
-                <button data-action="full-pay" data-id="${b.id}" data-ym="${activeYm}" data-interest="${calc.monthlyInterest}" class="success sm">पूर्ण व्याज जमा</button>
-                <input type="number" id="partialPayInput_${b.id}" placeholder="अर्धवट (₹)" min="1" style="width:115px;" />
-                <button data-action="partial-pay" data-id="${b.id}" data-ym="${activeYm}" data-interest="${calc.monthlyInterest}" data-paidamt="${calc.paidThisMonth}" class="primary sm">Partial</button>
-                <button data-action="reset-pay" data-id="${b.id}" data-ym="${activeYm}" class="danger sm">↺ Reset</button>
-              </div>
-              <div style="margin-top:8px;" class="row">
-                <input type="number" id="payPastInput_${b.id}" placeholder="मागील बाकी (₹)" min="1" style="width:125px;" />
-                <button data-action="pay-past" data-id="${b.id}" data-ym="${activeYm}" data-past="${calc.pastDue}" class="primary sm">बाकी कपात</button>
-                <button data-action="add-manual-month" data-id="${b.id}" class="warn sm">+ Manual Due</button>
-                <button data-action="clear-past" data-id="${b.id}" data-ym="${activeYm}" class="sm">बाकी काढा</button>
-              </div>
-              <div style="margin-top:8px;" class="row">
-                <input type="number" id="principalAmtInput_${b.id}" placeholder="मुद्दल (₹)" min="1" style="width:125px;" />
-                <button data-action="reduce-principal" data-id="${b.id}" data-principal="${calc.principal}" class="sm">- मुद्दल कमी</button>
-                <button data-action="add-principal" data-id="${b.id}" data-principal="${calc.principal}" data-original="${calc.originalPrincipal}" class="primary sm">+ अतिरिक्त मुद्दल</button>
-              </div>
-            `}
           </div>
         </div>
       `;
@@ -907,6 +1163,7 @@ function renderBorrowers() {
     : '<div class="muted">Recycle Bin रिकामा आहे.</div>';
 }
 
+// कार्डवरील सर्व बटणांचे इव्हेंट्स
 document.getElementById('borrowersList').addEventListener('click', (e) => {
   const btn = e.target.closest('button[data-action]'); if (!btn) return;
   const action = btn.getAttribute('data-action'), id = btn.getAttribute('data-id'), ym = btn.getAttribute('data-ym');
@@ -914,28 +1171,44 @@ document.getElementById('borrowersList').addEventListener('click', (e) => {
     const el = document.getElementById(`cardDetails_${id}`);
     if (el) { el.classList.toggle('hidden'); btn.textContent = el.classList.contains('hidden') ? 'खात्याचा तपशील पहा' : 'तपशील बंद करा'; }
   }
+  else if (action === 'quick-edit-guarantor') quickEditField(id, 'guarantor', 'जामीनदाराचे नाव', btn.getAttribute('data-val'));
+  else if (action === 'quick-edit-mobile') quickEditField(id, 'mobile', 'मोबाईल नंबर', btn.getAttribute('data-val'));
+  else if (action === 'quick-edit-day') quickEditField(id, 'interestDay', 'दर महिन्याची व्याजाची तारीख (1-31)', btn.getAttribute('data-val'));
   else if (action === 'call-borrower') { const mob = btn.getAttribute('data-mobile'); if (mob) window.location.href = `tel:${mob}`; }
   else if (action === 'wa-receipt') sendWaReceipt(id, ym, Number(btn.getAttribute('data-paidamt') || 0), Number(btn.getAttribute('data-pending') || 0));
+  else if (action === 'wa-reminder') sendCustomerWaReminder(id, ym, Number(btn.getAttribute('data-pending') || 0));
   else if (action === 'upi-qr') openUpiQr(id, Number(btn.getAttribute('data-pending') || 0));
   else if (action === 'vachan') openVachanChitthi(id);
+  else if (action === 'timeline') openPassbookModal(id, 'timeline');
+  else if (action === 'passbook') openPassbookModal(id, 'passbook');
+  else if (action === 'smart-collect') smartCollectMonthPayment(id, ym, Number(btn.getAttribute('data-interest') || 0), Number(btn.getAttribute('data-paidamt') || 0));
+  else if (action === 'reset-pay') resetMonthPayment(id, ym);
+  else if (action === 'add-manual-month') addManualPendingForMonth(id);
+  else if (action === 'pay-past-prompt') payCustomPastDuePrompt(id, ym, Number(btn.getAttribute('data-past') || 0));
   else if (action === 'compound-past') compoundPastDue(id, ym, Number(btn.getAttribute('data-past') || 0));
+  else if (action === 'add-principal-prompt') addExtraPrincipalPrompt(id, Number(btn.getAttribute('data-principal') || 0), Number(btn.getAttribute('data-original') || 0));
+  else if (action === 'reduce-principal-prompt') reducePrincipalPrompt(id, Number(btn.getAttribute('data-principal') || 0));
   else if (action === 'followup') addFollowUpNote(id, btn.getAttribute('data-name'));
   else if (action === 'add-loan-same') prefillNewLoanForCustomer(id);
   else if (action === 'close-acc') closeAccountWithSettlement(id, btn.getAttribute('data-name'), Number(btn.getAttribute('data-principal') || 0), Number(btn.getAttribute('data-pending') || 0));
   else if (action === 'reopen-acc') reopenAccount(id, btn.getAttribute('data-name'));
   else if (action === 'docs') openDocsModal(id);
   else if (action === 'versions') openVersionModal(id);
-  else if (action === 'full-pay') markFullMonthPayment(id, ym, Number(btn.getAttribute('data-interest') || 0));
-  else if (action === 'partial-pay') addPartialPayment(id, ym, Number(btn.getAttribute('data-interest') || 0), Number(btn.getAttribute('data-paidamt') || 0));
-  else if (action === 'reset-pay') resetMonthPayment(id, ym);
-  else if (action === 'add-manual-month') addManualPendingForMonth(id);
-  else if (action === 'pay-past') payCustomPastDue(id, ym, Number(btn.getAttribute('data-past') || 0));
-  else if (action === 'clear-past') clearManualPastDueForMonth(id, ym);
-  else if (action === 'reduce-principal') reducePrincipal(id, Number(btn.getAttribute('data-principal') || 0));
-  else if (action === 'add-principal') addExtraPrincipal(id, Number(btn.getAttribute('data-principal') || 0), Number(btn.getAttribute('data-original') || 0));
   else if (action === 'full-edit') openEditModal(id);
-  else if (action === 'passbook') openPassbookModal(id);
   else if (action === 'soft-delete') softDeleteBorrower(id, btn.getAttribute('data-name'));
+});
+
+// टीप (Note) आणि वायदा तारखा आपोआप सेव्ह होण्यासाठी इव्हेंट्स
+document.getElementById('borrowersList').addEventListener('change', (e) => {
+  const noteEl = e.target.closest('textarea[data-inline-note]');
+  if (noteEl) {
+    saveInlineNote(noteEl.getAttribute('data-inline-note'), noteEl.value);
+    return;
+  }
+  const promEl = e.target.closest('input[data-promise-field]');
+  if (promEl) {
+    saveInlinePromiseDate(promEl.getAttribute('data-id'), promEl.getAttribute('data-promise-field'), promEl.value);
+  }
 });
 
 document.getElementById('recycleBinList').addEventListener('click', (e) => { const btn = e.target.closest('button[data-action]'); if (!btn) return; if (btn.getAttribute('data-action') === 'restore') restoreBorrower(btn.getAttribute('data-id'), btn.getAttribute('data-name')); else if (btn.getAttribute('data-action') === 'perm-delete') permanentDeleteBorrower(btn.getAttribute('data-id'), btn.getAttribute('data-name')); });
