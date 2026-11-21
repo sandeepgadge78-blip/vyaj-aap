@@ -1,6 +1,7 @@
 // =========================================================================
 // Hishob Premium Fintech Dashboard V3 + Gmail-Style Hamburger Menu (☰)
-// V13.5: Smart Mobile Back-Button Navigation + Strict Month Ledger + Independent Excel
+// V13.6: Quick Payment Full Customer Summary Card (Principal, Past Due, Pending Months, Guarantor, Call)
+// + Smart Mobile Back-Button Navigation + Strict Month Ledger + Independent Excel
 // =========================================================================
 
 (function () {
@@ -58,29 +59,22 @@
   let v3TabHistory = [];
   let lastBackPressTime = 0;
 
-  // ब्राउझर History मध्ये नवीन स्टेप जोडणे
   function pushNavHistory(tag) {
     try { history.pushState({ hishobV3Nav: tag, ts: Date.now() }, ''); } catch (_) {}
   }
 
-  // Home स्क्रीनवर चुकून अ‍ॅप बंद होऊ नये म्हणून सुरुवातीचा Guard
   try { history.replaceState({ hishobRoot: true }, ''); history.pushState({ hishobGuard: true }, ''); } catch (_) {}
 
   window.addEventListener('popstate', () => {
-    // १. Three-Dot (⋮) मेन्यू उघडा असल्यास बंद करा
     const tdMenu = document.getElementById('threeDotDropdown');
     if (tdMenu && !tdMenu.classList.contains('hidden')) {
       tdMenu.classList.add('hidden');
       return;
     }
-
-    // २. डावा साईड ड्रॉअर (☰) उघडा असल्यास बंद करा
     if (isDrawerOpen) {
       setDrawerState(false, true);
       return;
     }
-
-    // ३. कोणताही Modal उघडा असल्यास बंद करा
     for (const id of MODAL_IDS) {
       const m = document.getElementById(id);
       if (m && !m.classList.contains('hidden')) {
@@ -88,25 +82,21 @@
         return;
       }
     }
-
-    // ४. V3 Dashboard / Months उघडे असल्यास स्टेप-बाय-स्टेप मागील टॅबवर जा
     const v3Ov = document.getElementById('v3Overlay');
     if (v3Ov && !v3Ov.classList.contains('hidden')) {
       if (v3TabHistory.length > 1) {
         v3TabHistory.pop();
         const prevTab = v3TabHistory[v3TabHistory.length - 1];
-        switchV3Tab(prevTab, false); // History न वाढवता मागील टॅब उघडा
+        switchV3Tab(prevTab, false);
       } else {
         v3TabHistory = [];
         v3Ov.classList.add('hidden');
       }
       return;
     }
-
-    // ५. मुख्य Home स्क्रीनवर असल्यास Double-Back to Exit सुरक्षा
     const now = Date.now();
     if (now - lastBackPressTime < 2000) {
-      history.back(); // २ सेकंदात पुन्हा दाबल्यास बाहेर पडा
+      history.back();
     } else {
       lastBackPressTime = now;
       showToast('बाहेर पडण्यासाठी पुन्हा Back दाबा');
@@ -268,10 +258,24 @@
       background: var(--card-2); border: 1px solid var(--border); color: var(--muted); cursor: pointer;
     }
     .v3-seg-btn.active { background: #0284c7; border-color: #38bdf8; color: #fff; }
+    .v3-pay-summary {
+      background: var(--card-2); border: 1px solid var(--border); border-radius: 12px;
+      padding: 12px; display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem;
+    }
+    .v3-pay-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .v3-pay-cell { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 7px 9px; }
+    .v3-month-pill {
+      display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.75rem; font-weight: 600;
+      background: rgba(239, 68, 68, 0.16); border: 1px solid rgba(239, 68, 68, 0.45); color: #fca5a5;
+      margin: 2px 4px 2px 0;
+    }
+    .v3-month-pill.partial {
+      background: rgba(245, 158, 11, 0.18); border-color: rgba(245, 158, 11, 0.5); color: #fcd34d;
+    }
   `;
   document.head.appendChild(styleEl);
 
-  // २. Strict Start Month व खरा व्यवहार तपासणी
+  // २. Strict Start Month व बाकी महिन्यांची अचूक यादी काढणारे Helper
   function extractValidYm(val) {
     const s = String(val || '').trim();
     return /^\d{4}-\d{2}/.test(s) ? s.slice(0, 7) : '';
@@ -285,6 +289,28 @@
       extractValidYm(borrower.createdAt) ||
       getTodayIso().slice(0, 7)
     );
+  }
+
+  // ग्राहकाचे नेमके कोणते महिने बाकी (Pending/Partial) आहेत ते काढणे
+  function getPendingMonthsList(borrower, upToYm) {
+    const startYm = getEffectiveStartYm(borrower);
+    if (!startYm || !upToYm || startYm > upToYm) return [];
+    const list = [];
+    let [y, m] = startYm.split('-').map(Number);
+    const [ey, em] = upToYm.split('-').map(Number);
+    let guard = 0;
+    while ((y < ey || (y === ey && m <= em)) && guard < 120) {
+      const ym = `${y}-${String(m).padStart(2, '0')}`;
+      const isPaid = Boolean(borrower.paidMonths && borrower.paidMonths[ym]);
+      if (!isPaid) {
+        const partAmt = Number((borrower.partialPayments && borrower.partialPayments[ym]) || 0);
+        list.push({ ym, label: fmtYmMarathi(ym), isPartial: partAmt > 0, partAmt });
+      }
+      m++;
+      if (m > 12) { m = 1; y++; }
+      guard++;
+    }
+    return list;
   }
 
   function hasTransactionInMonth(borrower, targetYm) {
@@ -403,7 +429,7 @@
       btn.classList.add('open');
       btn.textContent = '✕';
       document.body.style.overflow = 'hidden';
-      if (!fromPopstate) pushNavHistory('drawer'); // मोबाईल Back साठी नोंद
+      if (!fromPopstate) pushNavHistory('drawer');
     } else {
       drawer.classList.remove('open');
       backdrop.classList.remove('open');
@@ -548,7 +574,7 @@
         try { await firebase.auth().sendPasswordResetEmail(u.email); showToast(`✅ ${u.email} वर Password Reset लिंक पाठवली.`); }
         catch (err) { showToast(`एरर: ${err.message}`, true); }
       }
-      else if (act === 'about') showToast('व्याज हिशोब वही V13.5 — Smart Back Navigation');
+      else if (act === 'about') showToast('व्याज हिशोब वही V13.6 — Full Quick Pay Card');
       else if (act === 'logout') document.getElementById('lockBtn')?.click();
     });
   }
@@ -586,7 +612,7 @@
         e.stopPropagation();
         const willOpen = menu.classList.contains('hidden');
         menu.classList.toggle('hidden');
-        if (willOpen) pushNavHistory('td-menu'); // मोबाईल Back साठी नोंद
+        if (willOpen) pushNavHistory('td-menu');
       });
       document.addEventListener('click', () => menu.classList.add('hidden'));
       menu.addEventListener('click', (e) => {
@@ -814,7 +840,7 @@
       body.innerHTML = `
         <div class="v3-panel">
           <div class="row" style="justify-content:space-between; margin-bottom:10px;">
-            <h3 style="margin:0;">📅 महिना निहाय खरा हिशोब (V13.5)</h3>
+            <h3 style="margin:0;">📅 महिना निहाय खरा हिशोब (V13.6)</h3>
             <button id="v3ApplyMainYmBtn" class="sm">📂 मुख्य स्क्रीनवर सेट करा</button>
           </div>
 
@@ -1009,6 +1035,7 @@
       }));
 
     } else if (v3Tab === 'payments') {
+      // Quick Add Payment + संपूर्ण ग्राहक माहिती कार्ड
       body.innerHTML = `
         <div class="v3-panel" style="max-width:560px; margin:0 auto;">
           <h3 style="margin-top:0;">⚡ Quick Add Payment (झटपट पेमेंट नोंद)</h3>
@@ -1016,9 +1043,12 @@
             <label class="muted">ग्राहक निवडा:</label>
             <select id="v3PayCustomer">
               <option value="">-- ग्राहक निवडा --</option>
-              ${d.allActiveRows.map(r => `<option value="${r.id}" data-out="${r.outstanding}" data-int="${r.monthlyInterest}">${esc(r.name)} (बाकी: ₹${r.outstanding})</option>`).join('')}
+              ${d.allActiveRows.map(r => `<option value="${r.id}">${esc(r.name)} (बाकी: ₹${r.outstanding})</option>`).join('')}
             </select>
-            <div id="v3PayBalInfo" class="meta-box">ग्राहक निवडल्यावर थकबाकी दिसेल.</div>
+
+            <!-- ग्राहकाची संपूर्ण माहिती दाखवणारे कार्ड -->
+            <div id="v3PayBalInfo" class="meta-box">ग्राहक निवडल्यावर मुद्दल, आधीची बाकी, बाकी महिने, जामीनदार आणि Call बटण दिसेल.</div>
+
             <input type="number" id="v3PayAmount" placeholder="जमा रक्कम (₹)" min="1" />
             <select id="v3PayMode">
               <option value="Cash">💵 रोख (Cash)</option>
@@ -1030,13 +1060,73 @@
           </div>
         </div>
       `;
-      const sel = document.getElementById('v3PayCustomer'), amtInp = document.getElementById('v3PayAmount');
+      const sel = document.getElementById('v3PayCustomer');
+      const amtInp = document.getElementById('v3PayAmount');
+      const infoBox = document.getElementById('v3PayBalInfo');
+
       sel.addEventListener('change', () => {
-        const opt = sel.options[sel.selectedIndex]; if (!opt || !opt.value) return;
-        const out = Number(opt.getAttribute('data-out') || 0), mi = Number(opt.getAttribute('data-int') || 0);
-        document.getElementById('v3PayBalInfo').innerHTML = `मासिक व्याज: <strong>${fmt(mi)}</strong> | एकूण थकबाकी: <strong class="err">${fmt(out)}</strong>`;
-        amtInp.value = mi > 0 ? mi : out;
+        const bId = sel.value;
+        const row = d.allActiveRows.find(x => x.id === bId);
+        if (!row) {
+          infoBox.className = 'meta-box';
+          infoBox.innerHTML = 'ग्राहक निवडल्यावर मुद्दल, आधीची बाकी, बाकी महिने, जामीनदार आणि Call बटण दिसेल.';
+          amtInp.value = '';
+          return;
+        }
+        const raw = row.raw || {};
+        const cleanMob = String(row.mobile || '').replace(/\D/g, '');
+        const guarantors = [raw.guarantor, raw.extraGuarantors].filter(Boolean).join(', ') || 'नोंद नाही';
+        const pendMonths = getPendingMonthsList(raw, d.activeYm);
+
+        infoBox.className = 'v3-pay-summary';
+        infoBox.innerHTML = `
+          <div class="row" style="justify-content:space-between; align-items:center;">
+            <div>
+              <strong style="font-size:0.98rem;">${esc(row.name)}</strong>
+              <div class="muted" style="font-size:0.78rem;">📱 ${esc(row.mobile || 'नंबर नाही')}</div>
+            </div>
+            ${cleanMob ? `<button type="button" id="v3QuickPayCallBtn" class="success sm">📞 Call</button>` : `<span class="muted" style="font-size:0.75rem;">नंबर नाही</span>`}
+          </div>
+
+          <div class="v3-pay-grid">
+            <div class="v3-pay-cell">
+              <div class="muted" style="font-size:0.74rem;">एकूण मुद्दल</div>
+              <strong>${fmt(row.principal)}</strong>
+            </div>
+            <div class="v3-pay-cell">
+              <div class="muted" style="font-size:0.74rem;">मासिक व्याज</div>
+              <strong style="color:#38bdf8;">${fmt(row.monthlyInterest)}</strong>
+            </div>
+            <div class="v3-pay-cell">
+              <div class="muted" style="font-size:0.74rem;">आधीची बाकी (मागील)</div>
+              <strong class="warn-text">${fmt(row.pastDue)}</strong>
+            </div>
+            <div class="v3-pay-cell">
+              <div class="muted" style="font-size:0.74rem;">एकूण थकबाकी</div>
+              <strong class="err">${fmt(row.outstanding)}</strong>
+            </div>
+          </div>
+
+          <div>
+            <div class="muted" style="font-size:0.75rem; margin-bottom:3px;">📅 बाकी असलेले महिने (${pendMonths.length}):</div>
+            <div>
+              ${pendMonths.length
+                ? pendMonths.map(pm => `<span class="v3-month-pill ${pm.isPartial ? 'partial' : ''}">${esc(pm.label)}${pm.isPartial ? ` (अर्धवट ₹${pm.partAmt})` : ''}</span>`).join('')
+                : '<span class="ok" style="font-weight:600;">🟢 सर्व महिने पूर्ण जमा आहेत!</span>'}
+            </div>
+          </div>
+
+          <div style="border-top:1px solid var(--border); padding-top:6px; font-size:0.82rem;">
+            🤝 <span class="muted">जामीनदार:</span> <strong>${esc(guarantors)}</strong>
+          </div>
+        `;
+
+        document.getElementById('v3QuickPayCallBtn')?.addEventListener('click', () => {
+          window.location.href = `tel:${cleanMob}`;
+        });
+        amtInp.value = row.monthlyInterest > 0 ? row.monthlyInterest : row.outstanding;
       });
+
       document.getElementById('v3SaveQuickPayBtn').addEventListener('click', async () => {
         if (isSavingPay) return;
         const bId = sel.value, amt = Number(amtInp.value || 0), mode = document.getElementById('v3PayMode').value, note = document.getElementById('v3PayNote').value.trim();
