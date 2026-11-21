@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#070c16" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://sandeepgadge78-blip.github.io; script-src 'self' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://*.googleusercontent.com https://api.qrserver.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://docs.google.com https://*.googleusercontent.com https://script.google.com https://script.googleusercontent.com; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com;" />
-  <title>व्याज हिशोब वही (V13.8)</title>
+  <title>व्याज हिशोब वही (V13.9)</title>
 
   <link rel="manifest" href="./manifest.json" />
 
@@ -98,7 +98,6 @@
       border-radius: 14px; padding: 14px; margin-bottom: 12px;
     }
 
-    /* चालू महिना कार्ड व २x२ डॅशबोर्ड */
     .month-hero-card {
       background: var(--card); border: 1px solid var(--border); border-radius: 16px;
       padding: 16px 14px; text-align: center; margin-bottom: 12px;
@@ -126,7 +125,6 @@
     .stat-tile-lbl { font-size: 0.8rem; color: var(--muted); }
     .stat-tile-val { font-size: 1.35rem; font-weight: 800; margin-top: 6px; }
 
-    /* राऊंडेड सर्च व पिल फिल्टर्स */
     .search-pill-box {
       width: 100%; border-radius: 999px !important; padding: 10px 16px !important;
       background: var(--card) !important; border: 1px solid var(--border) !important;
@@ -145,7 +143,6 @@
     .pill-btn.pill-partial.filter-active { background: #713f12; border-color: #eab308; color: #facc15; }
     .pill-btn.pill-pending.filter-active { background: #7f1d1d; border-color: #ef4444; color: #fca5a5; }
 
-    /* स्वच्छ ग्राहक कार्ड */
     .borrower-item {
       border: 1px solid var(--border); border-radius: 16px; padding: 14px;
       margin-bottom: 12px; background: var(--default-item-bg);
@@ -153,29 +150,12 @@
     .borrower-item.status-paid { background: var(--paid-bg); border-color: rgba(34,197,94,0.45); }
     .borrower-item.status-partial { background: var(--partial-bg); border-color: rgba(245,158,11,0.45); }
     .borrower-item.status-closed { background: var(--closed-bg); opacity: 0.88; }
-    .b-card-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-    .b-card-name { font-size: 1.05rem; font-weight: 700; }
-    .b-3col {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
-      margin: 12px 0 10px;
-    }
-    .b-3col-lbl { font-size: 0.75rem; color: var(--muted); }
-    .b-3col-val { font-size: 0.98rem; font-weight: 700; margin-top: 2px; }
-    .b-status-line { font-size: 0.86rem; font-weight: 600; margin-bottom: 10px; }
-    .b-detail-btn {
-      width: 100%; border-radius: 999px; padding: 9px 12px;
-      background: transparent; border: 1px solid var(--border); color: var(--text);
-      font-size: 0.86rem; font-weight: 600;
-    }
-    .b-detail-btn:hover { background: var(--card-2); border-color: var(--accent); }
 
     .alert-banner { background: rgba(239, 68, 68, 0.16); border: 1px solid var(--danger); border-radius: 12px; padding: 10px 14px; margin-bottom: 12px; }
     .info-banner { background: rgba(14, 165, 233, 0.16); border: 1px solid var(--accent); border-radius: 12px; padding: 10px 14px; margin-bottom: 12px; }
     .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
     .field { display: flex; flex-direction: column; gap: 4px; }
     .field label { font-size: 0.78rem; color: var(--muted); }
-    .partial-prog-wrap { width: 100%; height: 7px; background: rgba(245, 158, 11, 0.3); border-radius: 999px; overflow: hidden; margin: 6px 0; }
-    .partial-prog-fill { height: 100%; background: #22c55e; border-radius: 999px; }
     .meta-box { margin-top: 6px; padding: 8px; border-radius: 8px; background: var(--meta-bg); border: 1px solid var(--border); font-size: 0.82rem; }
     .doc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-top: 10px; }
     .doc-card { border: 1px solid var(--border); border-radius: 8px; padding: 8px; background: var(--meta-bg); text-align: center; }
@@ -247,7 +227,7 @@
     </div>
   </div>
 
-  <!-- मुख्य अ‍ॅप स्क्रीन (आता पूर्णपणे स्वच्छ) -->
+  <!-- मुख्य अ‍ॅप स्क्रीन -->
   <main id="appScreen" class="container hidden">
 
     <div id="monthEndBanner" class="info-banner hidden"></div>
@@ -510,8 +490,8 @@
 
   <div id="passbookModal" class="modal-backdrop hidden"><div class="modal-card"><div class="row" style="justify-content:space-between;"><h3 id="pbTitle" style="margin:0;">Passbook</h3><button id="closePassbookBtn" class="danger sm">बंद करा</button></div><div class="tab-bar"><button class="tab-btn active sm" data-pbtab="passbook">📖 Passbook</button><button class="tab-btn sm" data-pbtab="timeline">🕒 Timeline</button><button class="tab-btn sm" data-pbtab="payments">💰 Payments</button><button class="tab-btn sm" data-pbtab="principals">📊 मुद्दल</button></div><div id="pbContent"></div></div></div>
 
-  <!-- ब्राउझर कॅश रिफ्रेशसाठी V13.8 व्हर्जन -->
-  <script src="./app.js?v=13.8"></script>
-  <script src="./dashboard.js?v=13.8"></script>
+  <!-- ब्राउझर कॅश रिफ्रेशसाठी V13.9 व्हर्जन -->
+  <script src="./app.js?v=13.9"></script>
+  <script src="./dashboard.js?v=13.9"></script>
 </body>
 </html>
