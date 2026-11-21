@@ -1,4 +1,4 @@
-// १. Hishob (hishob-4b548) साठी अचूक Firebase Configuration (V14.2 - Ultra-Pro Obsidian Glass)
+// १. Hishob (hishob-4b548) साठी अचूक Firebase Configuration (V14.3 - Ultra-Pro + Auto-Close + Profile + Settings)
 const firebaseConfig = {
   apiKey: "AIzaSyDYpC1Pdm9jDtmNlT2J6BOPzk88QvBo8ds",
   authDomain: "hishob-4b548.firebaseapp.com",
@@ -19,7 +19,17 @@ async function ensurePersistenceEnabled() {
 }
 ensurePersistenceEnabled();
 
-// Ultra-Pro ग्राहक कार्ड (V14.2) व आतल्या तपशील कार्डसाठी CSS (Dark Neon Glass + Light Mode)
+// Splash Screen सुरक्षितपणे बंद करणे (अजिबात अडकणार नाही)
+(function hideSplashSafely() {
+  const hideNow = () => {
+    const sp = document.getElementById('splashScreen');
+    if (sp) sp.classList.add('splash-hide');
+  };
+  setTimeout(hideNow, 950);
+  window.addEventListener('load', () => setTimeout(hideNow, 650));
+})();
+
+// Ultra-Pro ग्राहक कार्ड (V14.3) व आतल्या तपशील कार्डसाठी CSS (Dark Neon Glass + Light Mode)
 (function injectStructuredCardStyles() {
   if (document.getElementById('hishobStructuredCardCss')) return;
   const st = document.createElement('style');
@@ -148,11 +158,18 @@ const I18N = {
   en: { dashTitle: '📊 All Accounts Dashboard', lblPrincipal: 'Total Principal', lblExpected: 'Monthly Expected Interest', lblCollected: 'Collected This Month', lblPending: 'Total Pending Dues', remTitle: '📲 WhatsApp, UPI QR & Notification Reminders', addTitle: 'Add New Customer / Loan Account', ledgerTitle: 'Monthly Ledger & Payments', reportsTitle: '📑 Reports, CSV, Share, Backup & Webhook' }
 };
 
-// ३. अ‍ॅप स्टेट
+// ३. अ‍ॅप स्टेट (बिझनेस प्रोफाईल व सेटिंग्जसह)
+function loadSavedProfile() {
+  try { return JSON.parse(localStorage.getItem('hishob_biz_profile') || '{}'); } catch (_) { return {}; }
+}
+
 const state = {
   user: null, borrowers: [], auditLogs: [],
   unsubscribeBorrowers: null, unsubscribeAudit: null,
-  autoLockTimer: null, autoLockMs: 300000,
+  autoLockTimer: null,
+  autoLockMs: Number(localStorage.getItem('hishob_autolock_ms') || 300000),
+  defaultRate: Number(localStorage.getItem('hishob_default_rate') || 2),
+  profile: loadSavedProfile(),
   currentPassbookBorrowerId: null, currentPassbookTab: 'passbook',
   currentDocsBorrowerId: null, currentVersionBorrowerId: null,
   accountFilter: 'active', jobFilter: 'all', statusFilter: 'all',
@@ -165,6 +182,87 @@ const state = {
   todayPromisesCache: [], pendingPartialCache: [],
   security: { fileScans: 0, quarantined: 0, blockedThreats: 0, threatLog: [], writeTimestamps: [] }
 };
+
+function getBizBrandName() {
+  return (state.profile && state.profile.bizName) ? state.profile.bizName.trim() : 'व्याज हिशोब वही';
+}
+
+function applyProfileToUI() {
+  const p = state.profile || {};
+  const setV = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+  setV('profBizName', p.bizName || '');
+  setV('profOwnerName', p.ownerName || '');
+  setV('profMobile', p.mobile || '');
+  setV('profUpiId', p.upiId || state.selfUpiId || '');
+  const brandEl = document.getElementById('tBrandTitle');
+  if (brandEl) brandEl.textContent = getBizBrandName();
+  if (p.upiId) {
+    state.selfUpiId = p.upiId;
+    localStorage.setItem('hishob_self_upi', p.upiId);
+    const upiEl = document.getElementById('selfUpiId');
+    if (upiEl) upiEl.value = p.upiId;
+  }
+}
+
+function applySettingsToUI() {
+  const lockSel = document.getElementById('setAutoLockSelect');
+  if (lockSel) lockSel.value = String(state.autoLockMs || 300000);
+  const mainLockSel = document.getElementById('autoLockSelect');
+  if (mainLockSel) mainLockSel.value = String(state.autoLockMs || 300000);
+  const rateInp = document.getElementById('setDefaultRate');
+  if (rateInp) rateInp.value = String(state.defaultRate || 2);
+  const bRateInp = document.getElementById('bRate');
+  if (bRateInp) bRateInp.value = String(state.defaultRate || 2);
+}
+
+applyProfileToUI();
+applySettingsToUI();
+
+// बिझनेस प्रोफाईल सेव्ह करणे
+document.getElementById('saveProfileBtn')?.addEventListener('click', async () => {
+  const msgEl = document.getElementById('profMsg');
+  const nextProf = {
+    bizName: (document.getElementById('profBizName')?.value || '').trim(),
+    ownerName: (document.getElementById('profOwnerName')?.value || '').trim(),
+    mobile: (document.getElementById('profMobile')?.value || '').trim(),
+    upiId: (document.getElementById('profUpiId')?.value || '').trim()
+  };
+  state.profile = nextProf;
+  localStorage.setItem('hishob_biz_profile', JSON.stringify(nextProf));
+  applyProfileToUI();
+  if (state.user) {
+    try { await db.collection('users').doc(state.user.uid).set({ bizProfile: nextProf, selfUpiId: nextProf.upiId || state.selfUpiId }, { merge: true }); } catch (_) {}
+  }
+  if (msgEl) msgEl.textContent = '✅ बिझनेस प्रोफाईल सुरक्षित सेव्ह झाले!';
+  setTimeout(() => { if (msgEl) msgEl.textContent = ''; }, 2500);
+});
+
+// एकत्रित Settings सेव्ह व बटणे
+document.getElementById('saveSettingsBtn')?.addEventListener('click', () => {
+  const msgEl = document.getElementById('setStatusMsg');
+  const nextLock = Number(document.getElementById('setAutoLockSelect')?.value || 300000);
+  const nextRate = Number(document.getElementById('setDefaultRate')?.value || 2);
+  state.autoLockMs = nextLock;
+  state.defaultRate = nextRate >= 0 ? nextRate : 2;
+  localStorage.setItem('hishob_autolock_ms', String(state.autoLockMs));
+  localStorage.setItem('hishob_default_rate', String(state.defaultRate));
+  applySettingsToUI();
+  resetAutoLockTimer();
+  if (msgEl) msgEl.textContent = '✅ सेटिंग्ज सेव्ह झाल्या!';
+  setTimeout(() => { if (msgEl) msgEl.textContent = ''; }, 2500);
+});
+document.getElementById('setToggleHideBtn')?.addEventListener('click', () => document.getElementById('toggleHideAmtBtn')?.click());
+document.getElementById('setToggleThemeBtn')?.addEventListener('click', () => document.getElementById('toggleThemeBtn')?.click());
+document.getElementById('setResetPassBtn')?.addEventListener('click', async () => {
+  const msgEl = document.getElementById('setStatusMsg');
+  if (!state.user || !state.user.email) { if (msgEl) msgEl.textContent = 'ईमेल सापडला नाही.'; return; }
+  try {
+    await auth.sendPasswordResetEmail(state.user.email);
+    if (msgEl) msgEl.textContent = `✅ ${state.user.email} वर Password Reset लिंक पाठवली!`;
+  } catch (err) {
+    if (msgEl) msgEl.textContent = `एरर: ${err.message}`;
+  }
+});
 
 // पॉपअप उघडणे (Back बटण कंट्रोल dashboard.js मधून एकच राहील)
 function openModalSafe(modalId) {
@@ -391,24 +489,26 @@ document.getElementById('openPnlBtn')?.addEventListener('click', () => {
 });
 document.getElementById('closePnlModalBtn')?.addEventListener('click', () => document.getElementById('pnlModal')?.classList.add('hidden'));
 
-// वचनचिट्ठी व UPI QR Modal
+// वचनचिट्ठी व UPI QR Modal (Auto-Branding सह)
 document.getElementById('closeSmartInfoBtn')?.addEventListener('click', () => document.getElementById('smartInfoModal')?.classList.add('hidden'));
 document.getElementById('printSmartInfoBtn')?.addEventListener('click', () => { document.getElementById('printArea').innerHTML = document.getElementById('smartInfoBody').innerHTML; window.print(); });
 
 function openVachanChitthi(borrowerId) {
   const b = state.borrowers.find(x => x.id === borrowerId); if (!b) return;
   const calc = computeLedgerUpToMonth(b, document.getElementById('activeYm').value || currentYmDefault());
+  const biz = getBizBrandName();
+  const ownerLine = [state.profile.ownerName, state.profile.mobile].filter(Boolean).join(' • ');
   document.getElementById('smartInfoTitle').textContent = `📄 वचनचिट्ठी — ${b.name}`;
-  document.getElementById('smartInfoBody').innerHTML = `<div style="border:2px solid var(--border); padding:16px; border-radius:10px; line-height:1.8;"><h3 style="text-align:center; margin-top:0;">वचनचिट्ठी (Promissory Note)</h3><div style="text-align:right;"><strong>दिनांक:</strong> ${escapeHtml(getLocalDateIso(0))}</div><p>मी <strong>${escapeHtml(b.name || '')}</strong> (मोबाईल: ${escapeHtml(b.mobile || '-')}, जामीनदार: <strong>${escapeHtml(b.guarantor || '-')}</strong>), रक्कम <strong>₹${calc.principal}</strong> मुद्दल म्हणून घेतली असून दरमहा <strong>${b.interestDay || 10} तारखेला ₹${calc.monthlyInterest}</strong> व्याज वेळेवर परत करण्याची हमी देतो/देते.</p><div style="display:flex; justify-content:space-between; margin-top:36px; padding-top:8px;"><div>__________________<br/>ग्राहकाची सही</div><div>__________________<br/>जामीनदाराची सही</div></div></div>`;
+  document.getElementById('smartInfoBody').innerHTML = `<div style="border:2px solid var(--border); padding:16px; border-radius:10px; line-height:1.8;"><div style="text-align:center; font-weight:800; font-size:1.05rem; color:var(--accent);">${escapeHtml(biz)}</div>${ownerLine ? `<div style="text-align:center; font-size:0.78rem; color:var(--muted); margin-bottom:6px;">${escapeHtml(ownerLine)}</div>` : ''}<h3 style="text-align:center; margin-top:4px;">वचनचिट्ठी (Promissory Note)</h3><div style="text-align:right;"><strong>दिनांक:</strong> ${escapeHtml(getLocalDateIso(0))}</div><p>मी <strong>${escapeHtml(b.name || '')}</strong> (मोबाईल: ${escapeHtml(b.mobile || '-')}, जामीनदार: <strong>${escapeHtml(b.guarantor || '-')}</strong>), रक्कम <strong>₹${calc.principal}</strong> मुद्दल म्हणून घेतली असून दरमहा <strong>${b.interestDay || 10} तारखेला ₹${calc.monthlyInterest}</strong> व्याज वेळेवर परत करण्याची हमी देतो/देते.</p><div style="display:flex; justify-content:space-between; margin-top:36px; padding-top:8px;"><div>__________________<br/>ग्राहकाची सही</div><div>__________________<br/>जामीनदाराची सही</div></div></div>`;
   openModalSafe('smartInfoModal');
 }
 
 function openUpiQr(borrowerId, amount) {
   const b = state.borrowers.find(x => x.id === borrowerId); if (!b) return;
   const upiId = (state.selfUpiId || document.getElementById('selfUpiId').value || '').trim();
-  if (!upiId || !upiId.includes('@')) { alert('कृपया आधी UPI ID (उदा. name@okaxis) सेव्ह करा.'); return; }
+  if (!upiId || !upiId.includes('@')) { alert('कृपया आधी प्रोफाईल किंवा सेटिंग्जमध्ये UPI ID (उदा. name@okaxis) सेव्ह करा.'); return; }
   const payAmt = Number(amount || 0) > 0 ? Number(amount) : getMonthlyInterestAmount(b);
-  const upiStr = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent('Hishob Payment')}&am=${payAmt}&cu=INR&tn=${encodeURIComponent('Vyaj ' + (b.name || ''))}`;
+  const upiStr = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(getBizBrandName())}&am=${payAmt}&cu=INR&tn=${encodeURIComponent('Vyaj ' + (b.name || ''))}`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiStr)}`;
   document.getElementById('smartInfoTitle').textContent = `📲 UPI QR — ${b.name}`;
   document.getElementById('smartInfoBody').innerHTML = `<div style="text-align:center; padding:10px;"><div style="margin-bottom:8px;">UPI ID: <strong>${escapeHtml(upiId)}</strong></div><div style="font-size:1.25rem; font-weight:700; margin-bottom:10px;" class="ok">देय रक्कम: ₹${payAmt}</div><img src="${qrUrl}" alt="UPI QR" style="border-radius:10px; border:4px solid #fff; background:#fff;" /></div>`;
@@ -420,7 +520,8 @@ function sendWaReceipt(borrowerId, ym, paidAmt, totalPending) {
   const mob = String(b.mobile || '').replace(/\D/g, '');
   if (mob.length < 10) { alert('या ग्राहकाचा वैध मोबाईल नंबर सेव्ह नाही.'); return; }
   const target = mob.length === 10 ? `91${mob}` : mob;
-  window.open(`https://wa.me/${target}?text=${encodeURIComponent(`🧾 *व्याज हिशोब / पावती (Hishob)*\n• ग्राहक: *${b.name}*\n• महिना: *${formatMonthMarathi(ym)}*\n• जमा रक्कम: *₹${paidAmt}*\n• एकूण बाकी: *₹${totalPending}*\n• दिनांक: ${getLocalDateIso(0)}`)}`, '_blank', 'noopener,noreferrer');
+  const bizFooter = state.profile.mobile ? `\n— *${getBizBrandName()}* (${state.profile.mobile})` : `\n— *${getBizBrandName()}*`;
+  window.open(`https://wa.me/${target}?text=${encodeURIComponent(`🧾 *व्याज हिशोब / पावती*\n• ग्राहक: *${b.name}*\n• महिना: *${formatMonthMarathi(ym)}*\n• जमा रक्कम: *₹${paidAmt}*\n• एकूण बाकी: *₹${totalPending}*\n• दिनांक: ${getLocalDateIso(0)}${bizFooter}`)}`, '_blank', 'noopener,noreferrer');
 }
 
 function sendCustomerWaReminder(borrowerId, ym, totalPending) {
@@ -429,7 +530,7 @@ function sendCustomerWaReminder(borrowerId, ym, totalPending) {
   if (mob.length < 10) { alert('या ग्राहकाचा वैध मोबाईल नंबर सेव्ह नाही.'); return; }
   const target = mob.length === 10 ? `91${mob}` : mob;
   const promises = [b.promiseDate1, b.promiseDate2, b.promiseDate3].filter(Boolean).join(', ');
-  const msg = `नमस्कार *${b.name}*,\nआपली *${formatMonthMarathi(ym)}* पर्यंतची एकूण व्याज/बाकी रक्कम *₹${totalPending}* देय आहे.${promises ? `\nवायदा तारीख: ${promises}` : ''}\nकृपया लवकरात लवकर जमा करावी. धन्यवाद!`;
+  const msg = `नमस्कार *${b.name}*,\nआपली *${formatMonthMarathi(ym)}* पर्यंतची एकूण व्याज/बाकी रक्कम *₹${totalPending}* देय आहे.${promises ? `\nवायदा तारीख: ${promises}` : ''}\nकृपया लवकरात लवकर जमा करावी. धन्यवाद!\n— *${getBizBrandName()}*`;
   window.open(`https://wa.me/${target}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener,noreferrer');
 }
 
@@ -695,7 +796,8 @@ document.getElementById('printMonthlyPdfBtn')?.addEventListener('click', () => {
   const activeYm = document.getElementById('activeYm').value || currentYmDefault(), list = state.borrowers.filter(b => !b.isDeleted && b.accountStatus !== 'closed');
   let totP = 0, totInt = 0, totCol = 0, totPen = 0;
   const rows = list.map((b, i) => { const c = computeLedgerUpToMonth(b, activeYm); totP += c.principal; totInt += c.monthlyInterest; totCol += c.collectedInMonth; totPen += c.totalPayable; return `<tr><td>${i + 1}</td><td>${escapeHtml(b.name)}</td><td>${escapeHtml(b.mobile || '-')}</td><td>₹${c.principal}</td><td>₹${c.monthlyInterest}</td><td>₹${c.collectedInMonth}</td><td>₹${c.totalPayable}</td><td>${c.status === 'paid' ? 'पूर्ण जमा' : c.status === 'partial' ? 'अर्धवट' : 'बाकी'}</td></tr>`; }).join('');
-  document.getElementById('printArea').innerHTML = `<h2>Hishob — मासिक अहवाल (${activeYm})</h2><p>एकूण मुद्दल: ₹${totP} | अपेक्षित व्याज: ₹${totInt} | जमा: ₹${totCol} | थकबाकी: ₹${totPen}</p><table><thead><tr><th>क्र.</th><th>ग्राहक</th><th>मोबाईल</th><th>मुद्दल</th><th>व्याज</th><th>जमा</th><th>थकबाकी</th><th>स्थिती</th></tr></thead><tbody>${rows}</tbody></table>`;
+  const ownerLine = [state.profile.ownerName, state.profile.mobile].filter(Boolean).join(' • ');
+  document.getElementById('printArea').innerHTML = `<h2>${escapeHtml(getBizBrandName())} — मासिक अहवाल (${activeYm})</h2>${ownerLine ? `<p style="margin-top:-8px;">${escapeHtml(ownerLine)}</p>` : ''}<p>एकूण मुद्दल: ₹${totP} | अपेक्षित व्याज: ₹${totInt} | जमा: ₹${totCol} | थकबाकी: ₹${totPen}</p><table><thead><tr><th>क्र.</th><th>ग्राहक</th><th>मोबाईल</th><th>मुद्दल</th><th>व्याज</th><th>जमा</th><th>थकबाकी</th><th>स्थिती</th></tr></thead><tbody>${rows}</tbody></table>`;
   window.print();
 });
 document.getElementById('exportMonthlyCsvBtn')?.addEventListener('click', () => { const activeYm = document.getElementById('activeYm').value || currentYmDefault(); downloadTextFile(`hishob-monthly-${activeYm}.csv`, buildMonthlyCsvText(activeYm), 'text/csv;charset=utf-8;'); document.getElementById('ioMsg').textContent = `${activeYm} ची CSV डाउनलोड झाली.`; });
@@ -716,7 +818,7 @@ document.getElementById('importCsvBtn')?.addEventListener('click', async () => {
   try {
     const lines = (await file.text()).replace(/^\uFEFF/, '').split(/\r?\n/).map(l => l.trim()).filter(Boolean); let count = 0;
     for (let i = 1; i < lines.length; i++) {
-      const cols = parseCsvLine(lines[i]), name = cols[0], principal = Number(cols[1] || 0), rate = Number(cols[2] || 2), startYm = cols[3] || currentYmDefault();
+      const cols = parseCsvLine(lines[i]), name = cols[0], principal = Number(cols[1] || 0), rate = Number(cols[2] || state.defaultRate || 2), startYm = cols[3] || currentYmDefault();
       if (name && principal > 0) { const auto = detectJobAndGuarantor(name); await db.collection('users').doc(state.user.uid).collection('borrowers').add({ name, principal, originalPrincipal: principal, rate, fixedMonthlyInterest: 0, startYm, mobile: cols[4] || '', guarantor: auto.guarantor, jobType: auto.jobType, companyDept: auto.companyDept, accountStatus: 'active', interestType: 'reducing', isDeleted: false, paidMonths: {}, partialPayments: {}, paymentHistory: [], extraPrincipals: [], principalReductions: [], versionHistory: [], followUps: [], customPastDues: {}, customCashPaid: {}, createdAt: new Date().toISOString() }); count++; }
     }
     await appendAuditLog('CSV_IMPORT', `${count} नोंदी आयात`); msgEl.textContent = `✅ ${count} नोंदी आयात झाल्या.`;
@@ -726,7 +828,7 @@ document.getElementById('gmailReportBtn')?.addEventListener('click', () => {
   const activeYm = document.getElementById('activeYm').value || currentYmDefault(); let totP = 0, totInt = 0, totCol = 0, totPen = 0;
   const rows = state.borrowers.filter(b => !b.isDeleted && b.accountStatus !== 'closed').map((b, i) => { const c = computeLedgerUpToMonth(b, activeYm); totP += c.principal; totInt += c.monthlyInterest; totCol += c.collectedInMonth; totPen += c.totalPayable; return `${i + 1}. ${b.name} | मुद्दल ₹${c.principal} | व्याज ₹${c.monthlyInterest} | बाकी ₹${c.totalPayable}`; });
   const targetEmail = localStorage.getItem('hishob_report_gmail') || (state.user ? state.user.email : '');
-  window.location.href = `mailto:${encodeURIComponent(targetEmail)}?subject=${encodeURIComponent(`Hishob अहवाल (${activeYm})`)}&body=${encodeURIComponent(`मुद्दल: ₹${totP} | व्याज: ₹${totInt} | जमा: ₹${totCol} | बाकी: ₹${totPen}\n\n${rows.join('\n')}`)}`;
+  window.location.href = `mailto:${encodeURIComponent(targetEmail)}?subject=${encodeURIComponent(`${getBizBrandName()} अहवाल (${activeYm})`)}&body=${encodeURIComponent(`मुद्दल: ₹${totP} | व्याज: ₹${totInt} | जमा: ₹${totCol} | बाकी: ₹${totPen}\n\n${rows.join('\n')}`)}`;
 });
 document.getElementById('saveWebhookBtn')?.addEventListener('click', async () => { const url = document.getElementById('webhookUrlInput').value.trim(); state.webhookUrl = url; localStorage.setItem('hishob_webhook_url', url); if (state.user) { try { await db.collection('users').doc(state.user.uid).set({ webhookUrl: url }, { merge: true }); } catch (_) {} } document.getElementById('ioMsg').textContent = 'Webhook सेव्ह.'; });
 document.getElementById('sendWebhookBtn')?.addEventListener('click', async () => { const msgEl = document.getElementById('ioMsg'), url = document.getElementById('webhookUrlInput').value.trim(); if (!url || !checkRateLimit('WEBHOOK')) return; try { const activeYm = document.getElementById('activeYm').value || currentYmDefault(); await fetch(url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ym: activeYm, sentAt: new Date().toISOString(), borrowers: state.borrowers.filter(b => !b.isDeleted).map(b => ({ name: b.name, mobile: b.mobile || '', ...computeLedgerUpToMonth(b, activeYm) })) }) }); await appendAuditLog('WEBHOOK_SENT', `${activeYm} Webhook`); msgEl.textContent = '✅ Webhook पाठवले.'; } catch (err) { msgEl.textContent = `एरर: ${err.message}`; } });
@@ -930,12 +1032,30 @@ function formatDateShort(isoStr) {
   return `${d}/${m}/${y}`;
 }
 
+// Auto-Close ग्राहक कार्ड (Accordion Mode — एका वेळी फक्त १ कार्ड उघडे राहील)
 function toggleBorrowerCardDetails(id) {
-  const el = document.getElementById(`cardDetails_${id}`);
-  const tBtn = document.getElementById(`toggleDetailBtn_${id}`);
-  if (el) {
-    el.classList.toggle('hidden');
-    if (tBtn) tBtn.textContent = el.classList.contains('hidden') ? '▼ तपशील' : '▲ बंद';
+  const targetEl = document.getElementById(`cardDetails_${id}`);
+  const targetBtn = document.getElementById(`toggleDetailBtn_${id}`);
+  if (!targetEl) return;
+
+  const isCurrentlyHidden = targetEl.classList.contains('hidden');
+
+  // आधी उघडलेली सर्व इतर कार्ड्स आपोआप बंद करा
+  document.querySelectorAll('#borrowersList [id^="cardDetails_"]').forEach(el => {
+    if (el.id !== `cardDetails_${id}`) {
+      el.classList.add('hidden');
+      const otherId = el.id.replace('cardDetails_', '');
+      const otherBtn = document.getElementById(`toggleDetailBtn_${otherId}`);
+      if (otherBtn) otherBtn.textContent = '▼ तपशील';
+    }
+  });
+
+  if (isCurrentlyHidden) {
+    targetEl.classList.remove('hidden');
+    if (targetBtn) targetBtn.textContent = '▲ बंद';
+  } else {
+    targetEl.classList.add('hidden');
+    if (targetBtn) targetBtn.textContent = '▼ तपशील';
   }
 }
 
@@ -975,7 +1095,7 @@ function renderBorrowers() {
   document.getElementById('dashExpectedInterest').textContent = fmtAmt(totalExpectedInterest);
   document.getElementById('dashTotalPending').textContent = fmtAmt(totalPending);
 
-  // लाईव्ह मासिक वसुली प्रोग्रेस बार अपडेट (V14.2)
+  // लाईव्ह मासिक वसुली प्रोग्रेस बार अपडेट
   const collPct = totalExpectedInterest > 0 ? Math.min(100, Math.round((totalCollectedMonth / totalExpectedInterest) * 100)) : 0;
   const pctTextEl = document.getElementById('heroCollectionPctText');
   const barFillEl = document.getElementById('heroCollectionBarFill');
@@ -1294,9 +1414,10 @@ document.getElementById('addBorrowerBtn')?.addEventListener('click', async () =>
   const startYm = document.getElementById('bStartYm').value || currentYmDefault(), customDue = Number(document.getElementById('bCustomDue').value || 0);
   if (!name || principal <= 0) { alert('नाव व मुद्दल टाका.'); return; }
   const auto = detectJobAndGuarantor(name);
-  await db.collection('users').doc(state.user.uid).collection('borrowers').add({ name, loanLabel: document.getElementById('bLoanLabel').value.trim(), mobile: document.getElementById('bMobile').value.trim(), principal, originalPrincipal: principal, loanDate: document.getElementById('bLoanDate').value || '', startYm, rate: Number(document.getElementById('bRate').value || 0), fixedMonthlyInterest: Number(document.getElementById('bFixedInterest').value || 0), interestType: document.getElementById('bInterestType').value === 'flat' ? 'flat' : 'reducing', interestDay: Number(document.getElementById('bInterestDay').value || 0), lateFeePerDay: Number(document.getElementById('bLateFee').value || 0), guarantor: document.getElementById('bGuarantor').value.trim() || auto.guarantor, extraGuarantors: document.getElementById('bExtraGuarantors').value.trim(), jobType: document.getElementById('bJobType').value || auto.jobType, companyDept: document.getElementById('bCompanyDept').value.trim() || auto.companyDept, retirementDate: document.getElementById('bRetirementDate').value || '', promiseDate1: document.getElementById('bPromise1').value || '', promiseDate2: document.getElementById('bPromise2').value || '', promiseDate3: document.getElementById('bPromise3').value || '', note: document.getElementById('bNote').value.trim(), accountStatus: 'active', isDeleted: false, paidMonths: {}, partialPayments: {}, paymentHistory: [], extraPrincipals: [], principalReductions: [], versionHistory: [], followUps: [], customPastDues: customDue > 0 ? { [startYm]: customDue } : {}, customCashPaid: {}, createdAt: new Date().toISOString() });
+  await db.collection('users').doc(state.user.uid).collection('borrowers').add({ name, loanLabel: document.getElementById('bLoanLabel').value.trim(), mobile: document.getElementById('bMobile').value.trim(), principal, originalPrincipal: principal, loanDate: document.getElementById('bLoanDate').value || '', startYm, rate: Number(document.getElementById('bRate').value || state.defaultRate || 2), fixedMonthlyInterest: Number(document.getElementById('bFixedInterest').value || 0), interestType: document.getElementById('bInterestType').value === 'flat' ? 'flat' : 'reducing', interestDay: Number(document.getElementById('bInterestDay').value || 0), lateFeePerDay: Number(document.getElementById('bLateFee').value || 0), guarantor: document.getElementById('bGuarantor').value.trim() || auto.guarantor, extraGuarantors: document.getElementById('bExtraGuarantors').value.trim(), jobType: document.getElementById('bJobType').value || auto.jobType, companyDept: document.getElementById('bCompanyDept').value.trim() || auto.companyDept, retirementDate: document.getElementById('bRetirementDate').value || '', promiseDate1: document.getElementById('bPromise1').value || '', promiseDate2: document.getElementById('bPromise2').value || '', promiseDate3: document.getElementById('bPromise3').value || '', note: document.getElementById('bNote').value.trim(), accountStatus: 'active', isDeleted: false, paidMonths: {}, partialPayments: {}, paymentHistory: [], extraPrincipals: [], principalReductions: [], versionHistory: [], followUps: [], customPastDues: customDue > 0 ? { [startYm]: customDue } : {}, customCashPaid: {}, createdAt: new Date().toISOString() });
   await appendAuditLog('BORROWER_ADDED', `${name} (₹${principal})`);
   ['bName', 'bLoanLabel', 'bMobile', 'bPrincipal', 'bLoanDate', 'bFixedInterest', 'bCustomDue', 'bInterestDay', 'bGuarantor', 'bExtraGuarantors', 'bCompanyDept', 'bRetirementDate', 'bPromise1', 'bPromise2', 'bPromise3', 'bNote'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('bRate').value = String(state.defaultRate || 2);
   document.getElementById('bLateFee').value = '0'; document.getElementById('bJobType').value = '';
   document.getElementById('toolSectionModal')?.classList.add('hidden');
 });
@@ -1311,14 +1432,26 @@ document.getElementById('importSheetBtn')?.addEventListener('click', async () =>
   let fetchUrl = raw; const idMatch = raw.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
   if (idMatch) fetchUrl = `https://docs.google.com/spreadsheets/d/${idMatch[1]}/export?format=csv`;
   else if (/^[a-zA-Z0-9-_]{20,}$/.test(raw)) fetchUrl = `https://docs.google.com/spreadsheets/d/${raw}/export?format=csv`;
-  try { const res = await fetch(fetchUrl); if (!res.ok) throw new Error(`HTTP ${res.status}`); const lines = (await res.text()).split(/\r?\n/).map(l => l.trim()).filter(Boolean); let count = 0; for (let i = 1; i < lines.length; i++) { const cols = parseCsvLine(lines[i]), name = cols[0], principal = Number(cols[1] || 0), rate = Number(cols[2] || 2), startYm = cols[3] || currentYmDefault(); if (name && principal > 0) { const auto = detectJobAndGuarantor(name); await db.collection('users').doc(state.user.uid).collection('borrowers').add({ name, principal, originalPrincipal: principal, rate, fixedMonthlyInterest: 0, startYm, accountStatus: 'active', guarantor: auto.guarantor, jobType: auto.jobType, companyDept: auto.companyDept, interestType: 'reducing', isDeleted: false, paidMonths: {}, partialPayments: {}, paymentHistory: [], extraPrincipals: [], principalReductions: [], versionHistory: [], followUps: [], customPastDues: {}, customCashPaid: {}, importedFromSheet: true, createdAt: new Date().toISOString() }); count++; } } msgEl.textContent = `${count} नोंदी आयात.`; } catch (err) { msgEl.textContent = `एरर: ${err.message}`; }
+  try { const res = await fetch(fetchUrl); if (!res.ok) throw new Error(`HTTP ${res.status}`); const lines = (await res.text()).split(/\r?\n/).map(l => l.trim()).filter(Boolean); let count = 0; for (let i = 1; i < lines.length; i++) { const cols = parseCsvLine(lines[i]), name = cols[0], principal = Number(cols[1] || 0), rate = Number(cols[2] || state.defaultRate || 2), startYm = cols[3] || currentYmDefault(); if (name && principal > 0) { const auto = detectJobAndGuarantor(name); await db.collection('users').doc(state.user.uid).collection('borrowers').add({ name, principal, originalPrincipal: principal, rate, fixedMonthlyInterest: 0, startYm, accountStatus: 'active', guarantor: auto.guarantor, jobType: auto.jobType, companyDept: auto.companyDept, interestType: 'reducing', isDeleted: false, paidMonths: {}, partialPayments: {}, paymentHistory: [], extraPrincipals: [], principalReductions: [], versionHistory: [], followUps: [], customPastDues: {}, customCashPaid: {}, importedFromSheet: true, createdAt: new Date().toISOString() }); count++; } } msgEl.textContent = `${count} नोंदी आयात.`; } catch (err) { msgEl.textContent = `एरर: ${err.message}`; }
 });
 document.getElementById('exportEncBtn')?.addEventListener('click', async () => { const msgEl = document.getElementById('ioMsg'), shaBox = document.getElementById('shaDigestBox'); try { const res = await encryptPayload({ exportedAt: new Date().toISOString(), borrowers: state.borrowers }, document.getElementById('backupPasskey').value); downloadTextFile(`hishob-backup-${currentYmDefault()}.enc.json`, res.jsonString, 'application/json'); msgEl.textContent = 'Encrypted बॅकअप तयार.'; shaBox.classList.remove('hidden'); shaBox.innerHTML = `<strong>SHA-256:</strong> <code>${escapeHtml(res.sha256)}</code>`; } catch (err) { msgEl.textContent = `एरर: ${err.message}`; } });
 document.getElementById('importEncBtn')?.addEventListener('click', async () => { const msgEl = document.getElementById('ioMsg'), file = document.getElementById('importEncFile').files && document.getElementById('importEncFile').files[0]; if (!checkRateLimit('ENC_RESTORE')) return; const check = await validateFileUpload(file, 'json'); if (!check.ok) { msgEl.textContent = `❌ ${check.reason}`; return; } try { const list = (await decryptPayload(await file.text(), document.getElementById('backupPasskey').value)).borrowers || []; for (const item of list) { const cleanCopy = { ...item }; delete cleanCopy.id; await db.collection('users').doc(state.user.uid).collection('borrowers').add(cleanCopy); } msgEl.textContent = `✅ ${list.length} नोंदी रिस्टोर.`; } catch (err) { msgEl.textContent = `एरर: ${err.message}`; } });
 
-// Login, Lock & Logout
+// Login, Forgot Password, Lock & Logout
 document.getElementById('emailLoginBtn')?.addEventListener('click', async () => { const msg = document.getElementById('authMsg'); msg.textContent = 'लॉगिन होत आहे...'; try { await auth.signInWithEmailAndPassword(document.getElementById('loginEmail').value.trim(), document.getElementById('loginPassword').value); msg.textContent = ''; } catch (e) { msg.textContent = `एरर: ${e.message}`; } });
 document.getElementById('googleLoginBtn')?.addEventListener('click', async () => { const msg = document.getElementById('authMsg'); msg.textContent = 'Google Login...'; try { await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); msg.textContent = ''; } catch (e) { msg.textContent = `एरर: ${e.message}`; } });
+document.getElementById('forgotPasswordBtn')?.addEventListener('click', async () => {
+  const msg = document.getElementById('authMsg');
+  const email = (document.getElementById('loginEmail')?.value || '').trim();
+  if (!email) { msg.textContent = 'कृपया वरच्या बॉक्समध्ये तुमचा Gmail पत्ता टाका.'; return; }
+  msg.textContent = 'लिंक पाठवत आहे...';
+  try {
+    await auth.sendPasswordResetEmail(email);
+    msg.textContent = `✅ ${email} वर Password Reset लिंक पाठवली आहे! (Inbox / Spam तपासा)`;
+  } catch (e) {
+    msg.textContent = `एरर: ${e.message}`;
+  }
+});
 
 async function performFullLockAndLogout() {
   if (state.autoLockTimer) { clearTimeout(state.autoLockTimer); state.autoLockTimer = null; }
@@ -1326,7 +1459,7 @@ async function performFullLockAndLogout() {
   if (typeof state.unsubscribeAudit === 'function') { state.unsubscribeAudit(); state.unsubscribeAudit = null; }
   state.borrowers = []; state.auditLogs = [];
   try { await auth.signOut(); } catch (_) {}
-  try { localStorage.removeItem('vyaj_v11_audit'); Object.keys(localStorage).forEach(k => { if ((k.startsWith('vyaj_') || k.startsWith('hishob_')) && k !== 'hishob_emergency_vault') localStorage.removeItem(k); }); sessionStorage.clear(); } catch (_) {}
+  try { localStorage.removeItem('vyaj_v11_audit'); Object.keys(localStorage).forEach(k => { if ((k.startsWith('vyaj_') || k.startsWith('hishob_')) && k !== 'hishob_emergency_vault' && k !== 'hishob_biz_profile') localStorage.removeItem(k); }); sessionStorage.clear(); } catch (_) {}
   try { await db.terminate(); await db.clearPersistence(); } catch (_) {}
   window.location.reload();
 }
@@ -1344,7 +1477,15 @@ auth.onAuthStateChanged(async (user) => {
   resetAutoLockTimer();
 
   const userRoot = db.collection('users').doc(user.uid);
-  userRoot.get().then(docSnap => { if (docSnap.exists) { const d = docSnap.data(); if (d.selfWaNumber) { state.selfWaNumber = d.selfWaNumber; document.getElementById('selfWaNumber').value = d.selfWaNumber; } if (d.selfUpiId) { state.selfUpiId = d.selfUpiId; document.getElementById('selfUpiId').value = d.selfUpiId; } if (d.webhookUrl) { state.webhookUrl = d.webhookUrl; document.getElementById('webhookUrlInput').value = d.webhookUrl; } } }).catch(() => {});
+  userRoot.get().then(docSnap => {
+    if (docSnap.exists) {
+      const d = docSnap.data();
+      if (d.selfWaNumber) { state.selfWaNumber = d.selfWaNumber; document.getElementById('selfWaNumber').value = d.selfWaNumber; }
+      if (d.selfUpiId) { state.selfUpiId = d.selfUpiId; document.getElementById('selfUpiId').value = d.selfUpiId; }
+      if (d.webhookUrl) { state.webhookUrl = d.webhookUrl; document.getElementById('webhookUrlInput').value = d.webhookUrl; }
+      if (d.bizProfile) { state.profile = d.bizProfile; localStorage.setItem('hishob_biz_profile', JSON.stringify(d.bizProfile)); applyProfileToUI(); }
+    }
+  }).catch(() => {});
 
   state.unsubscribeBorrowers = userRoot.collection('borrowers').onSnapshot((snap) => { state.borrowers = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderBorrowers(); checkAndRunScheduledBackup(); if (!document.getElementById('passbookModal').classList.contains('hidden')) renderPassbookContent(); }, () => { badge.textContent = 'Sync Error'; });
   state.unsubscribeAudit = userRoot.collection('auditLogs').orderBy('ts', 'desc').limit(50).onSnapshot((snap) => { state.auditLogs = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderAuditLogs(); }, () => { userRoot.collection('auditLogs').limit(50).get().then(snap => { state.auditLogs = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderAuditLogs(); }).catch(() => {}); });
