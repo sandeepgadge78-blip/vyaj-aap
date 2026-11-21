@@ -1,7 +1,7 @@
 // =========================================================================
-// Hishob Premium Fintech Dashboard V3 + Advanced Hamburger Menu (☰)
-// V14.0: Categorized Menu + Direct WA Box + Cloud Sync/Backup UI
-// + Daily Cashbook + Bulk WA Queue + Guarantor Report + Smart Back Nav
+// Hishob Premium Fintech Dashboard V3 + Clean Categorized Menu (☰ & ⋮)
+// V14.1: Clickable Dashboard Drill-Downs (Principal / Interest / Pending)
+// + Unified Mobile Back-Button Controller + Zero Duplicate Menu Items + Call Everywhere
 // =========================================================================
 
 (function () {
@@ -73,9 +73,12 @@
   }
 
   // =========================================================================
-  // स्मार्ट मोबाईल Back-Button कंट्रोलर
+  // संपूर्ण अ‍ॅपसाठी एकच मजबूत मोबाईल Back-Button कंट्रोलर
   // =========================================================================
-  const MODAL_IDS = ['toolSectionModal', 'smartInfoModal', 'pnlModal', 'securityModal', 'versionModal', 'notifModal', 'docsModal', 'editModal', 'passbookModal'];
+  const MODAL_IDS = [
+    'statDrillModal', 'toolSectionModal', 'smartInfoModal', 'pnlModal',
+    'securityModal', 'versionModal', 'notifModal', 'docsModal', 'editModal', 'passbookModal'
+  ];
   let v3TabHistory = [];
   let lastBackPressTime = 0;
 
@@ -86,15 +89,18 @@
   try { history.replaceState({ hishobRoot: true }, ''); history.pushState({ hishobGuard: true }, ''); } catch (_) {}
 
   window.addEventListener('popstate', () => {
+    // १. Three-Dot मेन्यू उघडा असल्यास बंद करा
     const tdMenu = document.getElementById('threeDotDropdown');
     if (tdMenu && !tdMenu.classList.contains('hidden')) {
       tdMenu.classList.add('hidden');
       return;
     }
+    // २. Hamburger मेन्यू उघडा असल्यास बंद करा
     if (isDrawerOpen) {
       setDrawerState(false, true);
       return;
     }
+    // ३. कोणताही Modal उघडा असल्यास बंद करा
     for (const id of MODAL_IDS) {
       const m = document.getElementById(id);
       if (m && !m.classList.contains('hidden')) {
@@ -102,6 +108,7 @@
         return;
       }
     }
+    // ४. V3 फुलस्क्रीन डॅशबोर्ड उघडा असल्यास आधीच्या टॅबवर किंवा Home वर जा
     const v3Ov = document.getElementById('v3Overlay');
     if (v3Ov && !v3Ov.classList.contains('hidden')) {
       if (v3TabHistory.length > 1) {
@@ -114,6 +121,7 @@
       }
       return;
     }
+    // ५. Home स्क्रीनवर Double-Back to Exit
     const now = Date.now();
     if (now - lastBackPressTime < 2000) {
       history.back();
@@ -124,7 +132,7 @@
     }
   });
 
-  // १. Premium CSS (V14.0)
+  // १. Premium CSS (V14.1)
   const styleEl = document.createElement('style');
   styleEl.textContent = `
     .hm-btn {
@@ -171,7 +179,7 @@
       font-size: 0.72rem; font-weight: 800; color: var(--muted); text-transform: uppercase;
       padding: 10px 10px 4px; letter-spacing: 0.4px;
     }
-    .hm-body { flex: 1; overflow-y: auto; padding: 6px 8px; display: flex; flex-direction: column; gap: 2px; }
+    .hm-body { flex: 1; overflow-y: auto; padding: 6px 8px 16px; display: flex; flex-direction: column; gap: 2px; }
     .hm-item {
       display: flex; align-items: center; justify-content: space-between; width: 100%;
       padding: 9px 10px; border-radius: 9px; border: 1px solid transparent;
@@ -181,12 +189,17 @@
     .hm-item-left { display: flex; align-items: center; gap: 9px; }
     .hm-badge { background: var(--danger); color: #fff; font-size: 0.7rem; font-weight: 700; padding: 1px 6px; border-radius: 999px; }
     .hm-div { height: 1px; background: var(--border); margin: 5px 4px; }
-    .hm-foot { padding: 10px; border-top: 1px solid var(--border); display: flex; gap: 6px; }
+
+    /* डॅशबोर्ड ड्रिल-डाऊन यादी कार्ड */
+    .sd-row-card {
+      background: var(--meta-bg); border: 1px solid var(--border); border-radius: 10px;
+      padding: 10px 12px; margin-bottom: 8px;
+    }
+    .sd-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .sd-actions { display: flex; gap: 6px; align-items: center; }
 
     /* Cloud Sync, Backup & Restore रंगीत कार्ड बटणे */
-    .cs-grid-4 {
-      display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 12px 0;
-    }
+    .cs-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 12px 0; }
     @media (max-width: 560px) { .cs-grid-4 { grid-template-columns: repeat(2, 1fr); } }
     .cs-big-btn {
       border: none !important; border-radius: 12px !important; padding: 14px 8px !important;
@@ -207,7 +220,7 @@
     .td-wrap { position: relative; display: inline-block; }
     .td-btn { font-size: 1.15rem; padding: 4px 10px; line-height: 1; }
     .td-menu {
-      position: fixed; right: 14px; top: 64px; min-width: 235px; z-index: 95;
+      position: fixed; right: 14px; top: 64px; min-width: 220px; z-index: 95;
       background: var(--card); border: 1px solid var(--border); border-radius: 12px;
       box-shadow: 0 12px 32px rgba(0,0,0,0.5); padding: 6px; display: flex; flex-direction: column; gap: 4px;
     }
@@ -276,22 +289,10 @@
       background: var(--card); border: 1px solid var(--border); border-radius: 14px;
       padding: 14px; margin-bottom: 14px; box-shadow: 0 4px 14px rgba(0,0,0,0.14);
     }
-    .v3-avatar-strip { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; }
-    .v3-avatar-chip {
-      min-width: 74px; text-align: center; background: var(--card-2); border: 1px solid var(--border);
-      border-radius: 12px; padding: 8px 6px; font-size: 0.74rem; cursor: pointer;
-    }
-    .v3-avatar-circle {
-      width: 34px; height: 34px; border-radius: 50%; margin: 0 auto 4px;
-      background: linear-gradient(135deg, #6366f1, #ec4899); color: #fff;
-      display: flex; align-items: center; justify-content: center; font-weight: 700;
-    }
     .v3-loan-card {
       border: 1px solid var(--border); border-left: 5px solid #6366f1;
       border-radius: 12px; padding: 10px 12px; margin-top: 8px; background: var(--card-2);
     }
-    .v3-loan-card.teal { border-left-color: #14b8a6; }
-    .v3-loan-card.pink { border-left-color: #ec4899; }
     .v3-toast {
       position: fixed; left: 50%; bottom: 76px; transform: translateX(-50%) translateY(20px);
       padding: 10px 16px; border-radius: 999px; font-size: 0.84rem; font-weight: 600;
@@ -314,7 +315,7 @@
     .v3-pay-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .v3-pay-cell { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 7px 9px; }
     .v3-month-pill {
-      display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.75rem; font-weight: 600;
+      display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.74rem; font-weight: 600;
       background: rgba(239, 68, 68, 0.16); border: 1px solid rgba(239, 68, 68, 0.45); color: #fca5a5;
       margin: 2px 4px 2px 0;
     }
@@ -438,6 +439,7 @@
         const row = {
           id: b.id, name: b.name, mobile: b.mobile || '', principal: c.principal,
           monthlyInterest: c.monthlyInterest, paidThisMonth: c.paidThisMonth,
+          remainingThisMonth: c.remainingThisMonth,
           pastDue: c.pastDue, outstanding: c.totalPayable, status: c.status, lateDays: c.lateDays, raw: b
         };
         allActiveRows.push(row);
@@ -467,7 +469,108 @@
     };
   }
 
-  // ३. नवीन विभागवार Three-Line Hamburger Menu (☰) + थेट WhatsApp सेव्ह बॉक्स
+  // =========================================================================
+  // मुख्य डॅशबोर्ड कार्ड्स क्लिक केल्यावर उघडणारी सविस्तर यादी (मुद्दल / व्याज / बाकी)
+  // =========================================================================
+  let currentDrillMode = 'principal';
+
+  function renderStatDrillList(searchQuery = '') {
+    const d = computeV3Data();
+    const listEl = document.getElementById('statDrillList');
+    const sumEl = document.getElementById('statDrillSummary');
+    const titleEl = document.getElementById('statDrillTitle');
+    if (!d || !listEl || !sumEl || !titleEl) return;
+
+    const q = String(searchQuery || '').trim().toLowerCase();
+    const matchQ = (r) => !q || `${r.name || ''} ${r.mobile || ''}`.toLowerCase().includes(q);
+
+    if (currentDrillMode === 'principal') {
+      const rows = d.allActiveRows.filter(matchQ).sort((a, b) => b.principal - a.principal);
+      const total = rows.reduce((s, r) => s + r.principal, 0);
+      titleEl.textContent = `💰 एकूण मुद्दल यादी (${rows.length} खाती)`;
+      sumEl.innerHTML = `एकूण सक्रिय मुद्दल: <span class="ok">${fmt(total)}</span>`;
+      listEl.innerHTML = rows.length ? rows.map((r, i) => {
+        const mob = String(r.mobile || '').replace(/\D/g, '');
+        return `
+          <div class="sd-row-card">
+            <div class="sd-top">
+              <div><strong>${i + 1}. ${esc(r.name)}</strong><div class="muted" style="font-size:0.75rem;">दर: ${Number((r.raw && r.raw.rate) || 0)}% | मासिक व्याज: ${fmt(r.monthlyInterest)}</div></div>
+              <div class="sd-actions">
+                <strong style="font-size:1rem;">${fmt(r.principal)}</strong>
+                ${mob.length >= 10 ? `<button type="button" class="success sm" onclick="window.location.href='tel:${esc(mob)}'">📞 Call</button>` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('') : '<p class="muted" style="text-align:center;">कोणतीही नोंद नाही.</p>';
+
+    } else if (currentDrillMode === 'interest') {
+      const rows = d.allActiveRows.filter(matchQ).sort((a, b) => b.monthlyInterest - a.monthlyInterest);
+      const total = rows.reduce((s, r) => s + r.monthlyInterest, 0);
+      titleEl.textContent = `📈 मासिक व्याज यादी — ${fmtYmMarathi(d.activeYm)}`;
+      sumEl.innerHTML = `एकूण अपेक्षित व्याज: <span style="color:#38bdf8;">${fmt(total)}</span> (${rows.length} खाती)`;
+      listEl.innerHTML = rows.length ? rows.map((r, i) => {
+        const mob = String(r.mobile || '').replace(/\D/g, '');
+        const stBadge = r.status === 'paid'
+          ? '<span class="badge paid">जमा</span>'
+          : r.status === 'partial'
+            ? `<span class="badge partial">अर्धवट (${fmt(r.paidThisMonth)})</span>`
+            : '<span class="badge pending">बाकी</span>';
+        return `
+          <div class="sd-row-card">
+            <div class="sd-top">
+              <div><strong>${i + 1}. ${esc(r.name)}</strong> ${stBadge}<div class="muted" style="font-size:0.75rem;">मुद्दल: ${fmt(r.principal)}</div></div>
+              <div class="sd-actions">
+                <strong style="color:#38bdf8; font-size:1rem;">${fmt(r.monthlyInterest)}</strong>
+                ${mob.length >= 10 ? `<button type="button" class="success sm" onclick="window.location.href='tel:${esc(mob)}'">📞 Call</button>` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('') : '<p class="muted" style="text-align:center;">कोणतीही नोंद नाही.</p>';
+
+    } else if (currentDrillMode === 'pending') {
+      const rows = d.dueCustomers.filter(matchQ);
+      const total = rows.reduce((s, r) => s + r.outstanding, 0);
+      titleEl.textContent = `⏳ बाकी व्याज यादी — ${fmtYmMarathi(d.activeYm)}`;
+      sumEl.innerHTML = `एकूण बाकी व्याज: <span class="err">${fmt(total)}</span> (${rows.length} बाकीदार)`;
+      listEl.innerHTML = rows.length ? rows.map((r, i) => {
+        const mob = String(r.mobile || '').replace(/\D/g, '');
+        const pendMonths = getPendingMonthsList(r.raw || {}, d.activeYm);
+        const targetWa = mob.length === 10 ? `91${mob}` : mob;
+        const waMsg = encodeURIComponent(`नमस्कार *${r.name}*,\nआपली *${fmtYmMarathi(d.activeYm)}* पर्यंतची एकूण व्याज/बाकी रक्कम *₹${r.outstanding}* देय आहे. कृपया लवकर जमा करावी. धन्यवाद!`);
+        return `
+          <div class="sd-row-card">
+            <div class="sd-top">
+              <div><strong>${i + 1}. ${esc(r.name)}</strong><div class="muted" style="font-size:0.75rem;">चालू बाकी: ${fmt(r.remainingThisMonth)} | मागील बाकी: <span class="warn-text">${fmt(r.pastDue)}</span></div></div>
+              <div class="sd-actions">
+                <strong class="err" style="font-size:1rem;">${fmt(r.outstanding)}</strong>
+                ${mob.length >= 10 ? `<button type="button" class="success sm" onclick="window.location.href='tel:${esc(mob)}'">📞 Call</button>` : ''}
+                ${mob.length >= 10 ? `<button type="button" class="primary sm" onclick="window.open('https://wa.me/${esc(targetWa)}?text=${waMsg}','_blank','noopener,noreferrer')">💬 WA</button>` : ''}
+              </div>
+            </div>
+            <div style="margin-top:6px;">
+              <span class="muted" style="font-size:0.74rem;">बाकी महिने (${pendMonths.length}): </span>
+              ${pendMonths.length
+                ? pendMonths.map(pm => `<span class="v3-month-pill ${pm.isPartial ? 'partial' : ''}">${esc(pm.label)}${pm.isPartial ? ` (अर्धवट)` : ''}</span>`).join('')
+                : '<span class="muted" style="font-size:0.74rem;">चालू महिना / मॅन्युअल बाकी</span>'}
+            </div>
+          </div>
+        `;
+      }).join('') : '<p class="ok" style="text-align:center; font-weight:700;">🎉 कोणाचेही व्याज बाकी नाही!</p>';
+    }
+  }
+
+  function openStatDrillModal(mode) {
+    currentDrillMode = mode;
+    const sInp = document.getElementById('statDrillSearch');
+    if (sInp) sInp.value = '';
+    renderStatDrillList('');
+    document.getElementById('statDrillModal')?.classList.remove('hidden');
+    pushNavHistory(`drill:${mode}`);
+  }
+
+  // ३. नवीन स्वच्छ Three-Line Hamburger Menu (☰) — रिपीट न झालेले फक्त मुख्य कामकाज
   let isDrawerOpen = false;
   let touchStartX = 0;
 
@@ -516,9 +619,16 @@
   }
 
   function initHamburgerDrawer() {
-    document.getElementById('closeToolSectionModalBtn')?.addEventListener('click', closeToolSectionModal);
-    document.getElementById('toolSectionModal')?.addEventListener('click', (e) => {
-      if (e.target.id === 'toolSectionModal') closeToolSectionModal();
+    // डॅशबोर्ड कार्ड्स क्लिक इव्हेंट्स
+    document.querySelectorAll('[data-stat-drill]').forEach(tile => {
+      tile.addEventListener('click', () => openStatDrillModal(tile.getAttribute('data-stat-drill')));
+    });
+    document.getElementById('statDrillSearch')?.addEventListener('input', (e) => renderStatDrillList(e.target.value));
+    document.getElementById('statDrillPrintBtn')?.addEventListener('click', () => {
+      const pa = document.getElementById('printArea');
+      if (!pa) return;
+      pa.innerHTML = `<h2>${esc(document.getElementById('statDrillTitle')?.textContent || '')}</h2><p>${document.getElementById('statDrillSummary')?.innerHTML || ''}</p>${document.getElementById('statDrillList')?.innerHTML || ''}`;
+      window.print();
     });
 
     document.getElementById('borrowersList')?.addEventListener('click', (e) => {
@@ -555,7 +665,6 @@
         </div>
       </div>
 
-      <!-- थेट WhatsApp रिमाइंडर नंबर सेव्ह बॉक्स -->
       <div class="hm-wa-bar">
         <label>📲 माझा WhatsApp रिमाइंडर नंबर सेव्ह करा:</label>
         <div class="hm-wa-row">
@@ -594,22 +703,10 @@
         <button class="hm-item" data-hm="tool-recycle"><span class="hm-item-left"><span>🗑️</span><span>Recycle Bin (डिलीट झालेली नावे)</span></span></button>
         <button class="hm-item" data-hm="tool-audit"><span class="hm-item-left"><span>📜</span><span>Audit Log</span></span></button>
         <button class="hm-item" data-hm="tool-rem"><span class="hm-item-left"><span>⚙️</span><span>UPI QR व Notification सेटिंग</span></span></button>
-
-        <div class="hm-div"></div>
-        <div class="hm-sec-lbl">इतर</div>
-        <button class="hm-item" data-hm="hide-amt"><span class="hm-item-left"><span>👁️</span><span>रकमा Hide / Show</span></span></button>
-        <button class="hm-item" data-hm="theme"><span class="hm-item-left"><span>☀️</span><span>Dark / Light Theme</span></span></button>
-        <button class="hm-item" data-hm="reset-pass"><span class="hm-item-left"><span>🔑</span><span>Password Reset Email</span></span></button>
-        <button class="hm-item" data-hm="about"><span class="hm-item-left"><span>ℹ️</span><span>About Hishob App (V14.0)</span></span></button>
-      </div>
-
-      <div class="hm-foot">
-        <button class="danger sm" data-hm="logout" style="width:100%;">🔒 अ‍ॅप लॉक करा (Logout)</button>
       </div>
     `;
     document.body.appendChild(drawer);
 
-    // थेट WhatsApp नंबर सेव्ह
     document.getElementById('hmDirectWaSaveBtn').addEventListener('click', () => {
       const val = document.getElementById('hmDirectWaInput').value.trim();
       const mainInp = document.getElementById('selfWaNumber');
@@ -623,7 +720,7 @@
     drawer.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, { passive: true });
     drawer.addEventListener('touchend', (e) => { if (touchStartX - e.changedTouches[0].clientX > 55) setDrawerState(false); }, { passive: true });
 
-    drawer.addEventListener('click', async (e) => {
+    drawer.addEventListener('click', (e) => {
       const btn = e.target.closest('button[data-hm]');
       if (!btn) return;
       const act = btn.getAttribute('data-hm');
@@ -648,20 +745,10 @@
       else if (act === 'analytics') openV3Dashboard('analytics');
       else if (act === 'pnl') document.getElementById('openPnlBtn')?.click();
       else if (act === 'security') document.getElementById('openSecurityDashBtn')?.click();
-      else if (act === 'hide-amt') document.getElementById('toggleHideAmtBtn')?.click();
-      else if (act === 'theme') document.getElementById('toggleThemeBtn')?.click();
-      else if (act === 'reset-pass') {
-        const u = firebase.auth().currentUser;
-        if (!u || !u.email) { showToast('ईमेल सापडला नाही.', true); return; }
-        try { await firebase.auth().sendPasswordResetEmail(u.email); showToast(`✅ ${u.email} वर Password Reset लिंक पाठवली.`); }
-        catch (err) { showToast(`एरर: ${err.message}`, true); }
-      }
-      else if (act === 'about') showToast('व्याज हिशोब वही V14.0 — Pro Edition');
-      else if (act === 'logout') document.getElementById('lockBtn')?.click();
     });
   }
 
-  // ४. Three-Dot (⋮) Menu + Mobile Bottom Navigation + Floating `+` Button
+  // ४. Three-Dot (⋮) Menu (फक्त सेटिंग्जसाठी — कोणतेही रिपीट नाही) + Bottom Nav + FAB
   function initNavigationChrome() {
     initHamburgerDrawer();
 
@@ -670,17 +757,14 @@
       slot.dataset.ready = '1';
       slot.innerHTML = `
         <div class="td-wrap">
-          <button id="threeDotBtn" class="sm td-btn" title="अधिक पर्याय (Menu)">⋮</button>
+          <button id="threeDotBtn" class="sm td-btn" title="सेटिंग्ज">⋮</button>
           <div id="threeDotDropdown" class="td-menu hidden">
-            <button data-td="add-cust">➕ नवीन ग्राहक जोडा</button>
-            <button data-td="daily-cash">💰 आजची वसुली</button>
-            <button data-td="bulk-wa">📲 Bulk WhatsApp रांग</button>
-            <button data-td="cloud-sync">☁️ Cloud Sync & Backup</button>
-            <button data-td="pnl">💹 Profit & Loss Report</button>
-            <div class="td-divider"></div>
             <button data-td="hide-amt">👁️ रकमा Hide / Show</button>
             <button data-td="theme">☀️ Dark / Light Mode</button>
-            <button data-td="logout" style="color:var(--danger);">🔒 लॉक / लॉगआउट</button>
+            <button data-td="reset-pass">🔑 Password Reset Email</button>
+            <button data-td="about">ℹ️ About Hishob (V14.1)</button>
+            <div class="td-divider"></div>
+            <button data-td="logout" style="color:var(--danger);">🔒 अ‍ॅप लॉक करा (Logout)</button>
           </div>
         </div>
       `;
@@ -693,17 +777,19 @@
         if (willOpen) pushNavHistory('td-menu');
       });
       document.addEventListener('click', () => menu.classList.add('hidden'));
-      menu.addEventListener('click', (e) => {
+      menu.addEventListener('click', async (e) => {
         const item = e.target.closest('button[data-td]'); if (!item) return;
         menu.classList.add('hidden');
         const act = item.getAttribute('data-td');
-        if (act === 'add-cust') openToolSection('addBorrowerSection', '➕ नवीन नाव जोडा');
-        else if (act === 'daily-cash') openV3Dashboard('daily-cash');
-        else if (act === 'bulk-wa') openV3Dashboard('bulk-wa');
-        else if (act === 'cloud-sync') openV3Dashboard('cloud-sync');
-        else if (act === 'pnl') document.getElementById('openPnlBtn')?.click();
-        else if (act === 'hide-amt') document.getElementById('toggleHideAmtBtn')?.click();
+        if (act === 'hide-amt') document.getElementById('toggleHideAmtBtn')?.click();
         else if (act === 'theme') document.getElementById('toggleThemeBtn')?.click();
+        else if (act === 'reset-pass') {
+          const u = firebase.auth().currentUser;
+          if (!u || !u.email) { showToast('ईमेल सापडला नाही.', true); return; }
+          try { await firebase.auth().sendPasswordResetEmail(u.email); showToast(`✅ ${u.email} वर Password Reset लिंक पाठवली.`); }
+          catch (err) { showToast(`एरर: ${err.message}`, true); }
+        }
+        else if (act === 'about') showToast('व्याज हिशोब वही V14.1 — Pro Clean Edition');
         else if (act === 'logout') document.getElementById('lockBtn')?.click();
       });
     }
@@ -737,7 +823,7 @@
     }
   }
 
-  // ५. Premium V3 Fullscreen Dashboard Shell
+  // ५. Premium V3 Fullscreen Dashboard Shell (✕ बंद करा बटण काढले — फोनच्या Back ने बंद होईल)
   let v3Tab = 'overview';
   let v3Gradient = localStorage.getItem('hishob_v3_grad') !== '0';
   let isSavingPay = false;
@@ -770,7 +856,6 @@
         <button class="v3-nav-item" data-v3tab="analytics"><span>📈</span><span class="v3-nav-lbl">Analytics & Charts</span></button>
         <div style="margin-top:auto; padding-top:10px; border-top:1px solid var(--border);">
           <button id="v3GradThemeBtn" class="v3-nav-item"><span>🎨</span><span class="v3-nav-lbl">Gradient Theme</span></button>
-          <button id="v3CloseBtn" class="v3-nav-item" style="color:var(--danger);"><span>⬅️</span><span class="v3-nav-lbl">मुख्य अ‍ॅपवर जा</span></button>
         </div>
       </aside>
       <section class="v3-main">
@@ -784,7 +869,6 @@
             <button id="v3MobArchiveBtn" class="sm warn">📅 Months</button>
             <button id="v3MobPayBtn" class="sm success">⚡ Pay</button>
             <button id="v3TopRefreshBtn" class="sm">🔄</button>
-            <button id="v3TopCloseBtn" class="danger sm">✕ बंद करा</button>
           </div>
         </div>
         <div id="v3Body"></div>
@@ -793,8 +877,6 @@
     document.body.appendChild(ov);
 
     document.getElementById('v3ToggleSideBtn').addEventListener('click', () => document.getElementById('v3Sidebar').classList.toggle('collapsed'));
-    document.getElementById('v3CloseBtn').addEventListener('click', () => { v3TabHistory = []; ov.classList.add('hidden'); });
-    document.getElementById('v3TopCloseBtn').addEventListener('click', () => { v3TabHistory = []; ov.classList.add('hidden'); });
     document.getElementById('v3TopRefreshBtn').addEventListener('click', () => { renderV3Body(); showToast('रिफ्रेश झाले!'); });
     document.getElementById('v3GradThemeBtn').addEventListener('click', () => {
       v3Gradient = !v3Gradient; localStorage.setItem('hishob_v3_grad', v3Gradient ? '1' : '0');
@@ -891,9 +973,6 @@
     const target = Number(localStorage.getItem('hishob_monthly_target') || d.monthlyExpected || 0);
     const pct = target > 0 ? Math.min(100, Math.round((d.monthlyCollected / target) * 100)) : 0;
 
-    // -----------------------------------------------------------------------
-    // नवीन स्क्रीन १: Cloud Sync, Backup & Restore (फोटोप्रमाणे रंगीत कार्ड)
-    // -----------------------------------------------------------------------
     if (v3Tab === 'cloud-sync') {
       const user = (window.firebase && firebase.auth) ? firebase.auth().currentUser : null;
       const savedGmail = localStorage.getItem('hishob_report_gmail') || (user && user.email) || '';
@@ -903,7 +982,6 @@
         <div class="v3-panel" style="max-width:620px; margin:0 auto;">
           <div class="row" style="justify-content:space-between; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border);">
             <h3 style="margin:0; color:#38bdf8;">☁️ Update-Safe Cloud Sync, Backup & Restore</h3>
-            <button type="button" id="csBackBtn" class="sm">← मागे जा</button>
           </div>
 
           <div style="margin-bottom:12px;">
@@ -936,15 +1014,12 @@
             </div>
 
             <button type="button" id="csLocalVaultBtn" class="cs-vault-btn">🛟 लोकल सेफ्टी व्हॉल्टमधून परत आणा</button>
-            <div id="csStatusMsg" class="muted" style="margin-top:8px; text-align:center;"></div>
           </div>
         </div>
       `;
 
-      document.getElementById('csBackBtn').addEventListener('click', () => { v3TabHistory = []; document.getElementById('v3Overlay')?.classList.add('hidden'); });
       document.getElementById('csSaveGmailBtn').addEventListener('click', () => {
-        const g = document.getElementById('csGmailInp').value.trim();
-        localStorage.setItem('hishob_report_gmail', g);
+        localStorage.setItem('hishob_report_gmail', document.getElementById('csGmailInp').value.trim());
         showToast('✅ Gmail खाते सेव्ह झाले!');
       });
       document.getElementById('csSaveHookBtn').addEventListener('click', () => {
@@ -977,9 +1052,7 @@
           fileInp.click();
         }
       });
-      document.getElementById('csGmailRepBtn').addEventListener('click', () => {
-        document.getElementById('gmailReportBtn')?.click();
-      });
+      document.getElementById('csGmailRepBtn').addEventListener('click', () => document.getElementById('gmailReportBtn')?.click());
       document.getElementById('csLocalVaultBtn').addEventListener('click', () => {
         const pk = document.getElementById('csPasskeyInp').value;
         if (!pk || pk.length < 6) { showToast('व्हॉल्ट रिस्टोअरसाठी Passkey टाका.', true); return; }
@@ -989,9 +1062,6 @@
         showToast('🛟 लोकल व्हॉल्टमधून डेटा रिस्टोअर सुरू!');
       });
 
-    // -----------------------------------------------------------------------
-    // नवीन स्क्रीन २: आजची वसुली (Daily Cashbook)
-    // -----------------------------------------------------------------------
     } else if (v3Tab === 'daily-cash') {
       body.innerHTML = `
         <div class="v3-panel">
@@ -1012,13 +1082,11 @@
         </div>
       `;
 
-    // -----------------------------------------------------------------------
-    // नवीन स्क्रीन ३: Bulk WhatsApp रिमाइंडर रांग (Queue)
-    // -----------------------------------------------------------------------
     } else if (v3Tab === 'bulk-wa') {
       const queue = d.dueCustomers.filter(c => String(c.mobile || '').replace(/\D/g, '').length >= 10);
       if (bulkWaIdx >= queue.length) bulkWaIdx = 0;
       const cur = queue[bulkWaIdx];
+      const curMob = cur ? String(cur.mobile || '').replace(/\D/g, '') : '';
 
       body.innerHTML = `
         <div class="v3-panel" style="max-width:560px; margin:0 auto;">
@@ -1032,17 +1100,18 @@
               <div style="font-size:1.15rem; font-weight:800; margin-bottom:6px;">${esc(cur.name)}</div>
               <div style="margin-bottom:10px;">मुद्दल: <strong>${fmt(cur.principal)}</strong> | एकूण बाकी: <strong class="err">${fmt(cur.outstanding)}</strong></div>
               <div class="row">
+                <button type="button" id="bwaCallBtn" class="success sm">📞 Call</button>
                 <button type="button" id="bwaSendBtn" class="success" style="flex:1;">💬 WhatsApp पाठवा</button>
-                <button type="button" id="bwaNextBtn" class="primary">पुढचा ग्राहक →</button>
+                <button type="button" id="bwaNextBtn" class="primary">पुढचा →</button>
               </div>
             </div>
           ` : '<div class="meta-box" style="text-align:center;">मोबाईल नंबर असलेला कोणताही बाकी ग्राहक नाही!</div>'}
         </div>
       `;
 
+      document.getElementById('bwaCallBtn')?.addEventListener('click', () => { if (curMob) window.location.href = `tel:${curMob}`; });
       document.getElementById('bwaSendBtn')?.addEventListener('click', () => {
-        const m = String(cur.mobile || '').replace(/\D/g, '');
-        const target = m.length === 10 ? `91${m}` : m;
+        const target = curMob.length === 10 ? `91${curMob}` : curMob;
         const msg = `नमस्कार *${cur.name}*,\nआपली *${fmtYmMarathi(d.activeYm)}* पर्यंतची एकूण व्याज/बाकी रक्कम *₹${cur.outstanding}* देय आहे. कृपया लवकर जमा करावी. धन्यवाद!`;
         window.open(`https://wa.me/${target}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener,noreferrer');
       });
@@ -1051,9 +1120,6 @@
         renderV3Body();
       });
 
-    // -----------------------------------------------------------------------
-    // नवीन स्क्रीन ४: जमीनदार निहाय कर्ज यादी (Guarantor Report)
-    // -----------------------------------------------------------------------
     } else if (v3Tab === 'guarantor-rep') {
       const gMap = {};
       d.allActiveRows.forEach(r => {
@@ -1071,12 +1137,18 @@
           <h3 style="margin-top:0;">🤝 जमीनदार निहाय कर्ज यादी (${gList.length} जमीनदार)</h3>
           ${gList.map(g => `
             <div class="v3-loan-card">
-              <div class="row" style="justify-content:space-between;">
+              <div class="row" style="justify-content:space-between; margin-bottom:6px;">
                 <strong>🤝 ${esc(g.name)} (${g.count} खाती)</strong>
                 <div>मुद्दल: <strong>${fmt(g.principal)}</strong> | बाकी: <strong class="err">${fmt(g.outstanding)}</strong></div>
               </div>
-              <div class="muted" style="font-size:0.78rem; margin-top:5px;">
-                ${g.customers.map(c => `${esc(c.name)} (${fmt(c.principal)})`).join(' • ')}
+              <div style="display:flex; flex-direction:column; gap:5px;">
+                ${g.customers.map(c => {
+                  const m = String(c.mobile || '').replace(/\D/g, '');
+                  return `<div class="row" style="justify-content:space-between; font-size:0.8rem; border-top:1px dashed var(--border); padding-top:4px;">
+                    <span>• ${esc(c.name)} (मुद्दल: ${fmt(c.principal)} | बाकी: <span class="err">${fmt(c.outstanding)}</span>)</span>
+                    ${m.length >= 10 ? `<button type="button" class="success sm" onclick="window.location.href='tel:${esc(m)}'">📞 Call</button>` : ''}
+                  </div>`;
+                }).join('')}
               </div>
             </div>
           `).join('') || '<p class="muted">कोणतीही सक्रिय खाती नाहीत.</p>'}
@@ -1109,7 +1181,7 @@
       body.innerHTML = `
         <div class="v3-panel">
           <div class="row" style="justify-content:space-between; margin-bottom:10px;">
-            <h3 style="margin:0;">📅 महिना निहाय खरा हिशोब (V14.0)</h3>
+            <h3 style="margin:0;">📅 महिना निहाय खरा हिशोब (V14.1)</h3>
             <button id="v3ApplyMainYmBtn" class="sm">📂 मुख्य स्क्रीनवर सेट करा</button>
           </div>
           <div class="row" style="margin-bottom:12px; align-items:flex-end;">
@@ -1157,11 +1229,12 @@
 
             <div style="overflow-x:auto;">
               <table class="passbook-table">
-                <thead><tr><th>क्र.</th><th>ग्राहक</th><th>मुद्दल</th><th>मासिक व्याज</th><th>जमा</th><th>मागील बाकी</th><th>एकूण बाकी</th></tr></thead>
+                <thead><tr><th>क्र.</th><th>ग्राहक</th><th>मुद्दल</th><th>मासिक व्याज</th><th>जमा</th><th>मागील बाकी</th><th>एकूण बाकी</th><th>Call</th></tr></thead>
                 <tbody>
-                  ${filteredRows.length ? filteredRows.map((r, i) => `
-                    <tr><td>${i + 1}</td><td><strong>${esc(r.name)}</strong></td><td>${fmt(r.principal)}</td><td>${fmt(r.monthlyInterest)}</td><td class="ok">${fmt(r.paidThisMonth)}</td><td class="warn-text">${fmt(r.pastDue)}</td><td class="err"><strong>${fmt(r.outstanding)}</strong></td></tr>
-                  `).join('') : '<tr><td colspan="7" class="muted" style="text-align:center; padding:14px;">नोंद नाही.</td></tr>'}
+                  ${filteredRows.length ? filteredRows.map((r, i) => {
+                    const m = String(r.mobile || '').replace(/\D/g, '');
+                    return `<tr><td>${i + 1}</td><td><strong>${esc(r.name)}</strong></td><td>${fmt(r.principal)}</td><td>${fmt(r.monthlyInterest)}</td><td class="ok">${fmt(r.paidThisMonth)}</td><td class="warn-text">${fmt(r.pastDue)}</td><td class="err"><strong>${fmt(r.outstanding)}</strong></td><td>${m.length >= 10 ? `<button type="button" class="success sm" onclick="window.location.href='tel:${esc(m)}'">📞</button>` : '-'}</td></tr>`;
+                  }).join('') : '<tr><td colspan="8" class="muted" style="text-align:center; padding:14px;">नोंद नाही.</td></tr>'}
                 </tbody>
               </table>
             </div>
