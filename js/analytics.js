@@ -1,11 +1,13 @@
-// व्याज हिशोब वही - व्हिज्युअल Analytics चार्ट + High-Risk यादी + जमा व्याज यादी (js/analytics.js - V14.15)
+// व्याज हिशोब वही - Analytics + % बॅज + चालू/एकूण जमा व्याज + बाकी यादीत कॉल (js/analytics.js - V14.16)
 (function () {
   const MARATHI_SHORT_MONTHS = ["जाने", "फेब्रु", "मार्च", "एप्रि", "मे", "जून", "जुलै", "ऑग", "सप्टें", "ऑक्टो", "नोव्हें", "डिसें"];
   let isChartOpen = false;
   let isRiskOpen = false;
-  let lastInterestContributors = [];
+  let contributorScope = "month"; // "month" किंवा "all"
+  let monthContributors = [];
+  let allTimeContributors = [];
 
-  // CSS स्टाईल्स जोडा (inject lightweight CSS for chart, risk & clean UI polish)
+  // CSS स्टाईल्स जोडा (inject lightweight CSS)
   function injectAnalyticsStyles() {
     if (document.getElementById("vyajAnalyticsCss")) return;
     const st = document.createElement("style");
@@ -44,6 +46,13 @@
         margin-top: 10px; padding: 10px; border-radius: 12px;
         background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.4);
       }
+      .an-tile-pct {
+        font-size: 0.68rem; font-weight: 800; padding: 1px 6px; border-radius: 999px;
+        background: rgba(56, 189, 248, 0.14); color: var(--accent); margin-left: 4px;
+      }
+      .an-tile-pct.pend {
+        background: rgba(244, 63, 94, 0.16); color: #fb7185;
+      }
 
       /* UI व डिझाइन पॉलिश: कार्डवरील आकडे स्पष्ट व वाचायला सोपे */
       #borrowersList .meta-box strong,
@@ -71,7 +80,24 @@
     }[m]));
   }
 
-  // मागील ६ महिन्यांची यादी तयार करा (generate last 6 YYYY-MM keys)
+  // ISO किंवा Timestamp तारखेचे स्वच्छ DD/MM/YYYY स्वरूपात रूपांतर (format clean date)
+  function formatCleanDate(raw) {
+    if (!raw) return "-";
+    const s = String(raw).trim();
+    const mMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (mMatch) {
+      return `${mMatch[3]}/${mMatch[2]}/${mMatch[1]}`;
+    }
+    const d = new Date(s);
+    if (!Number.isNaN(d.getTime())) {
+      const dd = String(d.getDate()).padStart(2, "0");
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const yy = d.getFullYear();
+      return `${dd}/${mm}/${yy}`;
+    }
+    return s;
+  }
+
   function getLast6Months(baseYm) {
     const [yStr, mStr] = (baseYm || "").split("-");
     let y = Number(yStr) || new Date().getFullYear();
@@ -96,6 +122,70 @@
     return String(Math.round(n));
   }
 
+  // मासिक व्याज आणि बाकी व्याज कार्ड्सवर % बॅज अपडेट करा (update % badge on dashboard tiles)
+  function updateDashboardTilePercentages(totalExpected, totalCollected, totalPending) {
+    const intLbl = document.querySelector("#tileInterest .stat-tile-lbl span:first-child");
+    if (intLbl) {
+      const colPct = totalExpected > 0 ? Math.min(100, Math.round((totalCollected / totalExpected) * 100)) : 0;
+      let badge = intLbl.querySelector(".an-tile-pct");
+      if (!badge) {
+        badge = document.createElement("span");
+        badge.className = "an-tile-pct";
+        intLbl.appendChild(badge);
+      }
+      badge.textContent = `${colPct}% जमा`;
+    }
+
+    const pendLbl = document.querySelector("#tilePending .stat-tile-lbl span:first-child");
+    if (pendLbl) {
+      const denom = totalExpected + totalPending;
+      const pendPct = denom > 0 ? Math.min(100, Math.round((totalPending / denom) * 100)) : 0;
+      let pBadge = pendLbl.querySelector(".an-tile-pct");
+      if (!pBadge) {
+        pBadge = document.createElement("span");
+        pBadge.className = "an-tile-pct pend";
+        pendLbl.appendChild(pBadge);
+      }
+      pBadge.textContent = `${pendPct}% बाकी`;
+    }
+  }
+
+  // 'बाकी व्याज' पॉपअप यादीमध्ये प्रत्येक नावासमोर थेट '📞' कॉल बटण जोडा
+  function injectCallButtonsInDrillList() {
+    const drillList = document.getElementById("statDrillList");
+    if (!drillList || !window.HishobBridge) return;
+    const borrowers = window.HishobBridge.getBorrowers() || [];
+    const byName = new Map();
+    borrowers.forEach((b) => {
+      const clean = String(b.mobile || "").replace(/\D/g, "");
+      if (b.name && clean.length >= 10) {
+        byName.set(String(b.name).trim(), clean);
+      }
+    });
+
+    drillList.querySelectorAll(".meta-box, .borrower-item, div").forEach((el) => {
+      if (el.children.length === 0 && el.textContent && el.textContent.trim()) {
+        const txt = el.textContent.trim();
+        for (const [bName, mob] of byName.entries()) {
+          if (txt.includes(bName) && !el.querySelector("[data-drill-call]")) {
+            const callBtn = document.createElement("button");
+            callBtn.type = "button";
+            callBtn.className = "success sm";
+            callBtn.setAttribute("data-drill-call", mob);
+            callBtn.textContent = "📞";
+            callBtn.style.marginLeft = "8px";
+            callBtn.addEventListener("click", (ev) => {
+              ev.stopPropagation();
+              window.location.href = `tel:${mob}`;
+            });
+            el.appendChild(callBtn);
+            break;
+          }
+        }
+      }
+    });
+  }
+
   // जमा व्याज कोणी-कोणी केले याची पॉपअप यादी तयार करा (create Paid Interest Contributors Modal)
   function ensureInterestContributorsModal() {
     let modal = document.getElementById("interestContributorsModal");
@@ -113,9 +203,15 @@
             <button type="button" id="icCloseBtn" class="danger sm">✕ बंद</button>
           </div>
         </div>
+
+        <div class="row" style="margin-bottom:10px; gap:6px;">
+          <button type="button" id="icScopeMonthBtn" class="pill-btn filter-active sm">📅 चालू महिना</button>
+          <button type="button" id="icScopeAllBtn" class="pill-btn sm">📚 आजपर्यंत एकूण</button>
+        </div>
+
         <div id="icSummaryBox" class="meta-box" style="margin-bottom:10px; font-weight:700;"></div>
         <input type="text" id="icSearchInput" class="search-pill-box" placeholder="🔍 जमा केलेल्या ग्राहकाचे नाव शोधा..." style="margin-bottom:10px;" />
-        <div id="icListContainer" style="max-height:56vh; overflow-y:auto;"></div>
+        <div id="icListContainer" style="max-height:54vh; overflow-y:auto;"></div>
       </div>
     `;
     document.body.appendChild(modal);
@@ -128,29 +224,42 @@
       modal.classList.add("hidden");
     });
 
+    document.getElementById("icScopeMonthBtn").addEventListener("click", () => {
+      contributorScope = "month";
+      updateScopeButtons();
+      renderInterestContributorsList();
+    });
+
+    document.getElementById("icScopeAllBtn").addEventListener("click", () => {
+      contributorScope = "all";
+      updateScopeButtons();
+      renderInterestContributorsList();
+    });
+
     document.getElementById("icSearchInput").addEventListener("input", () => {
       renderInterestContributorsList();
     });
 
     document.getElementById("icPrintBtn").addEventListener("click", () => {
+      const list = contributorScope === "month" ? monthContributors : allTimeContributors;
       const printArea = document.getElementById("printArea");
       if (!printArea) return;
-      const rows = lastInterestContributors
+      const rows = list
         .map((x, i) => `
           <tr>
             <td>${i + 1}</td>
             <td>${esc(x.name)}</td>
             <td>₹${Number(x.totalPaid || 0).toLocaleString("en-IN")}</td>
-            <td>${x.count} वेळा</td>
-            <td>${esc(x.lastDate || "-")}</td>
+            <td>${x.count} नोंद</td>
+            <td>${esc(formatCleanDate(x.lastDate))}</td>
           </tr>
         `)
         .join("");
       printArea.innerHTML = `
-        <h2>जमा व्याज भरलेले ग्राहक — व्याज हिशोब वही</h2>
+        <h2>जमा व्याज भरलेले ग्राहक (${contributorScope === "month" ? "चालू महिना" : "आजपर्यंत एकूण"})</h2>
         <table>
           <thead>
-            <tr><th>#</th><th>ग्राहकाचे नाव</th><th>एकूण जमा रक्कम</th><th>नोंदी</th><th>शेवटची तारीख</th></tr>
+            <tr><th>#</th><th>ग्राहकाचे नाव</th><th>जमा रक्कम</th><th>नोंदी</th><th>तारीख</th></tr>
           </thead>
           <tbody>${rows}</tbody>
         </table>
@@ -161,25 +270,38 @@
     return modal;
   }
 
+  function updateScopeButtons() {
+    const mBtn = document.getElementById("icScopeMonthBtn");
+    const aBtn = document.getElementById("icScopeAllBtn");
+    if (mBtn && aBtn) {
+      mBtn.classList.toggle("filter-active", contributorScope === "month");
+      aBtn.classList.toggle("filter-active", contributorScope === "all");
+    }
+  }
+
   // पॉपअपमध्ये जमा व्याज भरलेल्या ग्राहकांची यादी दाखवा
   function renderInterestContributorsList() {
     const container = document.getElementById("icListContainer");
     const summaryBox = document.getElementById("icSummaryBox");
     if (!container) return;
 
+    const activeList = contributorScope === "month" ? monthContributors : allTimeContributors;
     const q = (document.getElementById("icSearchInput")?.value || "").trim().toLowerCase();
-    const filtered = lastInterestContributors.filter((item) => {
+
+    const filtered = activeList.filter((item) => {
       if (!q) return true;
       return String(item.name || "").toLowerCase().includes(q) || String(item.mobile || "").toLowerCase().includes(q);
     });
 
-    const grandTotal = lastInterestContributors.reduce((sum, x) => sum + Number(x.totalPaid || 0), 0);
+    const grandTotal = activeList.reduce((sum, x) => sum + Number(x.totalPaid || 0), 0);
+    const scopeLabel = contributorScope === "month" ? "चालू महिन्याचे जमा व्याज" : "आजपर्यंतचे एकूण जमा व्याज";
+
     if (summaryBox) {
-      summaryBox.innerHTML = `एकूण जमा व्याज: <span style="color:var(--accent-2);">₹${grandTotal.toLocaleString("en-IN")}</span> &nbsp;|&nbsp; ग्राहकांची संख्या: <span style="color:var(--accent);">${lastInterestContributors.length}</span>`;
+      summaryBox.innerHTML = `${scopeLabel}: <span style="color:var(--accent-2);">₹${grandTotal.toLocaleString("en-IN")}</span> &nbsp;|&nbsp; ग्राहक: <span style="color:var(--accent);">${activeList.length}</span>`;
     }
 
     if (!filtered.length) {
-      container.innerHTML = `<div class="muted" style="text-align:center; padding:16px;">कोणतीही जमा व्याज नोंद सापडली नाही.</div>`;
+      container.innerHTML = `<div class="muted" style="text-align:center; padding:16px;">${contributorScope === "month" ? "या महिन्यात अद्याप कोणतीही व्याज जमा नोंद नाही." : "कोणतीही जमा व्याज नोंद सापडली नाही."}</div>`;
       return;
     }
 
@@ -190,11 +312,11 @@
           <div class="meta-box row" style="justify-content:space-between; margin-bottom:8px;">
             <div>
               <strong style="font-size:0.95rem;">${esc(item.name)}</strong>
-              <span class="badge paid" style="margin-left:6px;">${item.count} जमा नोंदी</span>
-              <div style="color:var(--accent-2); font-weight:800; font-size:0.92rem; margin-top:2px;">
-                एकूण जमा: ${window.HishobBridge ? window.HishobBridge.fmtAmt(item.totalPaid) : "₹" + item.totalPaid}
+              <span class="badge paid" style="margin-left:6px;">${item.count} ${item.count === 1 ? "नोंद" : "नोंदी"}</span>
+              <div style="color:var(--accent-2); font-weight:800; font-size:0.94rem; margin-top:2px;">
+                जमा रक्कम: ${window.HishobBridge ? window.HishobBridge.fmtAmt(item.totalPaid) : "₹" + item.totalPaid}
               </div>
-              <div class="muted" style="font-size:0.74rem;">शेवटची तारीख: ${esc(item.lastDate || "-")} (${esc(item.lastMode || "Cash")})</div>
+              <div class="muted" style="font-size:0.75rem;">तारीख: ${esc(formatCleanDate(item.lastDate))} (${esc(item.lastMode || "Cash")})</div>
             </div>
             ${cleanMob.length >= 10 ? `<button type="button" class="success sm" onclick="window.location.href='tel:${esc(cleanMob)}'">📞</button>` : ""}
           </div>
@@ -204,7 +326,9 @@
   }
 
   function openInterestContributorsModal() {
+    contributorScope = "month";
     const modal = ensureInterestContributorsModal();
+    updateScopeButtons();
     const sInput = document.getElementById("icSearchInput");
     if (sInput) sInput.value = "";
     renderInterestContributorsList();
@@ -224,9 +348,13 @@
 
     let totalExpected = 0;
     let totalCollected = 0;
+    let totalPendingSum = 0;
     let lifetimeInterestProfit = 0;
+    let currentMonthInterestSum = 0;
+
     const highRiskList = [];
-    const contributorsMap = new Map();
+    const allMap = new Map();
+    const monthMap = new Map();
 
     const last6 = getLast6Months(activeYm);
     const monthTotals = {};
@@ -235,38 +363,67 @@
     borrowers
       .filter((b) => !b.isDeleted)
       .forEach((b) => {
-        let bPaidSum = 0;
-        let bPaidCount = 0;
-        let bLastDate = "";
-        let bLastMode = "Cash";
+        let bAllSum = 0;
+        let bAllCount = 0;
+        let bAllLastDate = "";
+        let bAllLastMode = "Cash";
+
+        let bCurSum = 0;
+        let bCurCount = 0;
+        let bCurLastDate = "";
+        let bCurLastMode = "Cash";
 
         (b.paymentHistory || []).forEach((p) => {
           const amt = Number(p.amount || 0);
-          if (amt > 0) {
-            lifetimeInterestProfit += amt;
-            bPaidSum += amt;
-            bPaidCount += 1;
-            const pDate = String(p.date || "");
-            if (!bLastDate || pDate >= bLastDate) {
-              bLastDate = pDate;
-              bLastMode = p.mode || "Cash";
+          if (amt <= 0) return;
+
+          const pDate = String(p.date || "");
+          const pYm = (p.ym && /^\d{4}-\d{2}$/.test(p.ym)) ? p.ym : pDate.slice(0, 7);
+
+          lifetimeInterestProfit += amt;
+          bAllSum += amt;
+          bAllCount += 1;
+          if (!bAllLastDate || pDate >= bAllLastDate) {
+            bAllLastDate = pDate;
+            bAllLastMode = p.mode || "Cash";
+          }
+
+          if (pYm === activeYm) {
+            currentMonthInterestSum += amt;
+            bCurSum += amt;
+            bCurCount += 1;
+            if (!bCurLastDate || pDate >= bCurLastDate) {
+              bCurLastDate = pDate;
+              bCurLastMode = p.mode || "Cash";
             }
           }
-          const pYm = (p.ym && /^\d{4}-\d{2}$/.test(p.ym)) ? p.ym : String(p.date || "").slice(0, 7);
+
           if (Object.prototype.hasOwnProperty.call(monthTotals, pYm)) {
             monthTotals[pYm] += amt;
           }
         });
 
-        if (bPaidSum > 0) {
-          contributorsMap.set(b.id, {
+        if (bAllSum > 0) {
+          allMap.set(b.id, {
             id: b.id,
             name: b.name || "ग्राहक",
             mobile: b.mobile || "",
-            totalPaid: bPaidSum,
-            count: bPaidCount,
-            lastDate: bLastDate,
-            lastMode: bLastMode
+            totalPaid: bAllSum,
+            count: bAllCount,
+            lastDate: bAllLastDate,
+            lastMode: bAllLastMode
+          });
+        }
+
+        if (bCurSum > 0) {
+          monthMap.set(b.id, {
+            id: b.id,
+            name: b.name || "ग्राहक",
+            mobile: b.mobile || "",
+            totalPaid: bCurSum,
+            count: bCurCount,
+            lastDate: bCurLastDate,
+            lastMode: bCurLastMode
           });
         }
 
@@ -275,6 +432,7 @@
         const calc = window.HishobBridge.computeLedgerUpToMonth(b, activeYm);
         totalExpected += calc.monthlyInterest;
         totalCollected += calc.collectedInMonth;
+        totalPendingSum += Math.max(0, calc.totalPayable);
 
         if (calc.monthlyInterest > 0 && calc.totalPayable >= calc.monthlyInterest * 2) {
           const approxMonths = Math.floor(calc.totalPayable / calc.monthlyInterest);
@@ -288,8 +446,11 @@
         }
       });
 
-    lastInterestContributors = Array.from(contributorsMap.values()).sort((a, b) => b.totalPaid - a.totalPaid);
+    allTimeContributors = Array.from(allMap.values()).sort((a, b) => b.totalPaid - a.totalPaid);
+    monthContributors = Array.from(monthMap.values()).sort((a, b) => b.totalPaid - a.totalPaid);
     highRiskList.sort((a, b) => b.totalPayable - a.totalPayable);
+
+    updateDashboardTilePercentages(totalExpected, totalCollected, totalPendingSum);
 
     const pct = totalExpected > 0 ? Math.min(100, Math.round((totalCollected / totalExpected) * 100)) : 0;
     const radius = 21;
@@ -351,8 +512,9 @@
             <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:0.74rem; font-weight:800; color:var(--accent-2);">${pct}%</div>
           </div>
           <div id="openPaidInterestListBtn" class="an-profit-trigger" title="कोणी-कोणी व्याज जमा केले ते पाहण्यासाठी क्लिक करा">
-            <div style="font-size:0.74rem; color:var(--muted);">एकूण नफा (जमा व्याज) <span style="color:var(--accent-2);">▸ यादी (${lastInterestContributors.length})</span></div>
-            <div style="font-size:1.12rem; font-weight:900; color:var(--accent-2);">${window.HishobBridge.fmtAmt(lifetimeInterestProfit)}</div>
+            <div style="font-size:0.74rem; color:var(--muted);">या महिन्याचे जमा व्याज <span style="color:var(--accent-2);">▸ यादी (${monthContributors.length})</span></div>
+            <div style="font-size:1.12rem; font-weight:900; color:var(--accent-2);">${window.HishobBridge.fmtAmt(currentMonthInterestSum)}</div>
+            <div class="muted" style="font-size:0.68rem;">एकूण नफा: ${window.HishobBridge.fmtAmt(lifetimeInterestProfit)}</div>
           </div>
         </div>
 
@@ -398,6 +560,8 @@
         window.open(`https://wa.me/${target}?text=${encodeURIComponent(msg)}`, "_blank", "noopener,noreferrer");
       });
     });
+
+    setTimeout(injectCallButtonsInDrillList, 120);
   }
 
   function initAnalytics() {
@@ -406,6 +570,11 @@
     if (listEl) {
       const obs = new MutationObserver(() => renderAnalyticsCard());
       obs.observe(listEl, { childList: true });
+    }
+    const drillListEl = document.getElementById("statDrillList");
+    if (drillListEl) {
+      const dObs = new MutationObserver(() => injectCallButtonsInDrillList());
+      dObs.observe(drillListEl, { childList: true, subtree: true });
     }
     setTimeout(renderAnalyticsCard, 1600);
   }
