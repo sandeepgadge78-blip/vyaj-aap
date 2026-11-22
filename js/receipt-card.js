@@ -1,18 +1,24 @@
-// व्याज हिशोब वही - ब्रँडेड WhatsApp पावती कार्ड (Image Receipt) मॉड्यूल (js/receipt-card.js - V14.13)
+// व्याज हिशोब वही - ब्रँडेड WhatsApp पावती कार्ड + मागील बाकी महिन्यांची नावे (js/receipt-card.js - V14.13)
 (function () {
   const MARATHI_MONTHS = [
     "जानेवारी", "फेब्रुवारी", "मार्च", "एप्रिल", "मे", "जून",
     "जुलै", "ऑगस्ट", "सप्टेंबर", "ऑक्टोबर", "नोव्हेंबर", "डिसेंबर"
   ];
 
+  const MARATHI_SHORT_MONTHS = [
+    "जाने", "फेब्रु", "मार्च", "एप्रि", "मे", "जून",
+    "जुलै", "ऑग", "सप्टें", "ऑक्टो", "नोव्हें", "डिसें"
+  ];
+
   let lastGeneratedBlob = null;
   let lastGeneratedFileName = "vyaj-pavati.png";
 
-  function formatMonthMr(ym) {
-    if (!ym || !ym.includes("-")) return ym || "";
-    const [y, m] = ym.split("-");
+  function formatMonthMr(ym, short = false) {
+    if (!ym || !String(ym).includes("-")) return String(ym || "");
+    const [y, m] = String(ym).split("-");
     const idx = parseInt(m, 10) - 1;
-    return `${MARATHI_MONTHS[idx] || m} ${y}`;
+    const arr = short ? MARATHI_SHORT_MONTHS : MARATHI_MONTHS;
+    return `${arr[idx] || m} ${y}`;
   }
 
   function formatRs(val) {
@@ -40,6 +46,52 @@
     }
   }
 
+  // मागील बाकी महिन्यांची यादी काढा (extract pending past month names before activeYm)
+  function getPastPendingMonthNames(borrower, calc, activeYm) {
+    if (!calc || Number(calc.pastDue || 0) <= 0) return [];
+
+    // १. जर calc ऑब्जेक्टमध्ये आधीच बाकी महिन्यांची यादी असेल तर ती वापरा
+    const rawList =
+      calc.pastPendingMonths ||
+      calc.pendingPastMonths ||
+      calc.unpaidMonths ||
+      calc.pendingMonths ||
+      null;
+
+    if (Array.isArray(rawList) && rawList.length > 0) {
+      const names = rawList
+        .map((item) => {
+          if (typeof item === "string") return item < activeYm ? formatMonthMr(item, true) : null;
+          if (item && item.ym && item.ym < activeYm) return formatMonthMr(item.ym, true);
+          return null;
+        })
+        .filter(Boolean);
+      if (names.length > 0) return names;
+    }
+
+    // २. नसेल तर activeYm च्या आधीच्या महिन्यांचा अंदाज काढा (fallback calculation)
+    const monthlyInt = Number(calc.monthlyInterest || 0);
+    const pastDue = Number(calc.pastDue || 0);
+    if (monthlyInt <= 0 || !activeYm || !activeYm.includes("-")) return [];
+
+    const approxCount = Math.min(12, Math.max(1, Math.ceil(pastDue / monthlyInt)));
+    let [y, m] = activeYm.split("-").map(Number);
+    const startYm = borrower && borrower.startYm ? String(borrower.startYm) : "";
+    const result = [];
+
+    for (let i = 0; i < approxCount; i++) {
+      m -= 1;
+      if (m <= 0) {
+        m = 12;
+        y -= 1;
+      }
+      const ymStr = `${y}-${String(m).padStart(2, "0")}`;
+      if (startYm && ymStr < startYm) break;
+      result.unshift(formatMonthMr(ymStr, true));
+    }
+    return result;
+  }
+
   // गोल कोपऱ्याचा चौकोन काढण्यासाठी मदत (helper to draw rounded rect on canvas)
   function drawRoundRect(ctx, x, y, w, h, r) {
     ctx.beginPath();
@@ -57,9 +109,12 @@
 
   // Canvas वर प्रोफेशनल ब्रँडेड पावती तयार करा (generate HD branded receipt PNG)
   function generateReceiptCanvas(borrower, calc, activeYm) {
+    const pastMonthNames = getPastPendingMonthNames(borrower, calc, activeYm);
+    const hasPastNames = pastMonthNames.length > 0;
+
     const canvas = document.createElement("canvas");
     const W = 800;
-    const H = 980;
+    const H = hasPastNames ? 1040 : 980;
     canvas.width = W;
     canvas.height = H;
     const ctx = canvas.getContext("2d");
@@ -89,7 +144,6 @@
     ctx.fillStyle = grad;
     drawRoundRect(ctx, 28, 28, W - 56, 195, 24);
     ctx.fill();
-    // हेडरच्या खालचे कोपरे सरळ करा
     ctx.fillRect(28, 195, W - 56, 28);
 
     // व्यवसायाचे नाव (Auto-Branding)
@@ -159,16 +213,18 @@
       { label: "एकूण मुद्दल (Principal)", val: formatRs(calc.principal), color: "#0f172a" },
       { label: `मासिक व्याज (${Number(borrower.rate || 0)}% दराने)`, val: formatRs(calc.monthlyInterest), color: "#0369a1" },
       { label: `${monthLabel} — जमा रक्कम`, val: formatRs(calc.paidThisMonth), color: "#059669", bold: true },
-      { label: "मागील बाकी व्याज", val: formatRs(calc.pastDue), color: calc.pastDue > 0 ? "#dc2626" : "#475569" }
+      { label: "मागील बाकी व्याज", val: formatRs(calc.pastDue), color: calc.pastDue > 0 ? "#dc2626" : "#475569", isPastRow: true }
     ];
 
     let yPos = 476;
     rows.forEach((row) => {
-      ctx.fillStyle = "#ffffff";
-      drawRoundRect(ctx, 60, yPos, W - 120, 62, 12);
+      const boxH = row.isPastRow && hasPastNames ? 96 : 62;
+
+      ctx.fillStyle = row.isPastRow && hasPastNames ? "#fff1f2" : "#ffffff";
+      drawRoundRect(ctx, 60, yPos, W - 120, boxH, 12);
       ctx.fill();
       ctx.lineWidth = 1.5;
-      ctx.strokeStyle = "#e2e8f0";
+      ctx.strokeStyle = row.isPastRow && hasPastNames ? "#fecdd3" : "#e2e8f0";
       ctx.stroke();
 
       ctx.textAlign = "left";
@@ -181,7 +237,17 @@
       ctx.font = `${row.bold ? "900" : "bold"} 26px system-ui, -apple-system, sans-serif`;
       ctx.fillText(row.val, W - 84, yPos + 40);
 
-      yPos += 74;
+      // मागील बाकी महिन्यांची नावे दाखवा (show pending past month names)
+      if (row.isPastRow && hasPastNames) {
+        const monthsText = `बाकी महिने: ${pastMonthNames.join(", ")}`;
+        const trimmed = monthsText.length > 58 ? monthsText.slice(0, 55) + "..." : monthsText;
+        ctx.textAlign = "left";
+        ctx.fillStyle = "#be123c";
+        ctx.font = "600 19px system-ui, -apple-system, sans-serif";
+        ctx.fillText(trimmed, 84, yPos + 74);
+      }
+
+      yPos += boxH + 12;
     });
 
     // ६. एकूण बाकी / स्थिती हायलाईट बॉक्स (Total Pending & Status Box)
@@ -280,7 +346,6 @@
       } catch (err) {
         if (err && err.name === "AbortError") return;
       }
-      // जर ब्राउझरमध्ये थेट File Share नसेल तर डाउनलोड करा
       document.getElementById("downloadBrandedReceiptBtn").click();
       if (st) st.textContent = "फोटो सेव्ह झाला आहे — आता तो WhatsApp वर पाठवा.";
     });
