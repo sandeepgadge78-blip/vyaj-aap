@@ -1,4 +1,4 @@
-// व्याज हिशोब वही - Analytics + SVG Ring % + 100% Synced चालू महिना/ग्राहकनिहाय इतिहास + Delete + कॉल (js/analytics.js - V14.18)
+// व्याज हिशोब वही - Glowing SVG Line Chart + SVG Ring % + 100% Synced चालू महिना/ग्राहकनिहाय इतिहास + Reports Hub (js/analytics.js - V14.21)
 (function () {
   const MARATHI_SHORT_MONTHS = ["जाने", "फेब्रु", "मार्च", "एप्रि", "मे", "जून", "जुलै", "ऑग", "सप्टें", "ऑक्टो", "नोव्हें", "डिसें"];
   const MARATHI_FULL_MONTHS = ["जानेवारी", "फेब्रुवारी", "मार्च", "एप्रिल", "मे", "जून", "जुलै", "ऑगस्ट", "सप्टेंबर", "ऑक्टोबर", "नोव्हेंबर", "डिसेंबर"];
@@ -8,6 +8,16 @@
   let activeModalTab = "month";
   let selectedHistoryBorrowerId = null;
   let currentMonthEntries = [];
+  let latestSummaryStats = {
+    activeCount: 0,
+    totalPrincipal: 0,
+    totalExpected: 0,
+    totalCollected: 0,
+    totalPending: 0,
+    lifetimeProfit: 0,
+    highRiskCount: 0,
+    recoveryPct: 0
+  };
 
   function injectAnalyticsStyles() {
     if (document.getElementById("vyajAnalyticsCss")) return;
@@ -25,11 +35,11 @@
         cursor: pointer; padding: 4px 8px; border-radius: 10px;
         transition: background 0.18s ease, transform 0.14s ease;
       }
-      .an-profit-trigger:hover { background: rgba(16, 185, 129, 0.12); }
+      .an-profit-trigger:hover { background: rgba(74, 222, 128, 0.12); }
       .an-profit-trigger:active { transform: scale(0.97); }
       .an-ring-svg { width: 52px; height: 52px; transform: rotate(-90deg); }
       .an-ring-bg { fill: none; stroke: rgba(148,163,184,0.22); stroke-width: 6; }
-      .an-ring-fg { fill: none; stroke: #10b981; stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 0.5s ease; }
+      .an-ring-fg { fill: none; stroke: #4ade80; stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 0.5s ease; }
 
       .an-mini-ring-box {
         position: relative; width: 40px; height: 40px; flex-shrink: 0;
@@ -45,27 +55,14 @@
       .an-tile-val-row {
         display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 6px;
       }
-      .an-bars {
-        display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px;
-        align-items: end; height: 110px; margin-top: 12px; padding: 10px 8px 4px;
-        background: var(--meta-bg); border: 1px solid var(--border); border-radius: 12px;
-      }
-      .an-bar-col { display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
-      .an-bar-val { font-size: 0.66rem; color: var(--accent); font-weight: 700; white-space: nowrap; }
-      .an-bar-fill {
-        width: 100%; max-width: 28px; border-radius: 6px 6px 2px 2px;
-        background: linear-gradient(180deg, #38bdf8, #6366f1);
-        min-height: 4px; transition: height 0.4s ease;
-      }
-      .an-bar-lbl { font-size: 0.7rem; color: var(--muted); font-weight: 600; }
       .an-risk-box {
         margin-top: 10px; padding: 10px; border-radius: 12px;
-        background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.4);
+        background: rgba(240, 113, 120, 0.1); border: 1px solid rgba(240, 113, 120, 0.35);
       }
       .an-year-head {
         font-size: 0.86rem; font-weight: 800; color: var(--accent);
         padding: 6px 10px; margin-top: 10px; border-radius: 8px;
-        background: rgba(56, 189, 248, 0.12); border-left: 3px solid var(--accent);
+        background: rgba(125, 211, 252, 0.12); border-left: 3px solid var(--accent);
       }
       .an-cust-row { cursor: pointer; transition: border-color 0.18s ease; }
       .an-cust-row:hover { border-color: var(--accent); }
@@ -120,6 +117,74 @@
     return String(Math.round(n));
   }
 
+  // ग्लोइंग SVG लाईन व एरिया चार्ट तयार करा (Smooth Bezier Curve Line Chart)
+  function buildGlowingLineChartSvg(last6, monthTotals) {
+    const maxVal = Math.max(1, ...last6.map((m) => Number(monthTotals[m.ym] || 0)));
+    const baseY = 102;
+    const topPad = 28;
+    const usableH = baseY - topPad;
+
+    const pts = last6.map((m, idx) => {
+      const val = Number(monthTotals[m.ym] || 0);
+      const x = Math.round(28 + idx * 52.8);
+      const y = Math.round(baseY - (val / maxVal) * usableH);
+      return { x, y, val, label: m.label };
+    });
+
+    // वळणदार (Smooth Cubic Bezier) पाथ तयार करा
+    let lineD = `M ${pts[0].x},${pts[0].y}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      const midX = Math.round((p1.x + p2.x) / 2);
+      lineD += ` C ${midX},${p1.y} ${midX},${p2.y} ${p2.x},${p2.y}`;
+    }
+    const areaD = `${lineD} L ${pts[pts.length - 1].x},${baseY} L ${pts[0].x},${baseY} Z`;
+
+    const dotsHtml = pts
+      .map((p) => `
+        <circle cx="${p.x}" cy="${p.y}" r="4.2" fill="#4ade80" stroke="#090a0d" stroke-width="1.8"></circle>
+        <text x="${p.x}" y="${Math.max(12, p.y - 9)}" class="an-chart-val">${p.val > 0 ? shortAmt(p.val) : "0"}</text>
+        <text x="${p.x}" y="122" class="an-chart-lbl">${esc(p.label)}</text>
+      `)
+      .join("");
+
+    return `
+      <div class="an-line-wrap">
+        <svg class="an-line-svg" viewBox="0 0 320 132" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <linearGradient id="vyajLineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#2dd4bf" />
+              <stop offset="100%" stop-color="#4ade80" />
+            </linearGradient>
+            <linearGradient id="vyajAreaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#4ade80" stop-opacity="0.32" />
+              <stop offset="100%" stop-color="#2dd4bf" stop-opacity="0.01" />
+            </linearGradient>
+            <filter id="vyajGlow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="2.2" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          <!-- पार्श्वभूमी ग्रीड रेषा -->
+          <line x1="16" y1="30" x2="304" y2="30" class="an-chart-grid"></line>
+          <line x1="16" y1="66" x2="304" y2="66" class="an-chart-grid"></line>
+          <line x1="16" y1="${baseY}" x2="304" y2="${baseY}" class="an-chart-grid"></line>
+
+          <!-- एरिया ग्रेडियंट व ग्लोइंग लाईन -->
+          <path d="${areaD}" fill="url(#vyajAreaGrad)"></path>
+          <path d="${lineD}" fill="none" stroke="url(#vyajLineGrad)" stroke-width="2.8" stroke-linecap="round" filter="url(#vyajGlow)"></path>
+
+          ${dotsHtml}
+        </svg>
+      </div>
+    `;
+  }
+
   function buildMiniRingHtml(pct, colorHex) {
     const safePct = Math.max(0, Math.min(100, Math.round(pct || 0)));
     const r = 16;
@@ -157,7 +222,7 @@
         ringHost.setAttribute("data-tile-ring", "interest");
         wrap.appendChild(ringHost);
       }
-      ringHost.innerHTML = buildMiniRingHtml(colPct, "#10b981");
+      ringHost.innerHTML = buildMiniRingHtml(colPct, "#4ade80");
     }
 
     const pendTile = document.getElementById("tilePending");
@@ -177,7 +242,7 @@
         ringHost.setAttribute("data-tile-ring", "pending");
         wrap.appendChild(ringHost);
       }
-      ringHost.innerHTML = buildMiniRingHtml(pendPct, "#f43f5e");
+      ringHost.innerHTML = buildMiniRingHtml(pendPct, "#f07178");
     }
   }
 
@@ -330,7 +395,6 @@
     const activeYm = (document.getElementById("activeYm") && document.getElementById("activeYm").value) || new Date().toISOString().slice(0, 7);
     const q = (searchInput?.value || "").trim().toLowerCase();
 
-    // टॅब १: चालू महिना (१००% सिंक केलेली यादी)
     if (activeModalTab === "month") {
       if (searchInput) searchInput.classList.remove("hidden");
 
@@ -383,7 +447,6 @@
       return;
     }
 
-    // टॅब २ (भाग अ): निवडलेल्या ग्राहकाचा संपूर्ण वर्ष-महिना इतिहास
     if (selectedHistoryBorrowerId) {
       const b = borrowers.find((x) => x.id === selectedHistoryBorrowerId);
       if (!b) {
@@ -397,7 +460,6 @@
       const hist = Array.isArray(b.paymentHistory) ? b.paymentHistory : [];
       const calcCur = window.HishobBridge.computeLedgerUpToMonth(b, activeYm);
 
-      // जर चालू महिन्यात खातेवहीतून जादा रक्कम जमा असेल तर तीही इतिहासात दाखवा
       const combinedHist = hist.map((p, idx) => ({ ...p, historyIndex: idx, isLedgerSync: false }));
       const curHistSum = hist
         .filter((p) => {
@@ -426,11 +488,11 @@
             <strong style="color:var(--accent); font-size:0.98rem;">${esc(b.name)}</strong>
           </div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:6px; font-size:0.82rem;">
-            <div style="background:rgba(251,191,36,0.12); padding:6px 8px; border-radius:8px; border:1px solid rgba(251,191,36,0.35);">
+            <div style="background:rgba(234,182,118,0.12); padding:6px 8px; border-radius:8px; border:1px solid rgba(234,182,118,0.35);">
               <span class="muted">एकूण मुद्दल:</span><br/>
               <strong style="color:var(--gold); font-size:0.96rem;">₹${Number(b.principal || b.originalPrincipal || 0).toLocaleString("en-IN")}</strong>
             </div>
-            <div style="background:rgba(56,189,248,0.12); padding:6px 8px; border-radius:8px; border:1px solid rgba(56,189,248,0.35);">
+            <div style="background:rgba(125,211,252,0.12); padding:6px 8px; border-radius:8px; border:1px solid rgba(125,211,252,0.35);">
               <span class="muted">कर्ज घेतलेला महिना/तारीख:</span><br/>
               <strong style="color:var(--accent); font-size:0.9rem;">${esc(loanStartInfo)}</strong>
             </div>
@@ -494,7 +556,6 @@
       return;
     }
 
-    // टॅब २ (भाग ब): सर्व खातेदारांची यादी
     if (searchInput) searchInput.classList.remove("hidden");
 
     const filteredCust = borrowers.filter((b) => {
@@ -559,6 +620,8 @@
     const borrowers = window.HishobBridge.getBorrowers() || [];
     const activeYm = (document.getElementById("activeYm") && document.getElementById("activeYm").value) || new Date().toISOString().slice(0, 7);
 
+    let activeCount = 0;
+    let totalPrincipal = 0;
     let totalExpected = 0;
     let totalCollected = 0;
     let totalPendingSum = 0;
@@ -608,12 +671,14 @@
 
         if (b.accountStatus === "closed") return;
 
+        activeCount += 1;
+        totalPrincipal += Number(b.principal || 0);
+
         const calc = window.HishobBridge.computeLedgerUpToMonth(b, activeYm);
         totalExpected += calc.monthlyInterest;
         totalCollected += calc.collectedInMonth;
         totalPendingSum += Math.max(0, calc.totalPayable);
 
-        // मुख्य खातेवहीतील (computeLedgerUpToMonth) जमा रक्कम आणि paymentHistory मधील फरक सिंक करा
         if (calc.collectedInMonth > bHistMonthSum) {
           const extraAmt = calc.collectedInMonth - bHistMonthSum;
           currentMonthInterestSum += extraAmt;
@@ -652,6 +717,21 @@
     updateDashboardTileRings(totalExpected, totalCollected, totalPendingSum);
 
     const pct = totalExpected > 0 ? Math.min(100, Math.round((totalCollected / totalExpected) * 100)) : 0;
+
+    // Reports Hub साठी ताजी आकडेवारी शेअर करा
+    latestSummaryStats = {
+      activeCount,
+      totalPrincipal,
+      totalExpected,
+      totalCollected,
+      totalPending: totalPendingSum,
+      lifetimeProfit: lifetimeInterestProfit,
+      highRiskCount: highRiskList.length,
+      recoveryPct: pct
+    };
+    window.VyajAnalyticsStats = latestSummaryStats;
+    window.openVyajInterestList = openInterestContributorsModal;
+
     const radius = 21;
     const circumference = 2 * Math.PI * radius;
     const offset = circumference - (pct / 100) * circumference;
@@ -664,20 +744,7 @@
       appScreen.insertBefore(card, searchBox);
     }
 
-    const maxVal = Math.max(1, ...Object.values(monthTotals));
-    const barsHtml = last6
-      .map((m) => {
-        const val = monthTotals[m.ym] || 0;
-        const hPct = Math.max(6, Math.round((val / maxVal) * 70));
-        return `
-          <div class="an-bar-col">
-            <div class="an-bar-val">${val > 0 ? shortAmt(val) : "0"}</div>
-            <div class="an-bar-fill" style="height:${hPct}px;"></div>
-            <div class="an-bar-lbl">${m.label}</div>
-          </div>
-        `;
-      })
-      .join("");
+    const lineChartHtml = buildGlowingLineChartSvg(last6, monthTotals);
 
     const riskRowsHtml = highRiskList.length
       ? highRiskList
@@ -720,25 +787,32 @@
         </div>
 
         <div class="row" style="gap:6px;">
-          <button type="button" id="toggleAnChartBtn" class="primary sm">📊 ६-महिने चार्ट ${isChartOpen ? "▲" : "▼"}</button>
+          <button type="button" id="toggleAnChartBtn" class="primary sm">📈 लाईन चार्ट ${isChartOpen ? "▲" : "▼"}</button>
+          <button type="button" id="openProReportsHubBtn" class="primary sm">📊 रिपोर्ट्स हब</button>
           <button type="button" id="toggleAnRiskBtn" class="${highRiskList.length ? "danger" : "success"} sm">
-            🔴 High-Risk (${highRiskList.length})
+            🔴 Risk (${highRiskList.length})
           </button>
         </div>
       </div>
 
       <div id="anChartBox" class="${isChartOpen ? "" : "hidden"}">
-        <div class="muted" style="font-size:0.76rem; margin-top:8px;">📈 मागील ६ महिन्यांची व्याज वसुली:</div>
-        <div class="an-bars">${barsHtml}</div>
+        <div class="muted" style="font-size:0.76rem; margin-top:8px;">📈 मागील ६ महिन्यांची व्याज वसुली (ग्लोइंग ग्राफ):</div>
+        ${lineChartHtml}
       </div>
 
       <div id="anRiskBox" class="an-risk-box ${isRiskOpen ? "" : "hidden"}">
-        <div style="font-weight:700; color:#fb7185; font-size:0.84rem; margin-bottom:4px;">🚨 High-Risk थकबाकीदार (२+ महिने व्याज बाकी):</div>
+        <div style="font-weight:700; color:#f07178; font-size:0.84rem; margin-bottom:4px;">🚨 High-Risk थकबाकीदार (२+ महिने व्याज बाकी):</div>
         ${riskRowsHtml}
       </div>
     `;
 
     document.getElementById("openPaidInterestListBtn")?.addEventListener("click", openInterestContributorsModal);
+
+    document.getElementById("openProReportsHubBtn")?.addEventListener("click", () => {
+      if (typeof window.openProReportsHub === "function") {
+        window.openProReportsHub();
+      }
+    });
 
     document.getElementById("toggleAnChartBtn")?.addEventListener("click", () => {
       isChartOpen = !isChartOpen;
