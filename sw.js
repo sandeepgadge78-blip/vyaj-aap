@@ -5,6 +5,7 @@ const CORE_ASSETS = [
   "./index.html",
   "./app.js",
   "./dashboard.js",
+  "./backup-safety.js",
   "./manifest.json",
   "./icon.png"
 ];
