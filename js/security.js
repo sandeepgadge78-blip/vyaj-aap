@@ -1,8 +1,13 @@
-// व्याज हिशोब वही - ४-अंकी अ‍ॅप PIN लॉक मॉड्यूल (js/security.js - V14.6)
+// व्याज हिशोब वही - ३ तासांचे Gmail सेशन + ४-अंकी PIN लॉक + Refresh सुरक्षितता (js/security.js - V14.10)
 (function () {
   const PIN_HASH_KEY = "vyaj_aap_pin_hash_v1";
   const PIN_ENABLED_KEY = "vyaj_aap_pin_enabled_v1";
+  const AUTH_TS_KEY = "vyaj_aap_last_auth_ts_v1";
+  const SESSION_UNLOCKED_KEY = "vyaj_aap_pin_unlocked_session";
+  const THREE_HOURS_MS = 3 * 60 * 60 * 1000; // ३ तास (3 Hours)
+
   let enteredPin = "";
+  let wasLoggedOut = false;
 
   // PIN सुरक्षित ठेवण्यासाठी SHA-256 हॅश तयार करा (create SHA-256 hash of PIN)
   async function hashPin(pin) {
@@ -13,7 +18,6 @@
       const hashArray = Array.from(new Uint8Array(hashBuffer));
       return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
     }
-    // बॅकअप पद्धत (fallback if crypto.subtle unavailable)
     return btoa("vyaj_salt_v14_" + pin);
   }
 
@@ -25,11 +29,17 @@
     );
   }
 
+  // या सेशनमध्ये अ‍ॅप आधीच अनलॉक आहे का तपासा (check if unlocked in current session - prevents lock on refresh)
+  function isUnlockedInSession() {
+    return sessionStorage.getItem(SESSION_UNLOCKED_KEY) === "true";
+  }
+
   // लॉक स्क्रीन तयार करा आणि दाखवा (create and show 4-digit PIN lock overlay)
   function showLockScreen() {
     if (!isPinEnabled()) return;
     if (document.getElementById("vyajPinLockOverlay")) return;
 
+    sessionStorage.removeItem(SESSION_UNLOCKED_KEY);
     enteredPin = "";
 
     const overlay = document.createElement("div");
@@ -108,6 +118,8 @@
           const inputHash = await hashPin(enteredPin);
 
           if (inputHash === savedHash) {
+            // या सेशनसाठी अनलॉक सेव्ह करा म्हणजे Refresh वर पुन्हा PIN मागणार नाही
+            sessionStorage.setItem(SESSION_UNLOCKED_KEY, "true");
             overlay.remove();
           } else {
             msgEl.textContent = "❌ चुकीचा PIN! कृपया पुन्हा प्रयत्न करा.";
@@ -132,6 +144,25 @@
     });
   }
 
+  // ३ तास पूर्ण झाल्यावर सुरक्षित लॉगआउट करा (force Gmail/Password login after 3 hours)
+  async function checkThreeHourSession(user) {
+    if (!user) return false;
+    const lastAuthTs = Number(localStorage.getItem(AUTH_TS_KEY) || 0);
+    const elapsed = Date.now() - lastAuthTs;
+
+    if (!lastAuthTs || elapsed >= THREE_HOURS_MS) {
+      localStorage.removeItem(AUTH_TS_KEY);
+      sessionStorage.removeItem(SESSION_UNLOCKED_KEY);
+      const existingOverlay = document.getElementById("vyajPinLockOverlay");
+      if (existingOverlay) existingOverlay.remove();
+      try {
+        await firebase.auth().signOut();
+      } catch (_) {}
+      return true;
+    }
+    return false;
+  }
+
   // सेटिंग्ज पॉपअपमध्ये PIN सेटअप विभाग जोडा (mount PIN settings inside #settingsModal)
   function mountPinSettings() {
     if (document.getElementById("vyajPinSettingsBox")) return;
@@ -148,7 +179,7 @@
 
     box.innerHTML = `
       <div style="font-weight:700; color:var(--accent); margin-bottom:8px;">
-        🔐 ४-अंकी अ‍ॅप PIN लॉक (Security Module)
+        🔐 ४-अंकी अ‍ॅप PIN लॉक (३ तासांचे Gmail सेशन)
       </div>
       <div id="pinCurrentStatus" class="muted" style="margin-bottom:8px;"></div>
       <div class="row" style="margin-bottom:8px;">
@@ -167,17 +198,16 @@
       const statusEl = document.getElementById("pinCurrentStatus");
       if (!statusEl) return;
       if (isPinEnabled()) {
-        statusEl.textContent = "स्थिती: ✅ PIN लॉक चालू आहे (दरवेळी अ‍ॅप उघडताना PIN मागेल)";
+        statusEl.textContent = "स्थिती: ✅ PIN लॉक चालू आहे (दर ३ तासांनी Gmail लॉगिन व मधल्या वेळेत ४-अंकी PIN)";
         statusEl.style.color = "var(--accent-2)";
       } else {
-        statusEl.textContent = "स्थिती: ⚪ PIN लॉक बंद आहे";
+        statusEl.textContent = "स्थिती: ⚪ PIN लॉक बंद आहे (दर ३ तासांनी Gmail लॉगिन)";
         statusEl.style.color = "var(--muted)";
       }
     }
 
     refreshStatus();
 
-    // नवीन PIN सेव्ह करा (save new 4-digit PIN)
     document.getElementById("saveAppPinBtn").addEventListener("click", async function () {
       const input = document.getElementById("newAppPinInput");
       const pinVal = (input.value || "").trim();
@@ -190,12 +220,12 @@
       const hashed = await hashPin(pinVal);
       localStorage.setItem(PIN_HASH_KEY, hashed);
       localStorage.setItem(PIN_ENABLED_KEY, "true");
+      sessionStorage.setItem(SESSION_UNLOCKED_KEY, "true");
       input.value = "";
       refreshStatus();
       alert("✅ ४-अंकी अ‍ॅप PIN यशस्वीरीत्या सेट झाला आहे!");
     });
 
-    // तात्काळ लॉक करा (lock app immediately)
     document.getElementById("lockNowPinBtn").addEventListener("click", function () {
       if (!isPinEnabled()) {
         alert("आधी ४-अंकी PIN सेट करा.");
@@ -205,7 +235,6 @@
       showLockScreen();
     });
 
-    // PIN बंद करा (disable PIN lock)
     document.getElementById("disableAppPinBtn").addEventListener("click", function () {
       if (!isPinEnabled()) {
         alert("PIN लॉक आधीच बंद आहे.");
@@ -220,7 +249,6 @@
     });
   }
 
-  // ग्लोबल अ‍ॅक्सेससाठी (expose globally)
   window.VyajSecurity = {
     showLockScreen,
     isPinEnabled
@@ -228,9 +256,40 @@
 
   function init() {
     mountPinSettings();
-    // अ‍ॅप उघडताच PIN चालू असल्यास लॉक स्क्रीन दाखवा (show lock screen on app open)
-    if (isPinEnabled()) {
-      showLockScreen();
+
+    if (typeof firebase !== "undefined" && firebase.auth) {
+      firebase.auth().onAuthStateChanged(async (user) => {
+        if (!user) {
+          wasLoggedOut = true;
+          sessionStorage.removeItem(SESSION_UNLOCKED_KEY);
+          const existingOverlay = document.getElementById("vyajPinLockOverlay");
+          if (existingOverlay) existingOverlay.remove();
+          return;
+        }
+
+        // जर युजरने आत्ताच Gmail/Password ने ताजे लॉगिन केले असेल (fresh login)
+        if (wasLoggedOut) {
+          wasLoggedOut = false;
+          localStorage.setItem(AUTH_TS_KEY, String(Date.now()));
+          sessionStorage.setItem(SESSION_UNLOCKED_KEY, "true");
+          return;
+        }
+
+        // ३ तास पूर्ण झाले आहेत का तपासा (check 3-hour expiry)
+        const expired = await checkThreeHourSession(user);
+        if (expired) return;
+
+        // ३ तासांच्या आत अ‍ॅप नव्याने उघडले असेल (आणि फक्त Refresh नसेल) तरच ४-अंकी PIN दाखवा
+        if (isPinEnabled() && !isUnlockedInSession()) {
+          showLockScreen();
+        }
+      });
+
+      // अ‍ॅप चालू असताना दर १ मिनिटाने ३ तासांची वेळ तपासा (check expiry every 1 min)
+      setInterval(() => {
+        const curUser = firebase.auth().currentUser;
+        if (curUser) checkThreeHourSession(curUser);
+      }, 60000);
     }
   }
 
