@@ -1,15 +1,14 @@
-// व्याज हिशोब वही - Analytics + SVG Ring % + चालू महिना/ग्राहकनिहाय इतिहास + 1-Click Delete + बाकी यादीत कॉल (js/analytics.js - V14.17)
+// व्याज हिशोब वही - Analytics + SVG Ring % + 100% Synced चालू महिना/ग्राहकनिहाय इतिहास + Delete + कॉल (js/analytics.js - V14.18)
 (function () {
   const MARATHI_SHORT_MONTHS = ["जाने", "फेब्रु", "मार्च", "एप्रि", "मे", "जून", "जुलै", "ऑग", "सप्टें", "ऑक्टो", "नोव्हें", "डिसें"];
   const MARATHI_FULL_MONTHS = ["जानेवारी", "फेब्रुवारी", "मार्च", "एप्रिल", "मे", "जून", "जुलै", "ऑगस्ट", "सप्टेंबर", "ऑक्टोबर", "नोव्हेंबर", "डिसेंबर"];
 
   let isChartOpen = false;
   let isRiskOpen = false;
-  let activeModalTab = "month"; // "month" किंवा "history"
+  let activeModalTab = "month";
   let selectedHistoryBorrowerId = null;
   let currentMonthEntries = [];
 
-  // CSS स्टाईल्स जोडा (inject lightweight CSS)
   function injectAnalyticsStyles() {
     if (document.getElementById("vyajAnalyticsCss")) return;
     const st = document.createElement("style");
@@ -32,7 +31,6 @@
       .an-ring-bg { fill: none; stroke: rgba(148,163,184,0.22); stroke-width: 6; }
       .an-ring-fg { fill: none; stroke: #10b981; stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 0.5s ease; }
 
-      /* डॅशबोर्ड कार्ड्ससाठी छोटी गोल रिंग (28% / 72% स्टाईल) */
       .an-mini-ring-box {
         position: relative; width: 40px; height: 40px; flex-shrink: 0;
         display: inline-flex; align-items: center; justify-content: center;
@@ -47,7 +45,6 @@
       .an-tile-val-row {
         display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 6px;
       }
-
       .an-bars {
         display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px;
         align-items: end; height: 110px; margin-top: 12px; padding: 10px 8px 4px;
@@ -70,16 +67,8 @@
         padding: 6px 10px; margin-top: 10px; border-radius: 8px;
         background: rgba(56, 189, 248, 0.12); border-left: 3px solid var(--accent);
       }
-      .an-cust-row {
-        cursor: pointer; transition: border-color 0.18s ease, background 0.18s ease;
-      }
+      .an-cust-row { cursor: pointer; transition: border-color 0.18s ease; }
       .an-cust-row:hover { border-color: var(--accent); }
-
-      /* UI पॉलिश: कार्डवरील आकडे स्पष्ट व स्मूथ टच */
-      #borrowersList .meta-box strong,
-      #borrowersList .meta-box b { font-size: 0.96rem; font-weight: 800; letter-spacing: 0.2px; }
-      button, .pill-btn, .stat-tile.clickable { -webkit-tap-highlight-color: transparent; }
-      button:active, .pill-btn:active { transform: scale(0.96); }
     `;
     document.head.appendChild(st);
   }
@@ -95,6 +84,7 @@
     const s = String(raw).trim();
     const mMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
     if (mMatch) return `${mMatch[3]}/${mMatch[2]}/${mMatch[1]}`;
+    if (/^\d{4}-\d{2}$/.test(s)) return formatMonthNameMr(s);
     const d = new Date(s);
     if (!Number.isNaN(d.getTime())) {
       return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
@@ -130,7 +120,6 @@
     return String(Math.round(n));
   }
 
-  // छोटी गोल रिंग (SVG Ring) तयार करा
   function buildMiniRingHtml(pct, colorHex) {
     const safePct = Math.max(0, Math.min(100, Math.round(pct || 0)));
     const r = 16;
@@ -147,13 +136,10 @@
     `;
   }
 
-  // मासिक व्याज आणि बाकी व्याज कार्ड्सवर गोल रिंग (%) अपडेट करा
   function updateDashboardTileRings(totalExpected, totalCollected, totalPending) {
     const colPct = totalExpected > 0 ? Math.min(100, Math.round((totalCollected / totalExpected) * 100)) : 0;
-    // अचूक बाकी %: जर एकूण मासिक व्याज असेल तर त्यातील किती % बाकी आहे (उदा. 28% जमा = 72% बाकी)
     const pendPct = totalExpected > 0 ? Math.min(100, Math.max(0, Math.round((totalPending / totalExpected) * 100))) : 0;
 
-    // १. मासिक व्याज कार्ड
     const intTile = document.getElementById("tileInterest");
     const intValEl = document.getElementById("dashExpectedInterest");
     if (intTile && intValEl) {
@@ -174,7 +160,6 @@
       ringHost.innerHTML = buildMiniRingHtml(colPct, "#10b981");
     }
 
-    // २. बाकी व्याज कार्ड
     const pendTile = document.getElementById("tilePending");
     const pendValEl = document.getElementById("dashTotalPending");
     if (pendTile && pendValEl) {
@@ -196,7 +181,6 @@
     }
   }
 
-  // 'बाकी व्याज' पॉपअप यादीमध्ये प्रत्येक नावासमोर थेट '📞' कॉल बटण जोडा
   function injectCallButtonsInDrillList() {
     const drillList = document.getElementById("statDrillList");
     if (!drillList || !window.HishobBridge) return;
@@ -234,7 +218,6 @@
     });
   }
 
-  // Firebase मधून विशिष्ट पेमेंट नोंद डिलीट करा (delete single payment entry from Firestore)
   async function deletePaymentEntry(borrowerId, entryIndex) {
     const user = typeof firebase !== "undefined" && firebase.auth ? firebase.auth().currentUser : null;
     if (!user || !window.HishobBridge) {
@@ -277,7 +260,6 @@
     }
   }
 
-  // जमा व्याज पॉपअप तयार करा (create 2-Tab Interest Modal)
   function ensureInterestContributorsModal() {
     let modal = document.getElementById("interestContributorsModal");
     if (modal) return modal;
@@ -289,7 +271,6 @@
       <div class="modal-card" style="max-width:640px;">
         <div class="row" style="justify-content:space-between; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--border);">
           <h3 style="margin:0; color:var(--accent-2);">💚 जमा व्याज तपशील</h3>
-          <button type="button" id="icCloseBtn" class="danger sm">✕ बंद</button>
         </div>
 
         <div class="row" style="margin-bottom:10px; gap:6px;">
@@ -299,17 +280,13 @@
 
         <div id="icSummaryBox" class="meta-box" style="margin-bottom:10px; font-weight:700;"></div>
         <input type="text" id="icSearchInput" class="search-pill-box" placeholder="🔍 ग्राहकाचे नाव शोधा..." style="margin-bottom:10px;" />
-        <div id="icListContainer" style="max-height:56vh; overflow-y:auto;"></div>
+        <div id="icListContainer" style="max-height:58vh; overflow-y:auto;"></div>
       </div>
     `;
     document.body.appendChild(modal);
 
     modal.addEventListener("click", (e) => {
       if (e.target === modal) modal.classList.add("hidden");
-    });
-
-    document.getElementById("icCloseBtn").addEventListener("click", () => {
-      modal.classList.add("hidden");
     });
 
     document.getElementById("icTabMonthBtn").addEventListener("click", () => {
@@ -342,7 +319,6 @@
     }
   }
 
-  // पॉपअपमधील कंटेंट रेंडर करा (Tab 1: चालू महिना नोंदी + Delete | Tab 2: ग्राहकनिहाय वर्ष/महिना इतिहास)
   function renderInterestContributorsContent() {
     if (!window.HishobBridge) return;
     const container = document.getElementById("icListContainer");
@@ -354,7 +330,7 @@
     const activeYm = (document.getElementById("activeYm") && document.getElementById("activeYm").value) || new Date().toISOString().slice(0, 7);
     const q = (searchInput?.value || "").trim().toLowerCase();
 
-    // टॅब १: चालू महिन्यातील सर्व वैयक्तिक नोंदी (Delete बटणासह)
+    // टॅब १: चालू महिना (१००% सिंक केलेली यादी)
     if (activeModalTab === "month") {
       if (searchInput) searchInput.classList.remove("hidden");
 
@@ -367,7 +343,7 @@
       const uniqueCust = new Set(currentMonthEntries.map((x) => x.borrowerId)).size;
 
       if (summaryBox) {
-        summaryBox.innerHTML = `${formatMonthNameMr(activeYm)} जमा: <span style="color:var(--accent-2);">₹${totalAmt.toLocaleString("en-IN")}</span> &nbsp;|&nbsp; ग्राहक: <span style="color:var(--accent);">${uniqueCust}</span> &nbsp;|&nbsp; नोंदी: ${currentMonthEntries.length}`;
+        summaryBox.innerHTML = `${formatMonthNameMr(activeYm)} जमा: <span style="color:var(--accent-2);">₹${totalAmt.toLocaleString("en-IN")}</span> &nbsp;|&nbsp; ग्राहक: <span style="color:var(--accent);">${uniqueCust}</span>`;
       }
 
       if (!filtered.length) {
@@ -378,6 +354,9 @@
       container.innerHTML = filtered
         .map((item) => {
           const cleanMob = String(item.mobile || "").replace(/\D/g, "");
+          const actionBtn = item.isLedgerSync
+            ? `<span class="badge paid">खातेवही नोंद</span>`
+            : `<button type="button" class="danger sm" data-del-bid="${esc(item.borrowerId)}" data-del-idx="${item.historyIndex}" title="ही नोंद डिलीट करा">🗑️</button>`;
           return `
             <div class="meta-box row" style="justify-content:space-between; margin-bottom:8px;">
               <div>
@@ -389,7 +368,7 @@
               </div>
               <div class="row" style="gap:6px;">
                 ${cleanMob.length >= 10 ? `<button type="button" class="success sm" onclick="window.location.href='tel:${esc(cleanMob)}'">📞</button>` : ""}
-                <button type="button" class="danger sm" data-del-bid="${esc(item.borrowerId)}" data-del-idx="${item.historyIndex}" title="ही नोंद डिलीट करा">🗑️ Delete</button>
+                ${actionBtn}
               </div>
             </div>
           `;
@@ -404,7 +383,7 @@
       return;
     }
 
-    // टॅब २ (भाग अ): निवडलेल्या एका ग्राहकाचा संपूर्ण वर्ष-महिना इतिहास
+    // टॅब २ (भाग अ): निवडलेल्या ग्राहकाचा संपूर्ण वर्ष-महिना इतिहास
     if (selectedHistoryBorrowerId) {
       const b = borrowers.find((x) => x.id === selectedHistoryBorrowerId);
       if (!b) {
@@ -416,7 +395,28 @@
       if (searchInput) searchInput.classList.add("hidden");
 
       const hist = Array.isArray(b.paymentHistory) ? b.paymentHistory : [];
-      const totalPaidAll = hist.reduce((s, p) => s + Number(p.amount || 0), 0);
+      const calcCur = window.HishobBridge.computeLedgerUpToMonth(b, activeYm);
+
+      // जर चालू महिन्यात खातेवहीतून जादा रक्कम जमा असेल तर तीही इतिहासात दाखवा
+      const combinedHist = hist.map((p, idx) => ({ ...p, historyIndex: idx, isLedgerSync: false }));
+      const curHistSum = hist
+        .filter((p) => {
+          const pYm = (p.ym && /^\d{4}-\d{2}$/.test(p.ym)) ? p.ym : String(p.date || "").slice(0, 7);
+          return pYm === activeYm;
+        })
+        .reduce((s, p) => s + Number(p.amount || 0), 0);
+
+      if (calcCur.collectedInMonth > curHistSum) {
+        combinedHist.push({
+          amount: calcCur.collectedInMonth - curHistSum,
+          date: activeYm,
+          ym: activeYm,
+          mode: "खातेवही नोंद",
+          isLedgerSync: true
+        });
+      }
+
+      const totalPaidAll = combinedHist.reduce((s, p) => s + Number(p.amount || 0), 0);
       const loanStartInfo = b.loanDate ? formatCleanDate(b.loanDate) : (b.startYm ? formatMonthNameMr(b.startYm) : "-");
 
       if (summaryBox) {
@@ -436,7 +436,7 @@
             </div>
           </div>
           <div style="margin-top:6px; font-size:0.8rem; color:var(--accent-2);">
-            आजपर्यंत एकूण जमा व्याज: <strong>₹${totalPaidAll.toLocaleString("en-IN")}</strong> (${hist.length} नोंदी)
+            आजपर्यंत एकूण जमा व्याज: <strong>₹${totalPaidAll.toLocaleString("en-IN")}</strong>
           </div>
         `;
       }
@@ -446,19 +446,18 @@
         renderInterestContributorsContent();
       });
 
-      if (!hist.length) {
+      if (!combinedHist.length) {
         container.innerHTML = `<div class="muted" style="text-align:center; padding:16px;">या ग्राहकाची अद्याप कोणतीही व्याज जमा नोंद नाही.</div>`;
         return;
       }
 
-      // वर्षानुसार (Year-wise) आणि महिन्यानुसार (Month-wise) गट करा
       const byYear = {};
-      hist.forEach((p, idx) => {
+      combinedHist.forEach((p) => {
         const pDate = String(p.date || "");
         const pYm = (p.ym && /^\d{4}-\d{2}$/.test(p.ym)) ? p.ym : pDate.slice(0, 7);
         const year = (pYm && pYm.slice(0, 4)) || "इतर";
         if (!byYear[year]) byYear[year] = [];
-        byYear[year].push({ ...p, pYm, historyIndex: idx });
+        byYear[year].push({ ...p, pYm });
       });
 
       const sortedYears = Object.keys(byYear).sort((a, bYear) => bYear.localeCompare(a));
@@ -470,6 +469,9 @@
 
         html += `<div class="an-year-head">📅 वर्ष ${esc(yr)} — एकूण जमा: ₹${yrSum.toLocaleString("en-IN")}</div>`;
         entries.forEach((e) => {
+          const delOrTag = e.isLedgerSync
+            ? `<span class="badge paid">खातेवही</span>`
+            : `<button type="button" class="danger sm" data-del-bid="${esc(b.id)}" data-del-idx="${e.historyIndex}" title="ही नोंद डिलीट करा">🗑️</button>`;
           html += `
             <div class="meta-box row" style="justify-content:space-between; margin-top:6px;">
               <div>
@@ -477,7 +479,7 @@
                 <div style="color:var(--accent-2); font-weight:800;">₹${Number(e.amount || 0).toLocaleString("en-IN")}</div>
                 <div class="muted" style="font-size:0.74rem;">तारीख: ${esc(formatCleanDate(e.date))} (${esc(e.mode || "Cash")})</div>
               </div>
-              <button type="button" class="danger sm" data-del-bid="${esc(b.id)}" data-del-idx="${e.historyIndex}" title="ही नोंद डिलीट करा">🗑️</button>
+              ${delOrTag}
             </div>
           `;
         });
@@ -492,7 +494,7 @@
       return;
     }
 
-    // टॅब २ (भाग ब): सर्व खातेदारांची यादी (नावावर क्लिक करून इतिहास पहा)
+    // टॅब २ (भाग ब): सर्व खातेदारांची यादी
     if (searchInput) searchInput.classList.remove("hidden");
 
     const filteredCust = borrowers.filter((b) => {
@@ -501,7 +503,7 @@
     });
 
     if (summaryBox) {
-      summaryBox.innerHTML = `एकूण खाती: <span style="color:var(--accent);">${borrowers.length}</span> &nbsp;|&nbsp; <span class="muted" style="font-weight:500;">संपूर्ण वर्ष-महिना इतिहास पाहण्यासाठी नावावर क्लिक करा</span>`;
+      summaryBox.innerHTML = `एकूण खाती: <span style="color:var(--accent);">${borrowers.length}</span> &nbsp;|&nbsp; <span class="muted" style="font-weight:500;">इतिहास पाहण्यासाठी नावावर क्लिक करा</span>`;
     }
 
     if (!filteredCust.length) {
@@ -512,13 +514,15 @@
     container.innerHTML = filteredCust
       .map((b) => {
         const hist = Array.isArray(b.paymentHistory) ? b.paymentHistory : [];
-        const totalPaid = hist.reduce((s, p) => s + Number(p.amount || 0), 0);
+        const calcCur = window.HishobBridge.computeLedgerUpToMonth(b, activeYm);
+        const histSum = hist.reduce((s, p) => s + Number(p.amount || 0), 0);
+        const totalDisplay = Math.max(histSum, calcCur.collectedInMonth || 0);
         return `
           <div class="meta-box row an-cust-row" data-open-hist-bid="${esc(b.id)}" style="justify-content:space-between; margin-bottom:8px;">
             <div>
               <strong style="font-size:0.95rem;">${esc(b.name)}</strong>
               <div class="muted" style="font-size:0.75rem;">
-                मुद्दल: ₹${Number(b.principal || 0).toLocaleString("en-IN")} • एकूण जमा व्याज: <span style="color:var(--accent-2); font-weight:700;">₹${totalPaid.toLocaleString("en-IN")}</span>
+                मुद्दल: ₹${Number(b.principal || 0).toLocaleString("en-IN")} • जमा व्याज: <span style="color:var(--accent-2); font-weight:700;">₹${totalDisplay.toLocaleString("en-IN")}</span>
               </div>
             </div>
             <span style="color:var(--accent); font-weight:700; font-size:0.8rem;">इतिहास पहा ▸</span>
@@ -544,10 +548,8 @@
     if (sInput) sInput.value = "";
     renderInterestContributorsContent();
     modal.classList.remove("hidden");
-    try { history.pushState({ hishobOverlay: "interestContributorsModal" }, ""); } catch (_) {}
   }
 
-  // मुख्य Analytics कार्ड रेंडर करा
   function renderAnalyticsCard() {
     if (!window.HishobBridge) return;
     const appScreen = document.getElementById("appScreen");
@@ -573,6 +575,8 @@
     borrowers
       .filter((b) => !b.isDeleted)
       .forEach((b) => {
+        let bHistMonthSum = 0;
+
         (b.paymentHistory || []).forEach((p, idx) => {
           const amt = Number(p.amount || 0);
           if (amt <= 0) return;
@@ -583,6 +587,7 @@
           lifetimeInterestProfit += amt;
 
           if (pYm === activeYm) {
+            bHistMonthSum += amt;
             currentMonthInterestSum += amt;
             monthEntries.push({
               borrowerId: b.id,
@@ -591,7 +596,8 @@
               mobile: b.mobile || "",
               amount: amt,
               date: pDate,
-              mode: p.mode || "Cash"
+              mode: p.mode || "Cash",
+              isLedgerSync: false
             });
           }
 
@@ -607,6 +613,26 @@
         totalCollected += calc.collectedInMonth;
         totalPendingSum += Math.max(0, calc.totalPayable);
 
+        // मुख्य खातेवहीतील (computeLedgerUpToMonth) जमा रक्कम आणि paymentHistory मधील फरक सिंक करा
+        if (calc.collectedInMonth > bHistMonthSum) {
+          const extraAmt = calc.collectedInMonth - bHistMonthSum;
+          currentMonthInterestSum += extraAmt;
+          lifetimeInterestProfit += extraAmt;
+          if (Object.prototype.hasOwnProperty.call(monthTotals, activeYm)) {
+            monthTotals[activeYm] += extraAmt;
+          }
+          monthEntries.push({
+            borrowerId: b.id,
+            historyIndex: -1,
+            name: b.name || "ग्राहक",
+            mobile: b.mobile || "",
+            amount: extraAmt,
+            date: activeYm,
+            mode: "खातेवही नोंद",
+            isLedgerSync: true
+          });
+        }
+
         if (calc.monthlyInterest > 0 && calc.totalPayable >= calc.monthlyInterest * 2) {
           const approxMonths = Math.floor(calc.totalPayable / calc.monthlyInterest);
           highRiskList.push({
@@ -619,11 +645,10 @@
         }
       });
 
-    monthEntries.sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
+    monthEntries.sort((a, b) => Number(b.amount || 0) - Number(a.amount || 0));
     currentMonthEntries = monthEntries;
     highRiskList.sort((a, b) => b.totalPayable - a.totalPayable);
 
-    // डॅशबोर्ड कार्ड्सवर गोल रिंग (%) अपडेट करा
     updateDashboardTileRings(totalExpected, totalCollected, totalPendingSum);
 
     const pct = totalExpected > 0 ? Math.min(100, Math.round((totalCollected / totalExpected) * 100)) : 0;
