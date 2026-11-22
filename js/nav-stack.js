@@ -1,9 +1,9 @@
-// व्याज हिशोब वही - ग्लोबल Step-by-Step Back Navigation मॅनेजर (js/nav-stack.js - V14.22)
+// व्याज हिशोब वही - ग्लोबल Step-by-Step Back Navigation मॅनेजर (js/nav-stack.js - V14.23)
 (function () {
   const stack = [];
   let isInternalChange = false;
+  let syncTimer = null;
 
-  // सध्या उघडे असलेले सर्व Modals शोधा
   function getVisibleModals() {
     return Array.from(document.querySelectorAll(".modal-backdrop")).filter(
       (m) => !m.classList.contains("hidden") && window.getComputedStyle(m).display !== "none"
@@ -28,7 +28,6 @@
     } catch (_) {}
   }
 
-  // एखादे Modal/Drawer एलिमेंट बंद करा
   function hideEntry(entry) {
     if (!entry) return;
     isInternalChange = true;
@@ -46,11 +45,10 @@
         if (el) el.classList.add("hidden");
       }
     } finally {
-      setTimeout(() => { isInternalChange = false; notifyVisibilityChange(); }, 30);
+      setTimeout(() => { isInternalChange = false; notifyVisibilityChange(); }, 40);
     }
   }
 
-  // मागील Suspended Modal/Drawer पुन्हा उघडा (Step-by-Step मागे येण्यासाठी)
   function restoreEntry(entry) {
     if (!entry) return;
     isInternalChange = true;
@@ -67,11 +65,10 @@
         if (el) el.classList.remove("hidden");
       }
     } finally {
-      setTimeout(() => { isInternalChange = false; notifyVisibilityChange(); }, 30);
+      setTimeout(() => { isInternalChange = false; notifyVisibilityChange(); }, 40);
     }
   }
 
-  // नवीन Drawer स्टॅकवर जोडा
   function pushDrawer(id, onClose, onRestore) {
     const existingIdx = stack.findIndex((x) => x.id === id && x.type === "drawer");
     if (existingIdx !== -1) stack.splice(existingIdx, 1);
@@ -80,7 +77,6 @@
     notifyVisibilityChange();
   }
 
-  // नवीन Modal स्टॅकवर जोडा
   function pushModal(id) {
     if (!id) return;
     const top = stack[stack.length - 1];
@@ -94,7 +90,6 @@
     notifyVisibilityChange();
   }
 
-  // एकाच पॉपअपमधील अंतर्गत पायरी जोडा (उदा. यादी → ग्राहकाचा इतिहास)
   function pushSubStep(id, onBack) {
     const existingIdx = stack.findIndex((x) => x.id === id && x.type === "substep");
     if (existingIdx !== -1) stack.splice(existingIdx, 1);
@@ -102,7 +97,6 @@
     pushBrowserState("sub:" + id);
   }
 
-  // एका स्क्रीन/पॉपअपमधून पुढचे पॉपअप उघडा (मागील स्क्रीन लपवून सुरक्षित ठेवा)
   function navigateFrom(currentId, openNextFn) {
     isInternalChange = true;
     try {
@@ -135,16 +129,14 @@
     setTimeout(() => {
       syncAutoOpenedModals();
       notifyVisibilityChange();
-    }, 50);
+    }, 60);
   }
 
-  // एक पायरी मागे जा (Mobile Back बटण दाबल्यावर)
   function stepBack() {
     if (stack.length > 0) {
       const top = stack.pop();
       hideEntry(top);
 
-      // जर त्याखाली एखादी Suspended स्क्रीन असेल तर ती पुन्हा उघडा
       const prev = stack[stack.length - 1];
       if (prev && prev.suspended) {
         restoreEntry(prev);
@@ -152,18 +144,16 @@
       return true;
     }
 
-    // Fallback: स्टॅक रिकामा असला तरी कोणतेही Modal उघडे असल्यास ते बंद करा
     const vis = getVisibleModals();
     if (vis.length > 0) {
       isInternalChange = true;
       vis[vis.length - 1].classList.add("hidden");
-      setTimeout(() => { isInternalChange = false; notifyVisibilityChange(); }, 30);
+      setTimeout(() => { isInternalChange = false; notifyVisibilityChange(); }, 40);
       return true;
     }
     return false;
   }
 
-  // बाहेर क्लिक करून सर्वात वरचे पॉपअप बंद केले असल्यास स्टॅक सिंक करा
   function popIfTop(id) {
     const top = stack[stack.length - 1];
     if (top && top.id === id) {
@@ -174,7 +164,6 @@
     }
   }
 
-  // संपूर्ण स्टॅक रिकामा करा (उदा. Home वर क्लिक केल्यावर)
   function clearAll() {
     isInternalChange = true;
     while (stack.length > 0) {
@@ -185,10 +174,9 @@
         if (el) el.classList.add("hidden");
       }
     }
-    setTimeout(() => { isInternalChange = false; notifyVisibilityChange(); }, 30);
+    setTimeout(() => { isInternalChange = false; notifyVisibilityChange(); }, 40);
   }
 
-  // app.js किंवा कोणत्याही मॉड्यूलने उघडलेले Modal आपोआप स्टॅकमध्ये नोंदवा
   function syncAutoOpenedModals() {
     if (isInternalChange) return;
     const visible = getVisibleModals();
@@ -200,7 +188,6 @@
       }
     });
 
-    // जर एखादे Modal बाहेरून बंद झाले असेल तर ते स्टॅकमधून काढा
     for (let i = stack.length - 1; i >= 0; i--) {
       const item = stack[i];
       if (item.type === "modal" && !item.suspended) {
@@ -226,10 +213,12 @@
     stepBack();
   });
 
+  // सुरक्षित Debounced Observer
   function initNavStack() {
     const obs = new MutationObserver(() => {
       if (isInternalChange) return;
-      syncAutoOpenedModals();
+      clearTimeout(syncTimer);
+      syncTimer = setTimeout(syncAutoOpenedModals, 50);
     });
     obs.observe(document.body, {
       childList: true,
