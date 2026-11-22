@@ -1,4 +1,4 @@
-/* व्याज हिशोब वही - Smoked Black Glass + Eye-Comfort Theme + Modern Unified Menu + Invoice Receipt (css/pro-theme.css - V14.22) */
+/* व्याज हिशोब वही - Smoked Black Glass + Eye-Comfort Theme + Modern Unified Menu + Invoice Receipt (css/pro-theme.css - V14.24) */
 
 :root {
   --bg: #090a0d;
@@ -50,7 +50,7 @@ body.light-mode {
   color: #1f242d !important;
 }
 
-/* स्वच्छ Frosted हेडर व ⋮ (Three-dot) मेन्यू लपवा */
+/* स्वच्छ Frosted हेडर + जुने ☰ व ⋮ पूर्णपणे लपवा */
 header {
   background: rgba(12, 13, 18, 0.88) !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
@@ -61,7 +61,25 @@ body.light-mode header {
   border-bottom: 1px solid #dcd7cc !important;
   box-shadow: 0 2px 10px rgba(31, 36, 45, 0.06);
 }
-#threeDotMenuSlot { display: none !important; }
+#threeDotMenuSlot,
+.pro-hide-old-ham {
+  display: none !important;
+}
+
+/* नवीन स्लीक ☰ (Hamburger) बटण */
+.pro-ham-btn {
+  width: 36px; height: 34px; padding: 7px 8px !important; flex-shrink: 0;
+  display: inline-flex; flex-direction: column; justify-content: space-between; align-items: stretch;
+  border-radius: 10px !important;
+  background: rgba(255, 255, 255, 0.07) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+}
+.pro-ham-btn span {
+  display: block; height: 2px; border-radius: 99px; background: var(--text);
+}
+body.light-mode .pro-ham-btn {
+  background: #eae6dd !important; border-color: #d5cfc2 !important;
+}
 
 button.primary {
   background: linear-gradient(135deg, #262a34, #1b1e26) !important;
@@ -267,7 +285,7 @@ body.light-mode .pro-rep-card.rep-amber { background: linear-gradient(145deg, #f
 .pro-switch input:checked + .pro-slider { background: #15803d; border-color: #4ade80; }
 .pro-switch input:checked + .pro-slider::before { transform: translateX(20px); }
 
-/* ===== टप्पा ३: Modern Unified Business मेन्यू (Drawer + Feature Search + Accordion) ===== */
+/* Modern Unified Business मेन्यू */
 .pro-menu-backdrop {
   position: fixed; inset: 0; z-index: 60;
   background: rgba(0, 0, 0, 0.72); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
@@ -302,7 +320,6 @@ body.light-mode .pro-menu-profile { background: #fbfaf7; }
 .pro-menu-owner { font-size: 0.72rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
 .pro-menu-lock-btn { padding: 7px 10px !important; border-radius: 12px !important; font-size: 0.95rem !important; flex-shrink: 0; }
 
-/* WhatsApp रिमाइंडर बॉक्स */
 .pro-menu-wa-box {
   padding: 10px; border-radius: 14px; margin-bottom: 10px;
   background: rgba(22, 101, 52, 0.14); border: 1px solid rgba(74, 222, 128, 0.28);
@@ -313,10 +330,9 @@ body.light-mode .pro-menu-wa-box { background: #eef7f1; border-color: #86efac; }
 .pro-menu-wa-row input { flex: 1; min-width: 0; padding: 7px 9px !important; font-size: 0.82rem !important; border-radius: 9px !important; }
 .pro-menu-wa-msg { font-size: 0.72rem; font-weight: 700; margin-top: 4px; }
 
-/* स्मार्ट Feature Search Bar */
 .pro-menu-search-wrap { margin-bottom: 12px; }
 .pro-menu-search-input {
-  width: 100%; padding: 9px 13px !important; border-radius: 12px !important; font-size: 0.84rem !important;
+  width: 100%; padding: 9px 13px !important; border-radius: 12px !important; font-size: 0.83rem !important;
   background: var(--meta-bg) !important; border: 1px solid var(--border) !important; color: var(--text) !important;
 }
 .pro-menu-recent-strip { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; margin-top: 6px; }
@@ -335,7 +351,6 @@ body.light-mode .pro-menu-wa-box { background: #eef7f1; border-color: #86efac; }
 
 .pro-menu-sec-lbl { font-size: 0.72rem; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; margin: 10px 2px 6px; }
 
-/* Pinned 2x2 ग्रिड */
 .pro-menu-pinned-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; margin-bottom: 10px; }
 .pro-pin-card {
   display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
@@ -345,13 +360,16 @@ body.light-mode .pro-menu-wa-box { background: #eef7f1; border-color: #86efac; }
 .pro-pin-icon { font-size: 1.15rem; }
 .pro-pin-lbl { font-size: 0.76rem; font-weight: 700; color: var(--text); line-height: 1.25; }
 
-/* Accordion कॅटेगरी ग्रुप्स */
 .pro-menu-acc-list { display: flex; flex-direction: column; gap: 7px; }
 .pro-acc-group { border-radius: 13px; overflow: hidden; background: var(--meta-bg); border: 1px solid var(--border); }
 .pro-acc-head {
   width: 100%; display: flex; align-items: center; justify-content: space-between;
   padding: 10px 12px !important; background: transparent !important; border: none !important;
   font-size: 0.83rem !important; font-weight: 800 !important; color: var(--text) !important; border-radius: 0 !important;
+}
+.pro-acc-meta-badge {
+  font-size: 0.64rem; font-weight: 700; padding: 2px 7px; border-radius: 999px;
+  background: rgba(74, 222, 128, 0.14); color: var(--accent-2); border: 1px solid rgba(74, 222, 128, 0.3);
 }
 .pro-acc-arrow { transition: transform 0.2s ease; color: var(--muted); }
 .pro-acc-group.is-open .pro-acc-arrow { transform: rotate(180deg); color: var(--accent); }
@@ -366,45 +384,28 @@ body.light-mode .pro-menu-wa-box { background: #eef7f1; border-color: #86efac; }
 body.light-mode .pro-acc-item { background: #fbfaf7 !important; border-color: #eae6dd !important; }
 .pro-acc-right { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); }
 
-/* ===== टप्पा ३: प्रोफेशनल Invoice पावती + UPI QR स्टाईल्स ===== */
-.inv-paper {
-  background: #ffffff; color: #0f172a; border-radius: 16px; overflow: hidden;
-  border: 1px solid #cbd5e1; box-shadow: 0 8px 26px rgba(0, 0, 0, 0.35);
-}
-.inv-head {
-  background: linear-gradient(135deg, #1b1e26, #0f1117); color: #ffffff;
-  padding: 14px 15px; display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
-}
+/* प्रोफेशनल Invoice पावती + UPI QR */
+.inv-paper { background: #ffffff; color: #0f172a; border-radius: 16px; overflow: hidden; border: 1px solid #cbd5e1; box-shadow: 0 8px 26px rgba(0, 0, 0, 0.35); }
+.inv-head { background: linear-gradient(135deg, #1b1e26, #0f1117); color: #ffffff; padding: 14px 15px; display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
 .inv-biz { font-size: 1.05rem; font-weight: 900; letter-spacing: 0.2px; }
 .inv-owner { font-size: 0.72rem; color: #cbd5e1; margin-top: 2px; }
 .inv-no { font-size: 0.74rem; font-weight: 800; color: #7dd3fc; }
 .inv-dt { font-size: 0.7rem; color: #cbd5e1; margin-top: 2px; }
-
-.inv-cust-row {
-  display: flex; justify-content: space-between; gap: 8px; padding: 12px 15px;
-  border-bottom: 1px dashed #cbd5e1; background: #f8fafc;
-}
+.inv-cust-row { display: flex; justify-content: space-between; gap: 8px; padding: 12px 15px; border-bottom: 1px dashed #cbd5e1; background: #f8fafc; }
 .inv-lbl { font-size: 0.68rem; color: #64748b; text-transform: uppercase; font-weight: 700; }
 .inv-cust-name { font-size: 0.94rem; font-weight: 800; color: #0f172a; margin-top: 2px; }
 .inv-sub { font-size: 0.74rem; color: #475569; margin-top: 2px; }
-
 .inv-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
 .inv-table th { background: #f1f5f9; color: #475569; padding: 8px 15px; text-align: left; font-size: 0.74rem; }
 .inv-table td { padding: 9px 15px; border-bottom: 1px solid #e2e8f0; color: #1e293b; }
 .inv-total-row td { background: #f8fafc; font-weight: 900; font-size: 0.9rem; border-bottom: none; }
-
-.inv-foot {
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  padding: 13px 15px; border-top: 1px solid #e2e8f0;
-}
+.inv-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 15px; border-top: 1px solid #e2e8f0; }
 .inv-qr-box { text-align: center; }
 .inv-qr-box img { width: 92px; height: 92px; border-radius: 8px; border: 1px solid #cbd5e1; padding: 3px; background: #fff; }
 .inv-upi-txt { font-size: 0.68rem; font-weight: 700; color: #334155; margin-top: 3px; }
 .inv-no-upi { font-size: 0.7rem; color: #64748b; padding: 10px; border: 1px dashed #cbd5e1; border-radius: 8px; }
 .inv-stamp-col { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
-.inv-stamp {
-  padding: 6px 12px; border-radius: 999px; font-size: 0.76rem; font-weight: 900; border: 2px solid;
-}
+.inv-stamp { padding: 6px 12px; border-radius: 999px; font-size: 0.76rem; font-weight: 900; border: 2px solid; }
 .inv-stamp-paid { color: #15803d; border-color: #16a34a; background: #dcfce7; }
 .inv-stamp-partial { color: #b45309; border-color: #d97706; background: #fef3c7; }
 .inv-stamp-pending { color: #be123c; border-color: #e11d48; background: #ffe4e6; }
