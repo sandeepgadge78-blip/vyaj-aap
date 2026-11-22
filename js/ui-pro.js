@@ -1,6 +1,5 @@
-// व्याज हिशोब वही - Customer Avatar, Single-Line Actions, 4-Card Reports Hub, Toggle Settings, Glass New & Global Back (js/ui-pro.js - V14.21)
+// व्याज हिशोब वही - Customer Avatar, Single-Line Actions, 4-Card Reports Hub, Toggle Settings, Glass New & NavStack Sync (js/ui-pro.js - V14.22)
 (function () {
-  let modalHistoryCount = 0;
   let enhanceTimer = null;
 
   function fmtInr(n) {
@@ -66,7 +65,7 @@
     });
   }
 
-  // ३. टप्पा २: ४-रंगी Eye-Comfort 'Reports Hub' पॉपअप तयार करा
+  // ३. ४-रंगी Eye-Comfort 'Reports Hub' (Step-by-Step Back समर्थनासह)
   function ensureProReportsHubModal() {
     let modal = document.getElementById("proReportsHubModal");
     if (modal) return modal;
@@ -81,7 +80,6 @@
           <span class="badge paid">Live Sync</span>
         </div>
 
-        <!-- ४ सॉफ्ट ग्रेडियंट कार्ड्स -->
         <div class="pro-rep-grid">
           <div class="pro-rep-card rep-emerald" id="repCardProfit">
             <span class="pro-rep-icon">💚</span>
@@ -112,7 +110,6 @@
           </div>
         </div>
 
-        <!-- Quick Reports यादी -->
         <div style="font-size:0.8rem; font-weight:800; color:var(--muted); margin-bottom:8px;">⚡ Quick Reports & Exports</div>
         <div class="pro-quick-list">
           <div class="pro-quick-item" id="repQuickPdf">
@@ -141,55 +138,54 @@
     document.body.appendChild(modal);
 
     modal.addEventListener("click", (e) => {
-      if (e.target === modal) modal.classList.add("hidden");
+      if (e.target === modal) {
+        modal.classList.add("hidden");
+        if (window.VyajNavStack) window.VyajNavStack.popIfTop("proReportsHubModal");
+      }
     });
 
-    // ४ कार्ड्सचे क्लिक अ‍ॅक्शन
+    const stepFromHub = (fn) => {
+      if (window.VyajNavStack) window.VyajNavStack.navigateFrom("proReportsHubModal", fn);
+      else { modal.classList.add("hidden"); fn(); }
+    };
+
     document.getElementById("repCardProfit")?.addEventListener("click", () => {
-      modal.classList.add("hidden");
-      if (typeof window.openVyajInterestList === "function") window.openVyajInterestList();
+      stepFromHub(() => { if (typeof window.openVyajInterestList === "function") window.openVyajInterestList(); });
     });
     document.getElementById("repCardMonthly")?.addEventListener("click", () => {
-      modal.classList.add("hidden");
-      document.getElementById("tileInterest")?.click();
+      stepFromHub(() => document.getElementById("tileInterest")?.click());
     });
     document.getElementById("repCardPending")?.addEventListener("click", () => {
-      modal.classList.add("hidden");
-      document.getElementById("tilePending")?.click();
+      stepFromHub(() => document.getElementById("tilePending")?.click());
     });
     document.getElementById("repCardPrincipal")?.addEventListener("click", () => {
-      modal.classList.add("hidden");
-      document.getElementById("tilePrincipal")?.click();
+      stepFromHub(() => document.getElementById("tilePrincipal")?.click());
     });
 
-    // Quick Reports बटणांचे क्लिक अ‍ॅक्शन
     document.getElementById("repQuickPdf")?.addEventListener("click", () => {
-      modal.classList.add("hidden");
       document.getElementById("printMonthlyPdfBtn")?.click();
     });
     document.getElementById("repQuickMonthCsv")?.addEventListener("click", () => {
-      modal.classList.add("hidden");
       document.getElementById("exportMonthlyCsvBtn")?.click();
     });
     document.getElementById("repQuickAllCsv")?.addEventListener("click", () => {
-      modal.classList.add("hidden");
       document.getElementById("exportAllCsvBtn")?.click();
     });
     document.getElementById("repQuickPnl")?.addEventListener("click", () => {
-      modal.classList.add("hidden");
-      document.getElementById("openPnlBtn")?.click();
+      stepFromHub(() => document.getElementById("openPnlBtn")?.click());
     });
     document.getElementById("repQuickBackup")?.addEventListener("click", () => {
-      modal.classList.add("hidden");
-      const toolModal = document.getElementById("toolSectionModal");
-      const repSec = document.getElementById("reportsSection");
-      const titleEl = document.getElementById("toolSectionModalTitle");
-      if (toolModal && repSec) {
-        document.querySelectorAll(".tool-sec-pane").forEach((p) => p.classList.add("hidden"));
-        repSec.classList.remove("hidden");
-        if (titleEl) titleEl.textContent = "☁️ Cloud Backup, Restore व Import";
-        toolModal.classList.remove("hidden");
-      }
+      stepFromHub(() => {
+        const toolModal = document.getElementById("toolSectionModal");
+        const repSec = document.getElementById("reportsSection");
+        const titleEl = document.getElementById("toolSectionModalTitle");
+        if (toolModal && repSec) {
+          document.querySelectorAll(".tool-sec-pane").forEach((p) => p.classList.add("hidden"));
+          repSec.classList.remove("hidden");
+          if (titleEl) titleEl.textContent = "☁️ Cloud Backup, Restore व Import";
+          toolModal.classList.remove("hidden");
+        }
+      });
     });
 
     return modal;
@@ -213,7 +209,7 @@
   }
   window.openProReportsHub = openProReportsHub;
 
-  // ४. टप्पा २: Settings मध्ये आधुनिक Toggle Switch UI जोडा (जुन्या IDs न तोडता)
+  // ४. Settings मध्ये आधुनिक Toggle Switch UI
   function upgradeSettingsWithToggles() {
     const settingsModal = document.getElementById("settingsModal");
     if (!settingsModal) return;
@@ -224,7 +220,6 @@
     if (!document.getElementById("proSettingsToggles")) {
       const targetRow = oldThemeBtn ? oldThemeBtn.closest(".row") : null;
       if (targetRow) {
-        // जुनी बटणे लपवा पण DOM मध्येच ठेवा जेणेकरून मूळ इव्हेंट्स चालत राहतील
         targetRow.classList.add("hidden");
 
         const toggleGroup = document.createElement("div");
@@ -266,21 +261,18 @@
         `;
         targetRow.parentNode.insertBefore(toggleGroup, targetRow);
 
-        // Toggle १: Night / Day Mode
         document.getElementById("proToggleDark")?.addEventListener("change", () => {
           if (oldThemeBtn) oldThemeBtn.click();
           else document.getElementById("toggleThemeBtn")?.click();
           setTimeout(syncSettingsToggleStates, 80);
         });
 
-        // Toggle २: Hide / Show Amounts
         document.getElementById("proToggleHideAmt")?.addEventListener("change", () => {
           if (oldHideBtn) oldHideBtn.click();
           else document.getElementById("toggleHideAmtBtn")?.click();
           setTimeout(syncSettingsToggleStates, 80);
         });
 
-        // Toggle ३: Push Notifications
         document.getElementById("proTogglePush")?.addEventListener("change", (ev) => {
           const msgEl = document.getElementById("setStatusMsg");
           if (ev.target.checked) {
@@ -322,7 +314,7 @@
     }
   }
 
-  // ५. UI Glass '＋ New' बटण तयार करा
+  // ५. UI Glass '＋ New' बटण (फक्त मुख्य डॅशबोर्डवर दिसेल)
   function createGlassNewButton() {
     if (document.getElementById("uiProNewBtn")) return;
     const btn = document.createElement("button");
@@ -343,23 +335,10 @@
       if (titleEl) titleEl.textContent = "➕ नवीन ग्राहक / कर्ज नोंद";
 
       modal.classList.remove("hidden");
-      pushOverlayHistory("toolSectionModal");
       updateNewButtonVisibility();
     });
 
     document.body.appendChild(btn);
-  }
-
-  function getOpenModals() {
-    return Array.from(document.querySelectorAll(".modal-backdrop")).filter(
-      (m) => !m.classList.contains("hidden") && window.getComputedStyle(m).display !== "none"
-    );
-  }
-
-  function isAnyOverlayOpen() {
-    if (getOpenModals().length > 0) return true;
-    const openDrawer = document.querySelector(".drawer.open, .sidebar.open, #sideDrawer:not(.hidden), #mobileDrawer.open");
-    return Boolean(openDrawer);
   }
 
   function updateNewButtonVisibility() {
@@ -368,50 +347,21 @@
     if (!newBtn || !appScreen) return;
 
     const isAppVisible = !appScreen.classList.contains("hidden");
-    const shouldShow = isAppVisible && !isAnyOverlayOpen();
+    const overlayOpen = window.VyajNavStack
+      ? window.VyajNavStack.hasActiveOverlay()
+      : Array.from(document.querySelectorAll(".modal-backdrop")).some((m) => !m.classList.contains("hidden"));
+
+    const shouldShow = isAppVisible && !overlayOpen;
     if (newBtn.classList.contains("hidden") === shouldShow) {
       newBtn.classList.toggle("hidden", !shouldShow);
     }
   }
-
-  // ६. ग्लोबल मोबाईल Back बटण सिस्टम
-  function pushOverlayHistory(tag) {
-    try {
-      history.pushState({ uiProOverlay: tag || "modal", ts: Date.now() }, "");
-      modalHistoryCount += 1;
-    } catch (_) {}
-  }
-
-  function handleGlobalBackButton() {
-    const openModals = getOpenModals();
-    if (openModals.length > 0) {
-      const topModal = openModals[openModals.length - 1];
-      topModal.classList.add("hidden");
-      modalHistoryCount = Math.max(0, modalHistoryCount - 1);
-      updateNewButtonVisibility();
-      return;
-    }
-
-    const openDrawer = document.querySelector(".drawer.open, .sidebar.open, #sideDrawer:not(.hidden), #mobileDrawer.open");
-    if (openDrawer) {
-      openDrawer.classList.remove("open");
-      if (openDrawer.id === "sideDrawer") openDrawer.classList.add("hidden");
-      updateNewButtonVisibility();
-    }
-  }
+  window.updateVyajNewBtnVisibility = updateNewButtonVisibility;
 
   function observeAppChanges() {
-    let prevOpenCount = getOpenModals().length;
-
     const obs = new MutationObserver(() => {
-      const curOpenCount = getOpenModals().length;
-      if (curOpenCount > prevOpenCount) {
-        pushOverlayHistory("auto_modal");
-        syncSettingsToggleStates();
-      }
-      prevOpenCount = curOpenCount;
       updateNewButtonVisibility();
-
+      syncSettingsToggleStates();
       clearTimeout(enhanceTimer);
       enhanceTimer = setTimeout(() => {
         cleanDuplicateControls();
@@ -435,7 +385,6 @@
     updateNewButtonVisibility();
     observeAppChanges();
 
-    window.addEventListener("popstate", handleGlobalBackButton);
     setTimeout(() => {
       upgradeSettingsWithToggles();
       cleanDuplicateControls();
