@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#05070e" />
+  <meta name="theme-color" content="#050816" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://sandeepgadge78-blip.github.io; script-src 'self' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://*.googleusercontent.com https://api.qrserver.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://docs.google.com https://*.googleusercontent.com https://script.google.com https://script.googleusercontent.com; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com;" />
-  <title>व्याज हिशोब वही (V14.18)</title>
+  <title>व्याज हिशोब वही (V14.19)</title>
 
   <link rel="manifest" href="./manifest.json" />
 
@@ -15,7 +15,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js" crossorigin="anonymous"></script>
 
   <style>
-    /* Ultra-Pro Obsidian Glass + Fintech Neon Theme (V14.18) */
+    /* Base Theme Layout (V14.19) */
     :root {
       --bg: #05070e;
       --card: rgba(13, 20, 36, 0.78);
@@ -69,30 +69,24 @@
       margin: 0;
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
       background-color: var(--bg);
-      background-image:
-        radial-gradient(circle at 12% 8%, rgba(168, 85, 247, 0.14), transparent 38%),
-        radial-gradient(circle at 88% 14%, rgba(56, 189, 248, 0.14), transparent 40%),
-        radial-gradient(circle at 50% 92%, rgba(16, 185, 129, 0.09), transparent 42%);
-      background-attachment: fixed;
       color: var(--text);
       padding-bottom: 80px;
       transition: background 0.25s, color 0.25s;
     }
-    body.light-mode { background-image: none; }
 
     /* Splash Screen */
     #splashScreen {
       position: fixed; inset: 0; z-index: 9999;
-      background: radial-gradient(circle at 50% 35%, #131c36 0%, #05070e 75%);
+      background: radial-gradient(circle at 50% 35%, #181f48 0%, #050816 75%);
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       gap: 12px; transition: opacity 0.4s ease, visibility 0.4s ease;
     }
     #splashScreen.splash-hide { opacity: 0; visibility: hidden; pointer-events: none; }
     .splash-logo {
       width: 78px; height: 78px; border-radius: 22px;
-      background: linear-gradient(135deg, #6366f1, #0ea5e9, #10b981);
+      background: linear-gradient(135deg, #6366f1, #2563eb, #8b5cf6);
       display: flex; align-items: center; justify-content: center;
-      font-size: 2.2rem; box-shadow: 0 0 32px rgba(56, 189, 248, 0.55);
+      font-size: 2.2rem; box-shadow: 0 0 32px rgba(99, 102, 241, 0.6);
       animation: splashPulse 1.4s infinite ease-in-out;
     }
     .splash-title {
@@ -115,7 +109,6 @@
       padding: 8px 10px; display: flex; gap: 6px; align-items: center; justify-content: space-between;
       flex-wrap: nowrap;
     }
-    body.light-mode header { background: rgba(255, 255, 255, 0.9); }
 
     .brand {
       font-weight: 800; font-size: 0.92rem; display: flex; align-items: center;
@@ -148,9 +141,9 @@
     button:active { transform: scale(0.97); }
     button:hover { border-color: var(--accent); }
     button.primary {
-      background: linear-gradient(135deg, #6366f1, #0ea5e9);
-      border-color: rgba(56, 189, 248, 0.6); color: #fff;
-      box-shadow: 0 4px 14px rgba(14, 165, 233, 0.28);
+      background: linear-gradient(135deg, #6366f1, #2563eb);
+      border-color: rgba(129, 140, 248, 0.6); color: #fff;
+      box-shadow: 0 4px 14px rgba(79, 70, 229, 0.32);
     }
     button.success {
       background: linear-gradient(135deg, #059669, #10b981);
@@ -173,114 +166,31 @@
       box-shadow: var(--glass-shadow);
     }
 
-    /* Ultra-Pro महिना कार्ड + लाईव्ह वसुली प्रोग्रेस बार */
     .month-hero-card {
-      background: linear-gradient(145deg, rgba(18, 28, 52, 0.85), rgba(15, 19, 38, 0.88));
-      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-      border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 18px;
-      padding: 16px 14px; text-align: center; margin-bottom: 12px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.06);
-    }
-    body.light-mode .month-hero-card {
-      background: linear-gradient(145deg, #ffffff, #f0f9ff);
-      border-color: #bae6fd; box-shadow: var(--glass-shadow);
+      text-align: center; margin-bottom: 12px; padding: 16px 14px; border-radius: 18px;
     }
     .month-hero-sub { font-size: 0.76rem; color: var(--muted); letter-spacing: 0.5px; text-transform: uppercase; }
     .month-hero-title {
-      font-size: 1.8rem; font-weight: 900;
-      background: linear-gradient(90deg, #38bdf8, #a855f7, #34d399);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      margin: 3px 0 8px; cursor: pointer; display: inline-block;
+      font-size: 1.8rem; font-weight: 900; margin: 3px 0 8px; cursor: pointer; display: inline-block;
     }
-    body.light-mode .month-hero-title {
-      background: linear-gradient(90deg, #0284c7, #6366f1);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    }
-    .month-hero-links {
-      display: flex; justify-content: center; align-items: center; gap: 10px;
-      font-size: 0.84rem; color: var(--muted); flex-wrap: wrap; margin-bottom: 10px;
-    }
-    .month-hero-links button {
-      background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25);
-      color: var(--text); padding: 4px 12px; border-radius: 999px;
-      font-size: 0.78rem; font-weight: 700;
-    }
-    .month-hero-links button:hover { border-color: var(--accent); color: var(--accent); }
+    .hero-prog-wrap { max-width: 440px; margin: 4px auto 0; text-align: left; padding: 8px 10px; }
+    .hero-prog-head { display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 700; margin-bottom: 5px; }
+    .hero-prog-track { width: 100%; height: 8px; border-radius: 999px; background: rgba(148, 163, 184, 0.22); overflow: hidden; }
+    .hero-prog-fill { height: 100%; width: 0%; border-radius: 999px; transition: width 0.45s cubic-bezier(.22,1,.36,1); }
 
-    /* लाईव्ह वसुली प्रोग्रेस बार */
-    .hero-prog-wrap {
-      max-width: 440px; margin: 4px auto 0; text-align: left;
-      background: rgba(0, 0, 0, 0.22); border: 1px solid var(--border);
-      border-radius: 12px; padding: 8px 10px;
-    }
-    body.light-mode .hero-prog-wrap { background: rgba(2, 132, 199, 0.06); }
-    .hero-prog-head {
-      display: flex; justify-content: space-between; font-size: 0.75rem;
-      font-weight: 700; margin-bottom: 5px; color: var(--muted);
-    }
-    .hero-prog-track {
-      width: 100%; height: 8px; border-radius: 999px;
-      background: rgba(148, 163, 184, 0.22); overflow: hidden;
-    }
-    .hero-prog-fill {
-      height: 100%; width: 0%; border-radius: 999px;
-      background: linear-gradient(90deg, #a855f7, #38bdf8, #10b981);
-      box-shadow: 0 0 10px rgba(56, 189, 248, 0.65);
-      transition: width 0.45s cubic-bezier(.22,1,.36,1);
-    }
-
-    /* २x२ निऑन ग्लो डॅशबोर्ड कार्ड्स */
     .grid-2x2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 12px; }
-    .stat-tile {
-      position: relative; overflow: hidden;
-      background: var(--card); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-      border: 1px solid var(--border); border-top: 3px solid var(--purple);
-      border-radius: 15px; padding: 13px 12px; text-align: left;
-      box-shadow: var(--glass-shadow); transition: transform 0.16s, box-shadow 0.2s, border-color 0.2s;
-    }
-    .stat-tile.tile-gold { border-top-color: var(--gold); }
-    .stat-tile.tile-cyan { border-top-color: var(--accent); }
-    .stat-tile.tile-crimson { border-top-color: var(--danger); }
+    .stat-tile { position: relative; overflow: hidden; text-align: left; transition: transform 0.16s, box-shadow 0.2s, border-color 0.2s; }
     .stat-tile.clickable { cursor: pointer; }
-    .stat-tile.clickable:hover, .stat-tile.clickable:active {
-      transform: translateY(-2px);
-      border-color: rgba(56, 189, 248, 0.55);
-      box-shadow: 0 8px 24px rgba(56, 189, 248, 0.18);
-    }
+    .stat-tile.clickable:hover, .stat-tile.clickable:active { transform: translateY(-2px); }
     .stat-tile-lbl { font-size: 0.78rem; color: var(--muted); display: flex; justify-content: space-between; align-items: center; font-weight: 600; white-space: nowrap; }
     .stat-tile-val { font-size: 1.32rem; font-weight: 900; margin-top: 6px; letter-spacing: 0.2px; }
 
-    .search-pill-box {
-      width: 100%; border-radius: 999px !important; padding: 11px 16px !important;
-      background: var(--card) !important; backdrop-filter: blur(10px);
-      border: 1px solid var(--border) !important; margin-bottom: 10px;
-      box-shadow: var(--glass-shadow);
-    }
-    .pill-strip {
-      display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 12px;
-      align-items: center;
-    }
-    .pill-btn {
-      border-radius: 999px; padding: 6px 13px; font-size: 0.78rem; white-space: nowrap;
-      background: var(--card); border: 1px solid var(--border); color: var(--text);
-    }
-    .pill-btn.filter-active {
-      background: linear-gradient(135deg, #6366f1, #0ea5e9);
-      border-color: #38bdf8; color: #fff; box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
-    }
-    .pill-btn.pill-paid.filter-active { background: #065f46; border-color: #10b981; color: #6ee7b7; box-shadow: 0 0 10px rgba(16,185,129,0.35); }
-    .pill-btn.pill-partial.filter-active { background: #78350f; border-color: #f59e0b; color: #fde68a; box-shadow: 0 0 10px rgba(245,158,11,0.35); }
-    .pill-btn.pill-pending.filter-active { background: #881337; border-color: #f43f5e; color: #fda4af; box-shadow: 0 0 10px rgba(244,63,94,0.35); }
-
-    .borrower-item {
-      border: 1px solid var(--border); border-radius: 16px; padding: 14px;
-      margin-bottom: 12px; background: var(--default-item-bg);
-      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-      box-shadow: var(--glass-shadow);
-    }
-    .borrower-item.status-paid { background: var(--paid-bg); border-color: rgba(16,185,129,0.45); }
-    .borrower-item.status-partial { background: var(--partial-bg); border-color: rgba(245,158,11,0.45); }
-    .borrower-item.status-closed { background: var(--closed-bg); opacity: 0.88; }
+    .search-pill-box { width: 100%; margin-bottom: 10px; }
+    .pill-strip { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 12px; align-items: center; }
+    .pill-btn { white-space: nowrap; color: var(--text); }
+    .pill-btn.pill-paid.filter-active { background: #065f46; border-color: #10b981; color: #6ee7b7; }
+    .pill-btn.pill-partial.filter-active { background: #78350f; border-color: #f59e0b; color: #fde68a; }
+    .pill-btn.pill-pending.filter-active { background: #881337; border-color: #f43f5e; color: #fda4af; }
 
     .alert-banner { background: rgba(244, 63, 94, 0.16); border: 1px solid var(--danger); border-radius: 12px; padding: 10px 14px; margin-bottom: 12px; }
     .info-banner { background: rgba(14, 165, 233, 0.16); border: 1px solid var(--accent); border-radius: 12px; padding: 10px 14px; margin-bottom: 12px; }
@@ -299,11 +209,11 @@
     table.passbook-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-top: 8px; }
     table.passbook-table th, table.passbook-table td { border: 1px solid var(--border); padding: 6px 8px; text-align: left; }
     table.passbook-table th { background: var(--card-2); color: var(--accent); }
-    #authScreen { max-width: 420px; margin: 48px auto; background: var(--card); backdrop-filter: blur(14px); border: 1px solid var(--border); border-radius: 16px; padding: 20px; box-shadow: var(--glass-shadow); }
-    .modal-backdrop { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.8); backdrop-filter: blur(6px); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 14px; overflow-y: auto; }
-    .modal-card { width: 100%; max-width: 840px; max-height: 92vh; overflow-y: auto; background: var(--card-solid); border: 1px solid rgba(56, 189, 248, 0.28); border-radius: 16px; padding: 16px; box-shadow: 0 20px 50px rgba(0,0,0,0.65); }
+    #authScreen { max-width: 420px; margin: 48px auto; background: var(--card); backdrop-filter: blur(14px); border: 1px solid var(--border); border-radius: 18px; padding: 20px; box-shadow: var(--glass-shadow); }
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.82); backdrop-filter: blur(6px); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 14px; overflow-y: auto; }
+    .modal-card { width: 100%; max-width: 840px; max-height: 92vh; overflow-y: auto; padding: 16px; box-shadow: 0 20px 50px rgba(0,0,0,0.65); }
     .tab-bar { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0; }
-    .tab-btn.active { background: linear-gradient(135deg, #6366f1, #0ea5e9); border-color: #38bdf8; color: #fff; }
+    .tab-btn.active { background: linear-gradient(135deg, #6366f1, #2563eb); border-color: #818cf8; color: #fff; }
     .hidden { display: none !important; }
 
     #printArea { display: none; }
@@ -315,14 +225,17 @@
       #printArea th, #printArea td { border: 1px solid #333; padding: 5px; text-align: left; }
     }
   </style>
+
+  <!-- Business Pro बाह्य CSS थीम (Zero JS Load) -->
+  <link rel="stylesheet" href="./css/pro-theme.css?v=14.19" />
 </head>
 <body>
 
-  <!-- Splash Screen (अ‍ॅप सुरू होताना १ सेकंदासाठी) -->
+  <!-- Splash Screen -->
   <div id="splashScreen">
     <div class="splash-logo">💎</div>
     <div class="splash-title">व्याज हिशोब वही</div>
-    <div class="splash-sub">Ultra-Pro Fintech V14.18 • सुरक्षित लोडिंग...</div>
+    <div class="splash-sub">Business Pro V14.19 • सुरक्षित लोडिंग...</div>
   </div>
 
   <!-- स्वच्छ एक-ओळीचा Frosted Glass हेडर -->
@@ -354,7 +267,7 @@
 
   <div id="printArea"></div>
 
-  <!-- लॉगिन स्क्रीन (Forgot Password सह) -->
+  <!-- लॉगिन स्क्रीन -->
   <div id="authScreen">
     <h2 style="margin-top:0;">व्याज हिशोब लॉगिन</h2>
     <p class="muted">केवळ अधिकृत खात्यासाठी सुरक्षित प्रवेश.</p>
@@ -374,7 +287,7 @@
     <div id="monthEndBanner" class="info-banner hidden"></div>
     <div id="todayPromiseAlert" class="alert-banner hidden"></div>
 
-    <!-- Ultra-Pro महिना कार्ड + लाईव्ह वसुली प्रोग्रेस बार -->
+    <!-- Business Pro महिना कार्ड + सिंगल-लाईन अ‍ॅक्शन बार + वसुली प्रोग्रेस बार -->
     <section class="month-hero-card">
       <div class="month-hero-sub">चालू खातेवही महिना</div>
       <div id="bigActiveMonthTitle" class="month-hero-title" title="महिना बदलण्यासाठी क्लिक करा">नोव्हेंबर 2026</div>
@@ -387,7 +300,7 @@
       <div class="hero-prog-wrap">
         <div class="hero-prog-head">
           <span>महिन्याची वसुली प्रगती</span>
-          <span id="heroCollectionPctText" style="color:var(--accent-2);">0% (₹0 / ₹0)</span>
+          <span id="heroCollectionPctText" style="color:#34d399;">0% (₹0 / ₹0)</span>
         </div>
         <div class="hero-prog-track">
           <div id="heroCollectionBarFill" class="hero-prog-fill"></div>
@@ -395,11 +308,11 @@
       </div>
     </section>
 
-    <!-- २x२ निऑन ग्लो क्लिकेबल डॅशबोर्ड कार्ड्स -->
+    <!-- २x२ Business Pro निऑन ग्लो क्लिकेबल डॅशबोर्ड कार्ड्स -->
     <section class="grid-2x2">
       <div class="stat-tile">
         <div class="stat-tile-lbl"><span>एकूण खाती</span></div>
-        <div id="dashActiveCount" class="stat-tile-val" style="color:var(--purple);">0</div>
+        <div id="dashActiveCount" class="stat-tile-val" style="color:#a78bfa;">0</div>
       </div>
       <div class="stat-tile tile-gold clickable" id="tilePrincipal" data-stat-drill="principal" title="सर्व ग्राहकांची मुद्दल यादी पहा">
         <div class="stat-tile-lbl"><span>एकूण मुद्दल</span><span style="font-size:0.72rem; color:var(--gold);">पहा ▸</span></div>
@@ -415,7 +328,7 @@
       </div>
     </section>
 
-    <!-- राऊंडेड सर्च बार व पिल फिल्टर्स -->
+    <!-- सर्च बार व पिल फिल्टर्स -->
     <input type="text" id="searchInput" class="search-pill-box" placeholder="🔍 नाव किंवा मोबाईल नंबर शोधा..." />
 
     <div class="pill-strip">
@@ -445,7 +358,7 @@
 
   </main>
 
-  <!-- नवीन १: बिझनेस प्रोफाईल पॉपअप (Auto-Branding) -->
+  <!-- बिझनेस प्रोफाईल पॉपअप -->
   <div id="profileModal" class="modal-backdrop hidden">
     <div class="modal-card" style="max-width:520px;">
       <div class="row" style="justify-content:space-between; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border);">
@@ -463,7 +376,7 @@
     </div>
   </div>
 
-  <!-- नवीन २: एकत्रित Settings पॉपअप -->
+  <!-- एकत्रित Settings पॉपअप -->
   <div id="settingsModal" class="modal-backdrop hidden">
     <div class="modal-card" style="max-width:520px;">
       <div class="row" style="justify-content:space-between; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border);">
@@ -495,7 +408,7 @@
     </div>
   </div>
 
-  <!-- नवीन ३: मराठी अ‍ॅप गाईड (Help & FAQ) पॉपअप -->
+  <!-- मराठी अ‍ॅप गाईड पॉपअप -->
   <div id="helpGuideModal" class="modal-backdrop hidden">
     <div class="modal-card" style="max-width:600px;">
       <div class="row" style="justify-content:space-between; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border);">
@@ -526,7 +439,7 @@
     </div>
   </div>
 
-  <!-- डॅशबोर्ड कार्ड्स (मुद्दल / मासिक व्याज / बाकी व्याज) साठी सविस्तर यादी पॉपअप -->
+  <!-- डॅशबोर्ड कार्ड्स तपशील यादी पॉपअप -->
   <div id="statDrillModal" class="modal-backdrop hidden">
     <div class="modal-card">
       <div class="row" style="justify-content:space-between; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--border);">
@@ -731,7 +644,7 @@
 
   <div id="passbookModal" class="modal-backdrop hidden"><div class="modal-card"><div class="row" style="justify-content:space-between;"><h3 id="pbTitle" style="margin:0;">Passbook</h3></div><div class="tab-bar"><button class="tab-btn active sm" data-pbtab="passbook">📖 Passbook</button><button class="tab-btn sm" data-pbtab="timeline">🕒 Timeline</button><button class="tab-btn sm" data-pbtab="payments">💰 Payments</button><button class="tab-btn sm" data-pbtab="principals">📊 मुद्दल</button></div><div id="pbContent"></div></div></div>
 
-  <!-- ब्राउझर कॅश रिफ्रेशसाठी V14.18 व्हर्जनसह सुरक्षित स्क्रिप्ट्स -->
+  <!-- ब्राउझर कॅश रिफ्रेशसाठी V14.19 व्हर्जनसह सुरक्षित स्क्रिप्ट्स -->
   <script src="./app.js?v=14.9"></script>
   <script src="./dashboard.js?v=14.3"></script>
   <script src="./backup-safety.js?v=14.5"></script>
@@ -742,6 +655,6 @@
   <script src="./js/analytics.js?v=14.18"></script>
   <script src="./js/receipt-card.js?v=14.13"></script>
   <script src="./js/quick-collect.js?v=14.14"></script>
-  <script src="./js/ui-pro.js?v=14.18"></script>
+  <script src="./js/ui-pro.js?v=14.19"></script>
 </body>
 </html>
