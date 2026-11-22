@@ -3,729 +3,492 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#05070e" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://sandeepgadge78-blip.github.io; script-src 'self' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://*.googleusercontent.com https://api.qrserver.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://docs.google.com https://*.googleusercontent.com https://script.google.com https://script.googleusercontent.com; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com;" />
-  <title>व्याज हिशोब वही (V14.3)</title>
-
+  <title>व्याज हिशोब वही (Hishob V14.3)</title>
   <link rel="manifest" href="./manifest.json" />
-
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js" crossorigin="anonymous"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js" crossorigin="anonymous"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js" crossorigin="anonymous"></script>
-
+  <meta name="theme-color" content="#05070e" />
   <style>
-    /* Ultra-Pro Obsidian Glass + Fintech Neon Theme (V14.3) */
     :root {
       --bg: #05070e;
-      --card: rgba(13, 20, 36, 0.78);
-      --card-solid: #0d1424;
-      --card-2: rgba(23, 33, 56, 0.85);
+      --card: rgba(15, 23, 42, 0.9);
+      --card-2: #111827;
       --text: #f8fafc;
       --muted: #94a3b8;
       --accent: #38bdf8;
-      --accent-2: #10b981;
       --gold: #fbbf24;
-      --purple: #a855f7;
+      --border: rgba(148, 163, 184, 0.22);
+      --meta-bg: rgba(30, 41, 59, 0.7);
       --danger: #f43f5e;
-      --warn: #f59e0b;
-      --border: rgba(56, 189, 248, 0.18);
-      --paid-bg: rgba(16, 185, 129, 0.14);
-      --paid-border: #10b981;
-      --partial-bg: rgba(245, 158, 11, 0.15);
-      --partial-border: #f59e0b;
-      --closed-bg: rgba(100, 116, 139, 0.16);
-      --default-item-bg: rgba(13, 20, 36, 0.82);
-      --meta-bg: rgba(17, 27, 46, 0.75);
-      --glass-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+      --ok: #10b981;
+      --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
     }
 
     body.light-mode {
       --bg: #f1f5f9;
-      --card: #ffffff;
-      --card-solid: #ffffff;
-      --card-2: #e2e8f0;
+      --card: rgba(255, 255, 255, 0.95);
+      --card-2: #f8fafc;
       --text: #0f172a;
       --muted: #475569;
       --accent: #0284c7;
-      --accent-2: #15803d;
-      --gold: #b45309;
-      --purple: #7e22ce;
+      --gold: #d97706;
+      --border: rgba(15, 23, 42, 0.14);
+      --meta-bg: #e2e8f0;
       --danger: #dc2626;
-      --warn: #d97706;
-      --border: #cbd5e1;
-      --paid-bg: rgba(34, 197, 94, 0.12);
-      --paid-border: #16a34a;
-      --partial-bg: rgba(245, 158, 11, 0.14);
-      --partial-border: #d97706;
-      --closed-bg: rgba(148, 163, 184, 0.18);
-      --default-item-bg: #ffffff;
-      --meta-bg: #f8fafc;
-      --glass-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+      --ok: #059669;
+      --glass-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      background-color: var(--bg);
-      background-image:
-        radial-gradient(circle at 12% 8%, rgba(168, 85, 247, 0.14), transparent 38%),
-        radial-gradient(circle at 88% 14%, rgba(56, 189, 248, 0.14), transparent 40%),
-        radial-gradient(circle at 50% 92%, rgba(16, 185, 129, 0.09), transparent 42%);
-      background-attachment: fixed;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
       color: var(--text);
-      padding-bottom: 80px;
-      transition: background 0.25s, color 0.25s;
-    }
-    body.light-mode { background-image: none; }
-
-    /* Splash Screen (V14.3) */
-    #splashScreen {
-      position: fixed; inset: 0; z-index: 9999;
-      background: radial-gradient(circle at 50% 35%, #131c36 0%, #05070e 75%);
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 12px; transition: opacity 0.4s ease, visibility 0.4s ease;
-    }
-    #splashScreen.splash-hide { opacity: 0; visibility: hidden; pointer-events: none; }
-    .splash-logo {
-      width: 78px; height: 78px; border-radius: 22px;
-      background: linear-gradient(135deg, #6366f1, #0ea5e9, #10b981);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 2.2rem; box-shadow: 0 0 32px rgba(56, 189, 248, 0.55);
-      animation: splashPulse 1.4s infinite ease-in-out;
-    }
-    .splash-title {
-      font-size: 1.55rem; font-weight: 900; letter-spacing: 0.4px;
-      background: linear-gradient(90deg, #38bdf8, #a855f7, #34d399);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    }
-    .splash-sub { font-size: 0.8rem; color: #94a3b8; }
-    @keyframes splashPulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.06); }
+      padding-bottom: 100px;
     }
 
-    /* Frosted Glass हेडर */
     header {
-      position: sticky; top: 0; z-index: 25;
-      background: rgba(8, 12, 24, 0.78);
-      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      background: var(--card);
+      backdrop-filter: blur(14px);
       border-bottom: 1px solid var(--border);
-      padding: 10px 14px; display: flex; gap: 8px; align-items: center; justify-content: space-between;
-    }
-    body.light-mode header { background: rgba(255, 255, 255, 0.88); }
-
-    .brand { font-weight: 800; font-size: 1.02rem; display: flex; align-items: center; gap: 8px; letter-spacing: 0.2px; }
-    .badge {
-      font-size: 0.72rem; padding: 3px 8px; border-radius: 999px;
-      background: var(--card-2); border: 1px solid var(--border); color: var(--accent);
-    }
-    .badge.paid { color: #34d399; border-color: rgba(16,185,129,0.5); background: rgba(16,185,129,0.14); }
-    .badge.partial { color: #fbbf24; border-color: rgba(245,158,11,0.5); background: rgba(245,158,11,0.14); }
-    .badge.pending { color: #fb7185; border-color: rgba(244,63,94,0.5); background: rgba(244,63,94,0.14); }
-    .badge.closed { color: #94a3b8; border-color: #64748b; }
-
-    .bell-btn { position: relative; display: inline-flex; align-items: center; gap: 3px; }
-    .due-count-pill {
-      background: linear-gradient(135deg, #f43f5e, #e11d48); color: #fff; font-size: 0.68rem; font-weight: 700;
-      padding: 1px 6px; border-radius: 999px; min-width: 17px; text-align: center;
-      box-shadow: 0 0 8px rgba(244, 63, 94, 0.55);
     }
 
-    .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-    button, input, select, textarea {
-      background: var(--card-2); color: var(--text); border: 1px solid var(--border);
-      border-radius: 10px; padding: 8px 10px; font-size: 0.88rem; font-family: inherit;
+    .brand h1 {
+      margin: 0;
+      font-size: 1.05rem;
     }
-    button { cursor: pointer; font-weight: 600; transition: transform 0.14s, border-color 0.18s, box-shadow 0.18s; }
-    button:active { transform: scale(0.97); }
-    button:hover { border-color: var(--accent); }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .ok {
+      color: var(--ok);
+    }
+
+    .err {
+      color: var(--danger);
+    }
+
+    .warn-text {
+      color: #f59e0b;
+    }
+
+    .row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px;
+    }
+
+    button,
+    input,
+    select {
+      font-family: inherit;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--card-2);
+      color: var(--text);
+      padding: 8px 12px;
+      font-size: 0.9rem;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
     button.primary {
-      background: linear-gradient(135deg, #6366f1, #0ea5e9);
-      border-color: rgba(56, 189, 248, 0.6); color: #fff;
-      box-shadow: 0 4px 14px rgba(14, 165, 233, 0.28);
+      background: linear-gradient(135deg, #2563eb, #0284c7);
+      border-color: #38bdf8;
+      color: #fff;
+      font-weight: 700;
     }
+
     button.success {
       background: linear-gradient(135deg, #059669, #10b981);
-      border-color: rgba(52, 211, 153, 0.55); color: #fff;
+      border-color: #34d399;
+      color: #fff;
+      font-weight: 700;
     }
-    button.danger {
-      background: linear-gradient(135deg, #be123c, #e11d48);
-      border-color: rgba(251, 113, 133, 0.5); color: #fff;
-    }
+
     button.warn {
-      background: linear-gradient(135deg, #b45309, #d97706);
-      border-color: rgba(251, 191, 36, 0.5); color: #fff;
-    }
-    button.sm { padding: 5px 9px; font-size: 0.78rem; }
-
-    .container { max-width: 1020px; margin: 12px auto; padding: 0 12px; }
-    .card {
-      background: var(--card); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-      border: 1px solid var(--border); border-radius: 16px; padding: 14px; margin-bottom: 12px;
-      box-shadow: var(--glass-shadow);
+      background: linear-gradient(135deg, #d97706, #f59e0b);
+      border-color: #fbbf24;
+      color: #fff;
+      font-weight: 700;
     }
 
-    /* Ultra-Pro महिना कार्ड + लाईव्ह वसुली प्रोग्रेस बार */
-    .month-hero-card {
-      background: linear-gradient(145deg, rgba(18, 28, 52, 0.85), rgba(15, 19, 38, 0.88));
-      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-      border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 18px;
-      padding: 16px 14px; text-align: center; margin-bottom: 12px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.06);
-    }
-    body.light-mode .month-hero-card {
-      background: linear-gradient(145deg, #ffffff, #f0f9ff);
-      border-color: #bae6fd; box-shadow: var(--glass-shadow);
-    }
-    .month-hero-sub { font-size: 0.76rem; color: var(--muted); letter-spacing: 0.5px; text-transform: uppercase; }
-    .month-hero-title {
-      font-size: 1.8rem; font-weight: 900;
-      background: linear-gradient(90deg, #38bdf8, #a855f7, #34d399);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      margin: 3px 0 8px; cursor: pointer; display: inline-block;
-    }
-    body.light-mode .month-hero-title {
-      background: linear-gradient(90deg, #0284c7, #6366f1);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    }
-    .month-hero-links {
-      display: flex; justify-content: center; align-items: center; gap: 10px;
-      font-size: 0.84rem; color: var(--muted); flex-wrap: wrap; margin-bottom: 10px;
-    }
-    .month-hero-links button {
-      background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25);
-      color: var(--text); padding: 4px 12px; border-radius: 999px;
-      font-size: 0.78rem; font-weight: 700;
-    }
-    .month-hero-links button:hover { border-color: var(--accent); color: var(--accent); }
-
-    /* लाईव्ह वसुली प्रोग्रेस बार */
-    .hero-prog-wrap {
-      max-width: 440px; margin: 4px auto 0; text-align: left;
-      background: rgba(0, 0, 0, 0.22); border: 1px solid var(--border);
-      border-radius: 12px; padding: 8px 10px;
-    }
-    body.light-mode .hero-prog-wrap { background: rgba(2, 132, 199, 0.06); }
-    .hero-prog-head {
-      display: flex; justify-content: space-between; font-size: 0.75rem;
-      font-weight: 700; margin-bottom: 5px; color: var(--muted);
-    }
-    .hero-prog-track {
-      width: 100%; height: 8px; border-radius: 999px;
-      background: rgba(148, 163, 184, 0.22); overflow: hidden;
-    }
-    .hero-prog-fill {
-      height: 100%; width: 0%; border-radius: 999px;
-      background: linear-gradient(90deg, #a855f7, #38bdf8, #10b981);
-      box-shadow: 0 0 10px rgba(56, 189, 248, 0.65);
-      transition: width 0.45s cubic-bezier(.22,1,.36,1);
+    button.sm {
+      padding: 6px 10px;
+      font-size: 0.8rem;
     }
 
-    /* २x२ निऑन ग्लो डॅशबोर्ड कार्ड्स */
-    .grid-2x2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 12px; }
+    .hidden {
+      display: none !important;
+    }
+
+    .container {
+      max-width: 1020px;
+      margin: 0 auto;
+      padding: 14px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
     .stat-tile {
-      position: relative; overflow: hidden;
-      background: var(--card); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-      border: 1px solid var(--border); border-top: 3px solid var(--purple);
-      border-radius: 15px; padding: 13px 12px; text-align: left;
-      box-shadow: var(--glass-shadow); transition: transform 0.16s, box-shadow 0.2s, border-color 0.2s;
-    }
-    .stat-tile.tile-gold { border-top-color: var(--gold); }
-    .stat-tile.tile-cyan { border-top-color: var(--accent); }
-    .stat-tile.tile-crimson { border-top-color: var(--danger); }
-    .stat-tile.clickable { cursor: pointer; }
-    .stat-tile.clickable:hover, .stat-tile.clickable:active {
-      transform: translateY(-2px);
-      border-color: rgba(56, 189, 248, 0.55);
-      box-shadow: 0 8px 24px rgba(56, 189, 248, 0.18);
-    }
-    .stat-tile-lbl { font-size: 0.78rem; color: var(--muted); display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
-    .stat-tile-val { font-size: 1.38rem; font-weight: 900; margin-top: 6px; letter-spacing: 0.2px; }
-
-    .search-pill-box {
-      width: 100%; border-radius: 999px !important; padding: 11px 16px !important;
-      background: var(--card) !important; backdrop-filter: blur(10px);
-      border: 1px solid var(--border) !important; margin-bottom: 10px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      cursor: pointer;
       box-shadow: var(--glass-shadow);
     }
-    .pill-strip {
-      display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 12px;
+
+    .stat-label {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .stat-val {
+      font-size: 1.25rem;
+      font-weight: 800;
+      margin-top: 4px;
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 14px;
+      box-shadow: var(--glass-shadow);
+    }
+
+    .meta-box {
+      background: var(--meta-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 0.85rem;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.74rem;
+      font-weight: 700;
+      background: rgba(56, 189, 248, 0.16);
+      color: var(--accent);
+    }
+
+    .badge.paid {
+      background: rgba(16, 185, 129, 0.18);
+      color: #34d399;
+    }
+
+    .badge.partial {
+      background: rgba(245, 158, 11, 0.18);
+      color: #fbbf24;
+    }
+
+    .badge.pending {
+      background: rgba(244, 63, 94, 0.18);
+      color: #fda4af;
+    }
+
+    .passbook-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+
+    .passbook-table th,
+    .passbook-table td {
+      border: 1px solid var(--border);
+      padding: 7px 8px;
+      text-align: left;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      background: rgba(2, 6, 23, 0.78);
+      backdrop-filter: blur(5px);
+      display: flex;
       align-items: center;
+      justify-content: center;
+      padding: 14px;
     }
-    .pill-btn {
-      border-radius: 999px; padding: 6px 13px; font-size: 0.78rem; white-space: nowrap;
-      background: var(--card); border: 1px solid var(--border); color: var(--text);
-    }
-    .pill-btn.filter-active {
-      background: linear-gradient(135deg, #6366f1, #0ea5e9);
-      border-color: #38bdf8; color: #fff; box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
-    }
-    .pill-btn.pill-paid.filter-active { background: #065f46; border-color: #10b981; color: #6ee7b7; box-shadow: 0 0 10px rgba(16,185,129,0.35); }
-    .pill-btn.pill-partial.filter-active { background: #78350f; border-color: #f59e0b; color: #fde68a; box-shadow: 0 0 10px rgba(245,158,11,0.35); }
-    .pill-btn.pill-pending.filter-active { background: #881337; border-color: #f43f5e; color: #fda4af; box-shadow: 0 0 10px rgba(244,63,94,0.35); }
 
-    .borrower-item {
-      border: 1px solid var(--border); border-radius: 16px; padding: 14px;
-      margin-bottom: 12px; background: var(--default-item-bg);
-      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-      box-shadow: var(--glass-shadow);
+    .modal-card {
+      width: 100%;
+      max-width: 700px;
+      max-height: 88vh;
+      overflow-y: auto;
+      background: var(--card-2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65);
     }
-    .borrower-item.status-paid { background: var(--paid-bg); border-color: rgba(16,185,129,0.45); }
-    .borrower-item.status-partial { background: var(--partial-bg); border-color: rgba(245,158,11,0.45); }
-    .borrower-item.status-closed { background: var(--closed-bg); opacity: 0.88; }
 
-    .alert-banner { background: rgba(244, 63, 94, 0.16); border: 1px solid var(--danger); border-radius: 12px; padding: 10px 14px; margin-bottom: 12px; }
-    .info-banner { background: rgba(14, 165, 233, 0.16); border: 1px solid var(--accent); border-radius: 12px; padding: 10px 14px; margin-bottom: 12px; }
-    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
-    .field { display: flex; flex-direction: column; gap: 4px; }
-    .field label { font-size: 0.78rem; color: var(--muted); }
-    .meta-box { margin-top: 6px; padding: 8px; border-radius: 10px; background: var(--meta-bg); border: 1px solid var(--border); font-size: 0.82rem; }
-    .doc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-top: 10px; }
-    .doc-card { border: 1px solid var(--border); border-radius: 10px; padding: 8px; background: var(--meta-bg); text-align: center; }
-    .doc-card img { max-width: 100%; max-height: 150px; border-radius: 6px; object-fit: cover; }
-    .muted { color: var(--muted); font-size: 0.84rem; }
-    .ok { color: var(--accent-2); }
-    .err { color: var(--danger); }
-    .warn-text { color: var(--warn); }
-    .audit-box { max-height: 320px; overflow-y: auto; font-size: 0.82rem; background: var(--bg); padding: 10px; border-radius: 10px; border: 1px solid var(--border); }
-    table.passbook-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-top: 8px; }
-    table.passbook-table th, table.passbook-table td { border: 1px solid var(--border); padding: 6px 8px; text-align: left; }
-    table.passbook-table th { background: var(--card-2); color: var(--accent); }
-    #authScreen { max-width: 420px; margin: 48px auto; background: var(--card); backdrop-filter: blur(14px); border: 1px solid var(--border); border-radius: 16px; padding: 20px; box-shadow: var(--glass-shadow); }
-    .modal-backdrop { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.8); backdrop-filter: blur(6px); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 14px; overflow-y: auto; }
-    .modal-card { width: 100%; max-width: 840px; max-height: 92vh; overflow-y: auto; background: var(--card-solid); border: 1px solid rgba(56, 189, 248, 0.28); border-radius: 16px; padding: 16px; box-shadow: 0 20px 50px rgba(0,0,0,0.65); }
-    .tab-bar { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0; }
-    .tab-btn.active { background: linear-gradient(135deg, #6366f1, #0ea5e9); border-color: #38bdf8; color: #fff; }
-    .hidden { display: none !important; }
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding-bottom: 10px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
 
-    #printArea { display: none; }
+    .modal-head h3 {
+      margin: 0;
+      font-size: 1rem;
+    }
+
     @media print {
-      body * { visibility: hidden; }
-      #printArea, #printArea * { visibility: visible; }
-      #printArea { display: block; position: absolute; left: 0; top: 0; width: 100%; color: #000 !important; background: #fff !important; padding: 12px; }
-      #printArea table { width: 100%; border-collapse: collapse; font-size: 12px; }
-      #printArea th, #printArea td { border: 1px solid #333; padding: 5px; text-align: left; }
+      header,
+      .panel:not(#cashbookSummaryPanel),
+      .stats-grid,
+      #vyaj-safety-bar,
+      .modal-backdrop {
+        display: none !important;
+      }
+
+      #printArea {
+        display: block !important;
+      }
     }
   </style>
 </head>
 <body>
-
-  <!-- Splash Screen (अ‍ॅप सुरू होताना १ सेकंदासाठी) -->
-  <div id="splashScreen">
-    <div class="splash-logo">💎</div>
-    <div class="splash-title">व्याज हिशोब वही</div>
-    <div class="splash-sub">Ultra-Pro Fintech V14.3 • सुरक्षित लोडिंग...</div>
-  </div>
-
-  <!-- स्वच्छ Frosted Glass हेडर -->
   <header>
     <div class="brand">
-      <span id="tBrandTitle">व्याज हिशोब वही</span>
-      <span id="networkBadge" class="badge paid">Online 🟢</span>
-      <span id="syncStatus" class="badge">Synced</span>
+      <div>
+        <h1>📒 व्याज हिशोब वही</h1>
+        <div class="muted" style="font-size:0.74rem;">V14.3 • कर्ज, व्याज व कॅशबुक प्रणाली</div>
+      </div>
     </div>
-    <div id="topActions" class="row hidden">
-      <button id="notifBellBtn" class="sm bell-btn" title="रिमाइंडर व थकबाकी सूचना">
-        🔔 <span id="dueCounterBadge" class="due-count-pill">0</span>
-      </button>
+    <div class="row">
+      <input type="month" id="activeYm" />
+      <button type="button" id="notifBellBtn" class="sm" title="आजचे वायदे">🔔</button>
+      <button type="button" id="lockBtn" class="sm" title="लॉक">🔒</button>
       <span id="threeDotMenuSlot"></span>
-
-      <!-- अंतर्गत सुरक्षित ट्रिगर्स -->
-      <span class="hidden">
-        <button id="toggleHideAmtBtn">👁️</button>
-        <button id="toggleThemeBtn">☀️</button>
-        <select id="langSelect"><option value="mr">मराठी</option><option value="hi">हिंदी</option><option value="en">English</option></select>
-        <button id="openPnlBtn">📈 P&L</button>
-        <button id="openSecurityDashBtn">🛡️ Security</button>
-        <span id="userEmailBadge"></span>
-        <select id="autoLockSelect"><option value="120000">2m</option><option value="300000" selected>5m</option><option value="600000">10m</option><option value="900000">15m</option></select>
-        <button id="lockBtn">🔒</button>
-      </span>
     </div>
   </header>
 
-  <div id="printArea"></div>
-
-  <!-- लॉगिन स्क्रीन (Forgot Password सह) -->
-  <div id="authScreen">
-    <h2 style="margin-top:0;">व्याज हिशोब लॉगिन</h2>
-    <p class="muted">केवळ अधिकृत खात्यासाठी सुरक्षित प्रवेश.</p>
-    <div style="display:flex; flex-direction:column; gap:10px;">
-      <input type="email" id="loginEmail" placeholder="तुमचा Gmail पत्ता" autocomplete="username" />
-      <input type="password" id="loginPassword" placeholder="पासवर्ड" autocomplete="current-password" />
-      <button id="emailLoginBtn" class="primary">ईमेल/पासवर्डने लॉगिन करा</button>
-      <button id="googleLoginBtn" class="success">Google Sign-In</button>
-      <button type="button" id="forgotPasswordBtn" class="sm" style="background:transparent; border:none; color:var(--accent); text-decoration:underline; margin-top:2px;">🔑 पासवर्ड विसरलात? (Forgot Password)</button>
-      <div id="authMsg" class="muted" style="text-align:center;"></div>
-    </div>
-  </div>
-
-  <!-- मुख्य अ‍ॅप स्क्रीन -->
-  <main id="appScreen" class="container hidden">
-
-    <div id="monthEndBanner" class="info-banner hidden"></div>
-    <div id="todayPromiseAlert" class="alert-banner hidden"></div>
-
-    <!-- Ultra-Pro महिना कार्ड + लाईव्ह वसुली प्रोग्रेस बार -->
-    <section class="month-hero-card">
-      <div class="month-hero-sub">चालू खातेवही महिना</div>
-      <div id="bigActiveMonthTitle" class="month-hero-title" title="महिना बदलण्यासाठी क्लिक करा">नोव्हेंबर 2026</div>
-      <div class="month-hero-links">
-        <button type="button" id="heroPdfLink">🖨️ PDF</button>
-        <button type="button" id="heroExcelLink">📊 Excel</button>
-        <button type="button" id="heroBackupLink">☁️ Backup</button>
-        <span class="hidden"><input type="month" id="activeYm" /></span>
+  <main class="container">
+    <!-- मुख्य आकडेवारी कार्ड्स -->
+    <div class="stats-grid">
+      <div class="stat-tile" data-stat-drill="principal">
+        <div class="stat-label">एकूण मुद्दल</div>
+        <div id="statPrincipal" class="stat-val" style="color:var(--gold);">₹0</div>
       </div>
-      <div class="hero-prog-wrap">
-        <div class="hero-prog-head">
-          <span>महिन्याची वसुली प्रगती</span>
-          <span id="heroCollectionPctText" style="color:var(--accent-2);">0% (₹0 / ₹0)</span>
+      <div class="stat-tile" data-stat-drill="interest">
+        <div class="stat-label">मासिक व्याज</div>
+        <div id="statMonthlyInterest" class="stat-val" style="color:var(--accent);">₹0</div>
+      </div>
+      <div class="stat-tile" data-stat-drill="pending">
+        <div class="stat-label">एकूण बाकी व्याज</div>
+        <div id="statPendingInterest" class="stat-val err">₹0</div>
+      </div>
+    </div>
+
+    <!-- नवीन ग्राहक व कर्ज नोंद विभाग -->
+    <section class="panel" id="newLoanSection">
+      <div class="row" style="justify-content:space-between; margin-bottom:10px;">
+        <strong>➕ नवीन ग्राहक / कर्ज नोंद</strong>
+        <span class="badge">झटपट नोंद</span>
+      </div>
+      <form id="newBorrowerForm" class="grid-2">
+        <input type="text" id="borrowerNameInput" placeholder="ग्राहकाचे पूर्ण नाव" required />
+        <input type="tel" id="borrowerPhoneInput" placeholder="मोबाइल नंबर (उदा. 9876543210)" />
+        <input type="number" id="principalAmountInput" placeholder="मुद्दल रक्कम (₹)" min="1" step="any" required />
+        <input type="number" id="interestRateInput" placeholder="मासिक व्याज दर (%)" min="0" step="any" required />
+        <input type="date" id="loanStartDateInput" />
+        <input type="number" id="vaydaDayInput" placeholder="वायदा तारीख (1 ते 31)" min="1" max="31" />
+        <div class="row" style="grid-column: 1 / -1; justify-content:flex-end;">
+          <button type="submit" id="saveBorrowerBtn" class="primary">💾 कर्ज खाते सेव्ह करा</button>
         </div>
-        <div class="hero-prog-track">
-          <div id="heroCollectionBarFill" class="hero-prog-fill"></div>
+      </form>
+    </section>
+
+    <!-- झटपट व्याज जमा व मुद्दल कपात विभाग -->
+    <section class="panel" id="quickEntrySection">
+      <div class="row" style="justify-content:space-between; margin-bottom:10px;">
+        <strong>💸 व्याज जमा / मुद्दल कपात नोंद</strong>
+        <span class="badge">लेजर अपडेट</span>
+      </div>
+      <form id="quickPaymentForm" class="grid-2">
+        <select id="paymentBorrowerSelect">
+          <option value="">-- ग्राहक निवडा --</option>
+        </select>
+        <select id="paymentTypeSelect">
+          <option value="interest">व्याज जमा (Interest)</option>
+          <option value="principal_reduction">मुद्दल कपात (Principal Reduction)</option>
+        </select>
+        <input type="number" id="paymentAmountInput" placeholder="रक्कम (₹)" min="1" step="any" required />
+        <input type="date" id="paymentDateInput" />
+        <input type="text" id="paymentNoteInput" placeholder="नोंद / UPI Ref (ऐच्छिक)" />
+        <div class="row" style="align-items:center; justify-content:flex-end;">
+          <button type="submit" id="savePaymentBtn" class="success">✅ व्यवहार नोंदवा</button>
         </div>
+      </form>
+    </section>
+
+    <!-- कॅशबुक व मासिक सारांश विभाग -->
+    <section class="panel" id="cashbookSummaryPanel">
+      <div class="row" style="justify-content:space-between; margin-bottom:10px;">
+        <strong>📊 कॅशबुक व मासिक हिशोब सारांश</strong>
+        <div class="row">
+          <button type="button" id="openPnlBtn" class="sm warn">📈 नफा-तोटा (P&L)</button>
+          <button type="button" id="printSummaryBtn" class="sm">🖨️ प्रिंट / PDF</button>
+        </div>
+      </div>
+      <div id="cashbookSummaryBox" class="meta-box">
+        निवडलेल्या महिन्याचा व्याज, मुद्दल आणि जमा-खर्चाचा हिशोब येथे दिसेल.
       </div>
     </section>
 
-    <!-- २x२ निऑन ग्लो क्लिकेबल डॅशबोर्ड कार्ड्स -->
-    <section class="grid-2x2">
-      <div class="stat-tile">
-        <div class="stat-tile-lbl"><span>एकूण खाती</span></div>
-        <div id="dashActiveCount" class="stat-tile-val" style="color:var(--purple);">0</div>
+    <!-- ग्राहक व कर्ज खात्यांची यादी -->
+    <section class="panel">
+      <div class="row" style="justify-content:space-between; margin-bottom:10px;">
+        <strong>📋 ग्राहक व कर्ज खाती</strong>
+        <input type="text" id="searchCustomerInput" placeholder="ग्राहक नाव किंवा नंबर शोधा..." />
       </div>
-      <div class="stat-tile tile-gold clickable" id="tilePrincipal" data-stat-drill="principal" title="सर्व ग्राहकांची मुद्दल यादी पहा">
-        <div class="stat-tile-lbl"><span>एकूण मुद्दल</span><span style="font-size:0.72rem; color:var(--gold);">पहा ▸</span></div>
-        <div id="dashTotalPrincipal" class="stat-tile-val" style="color:var(--gold);">₹0</div>
-      </div>
-      <div class="stat-tile tile-cyan clickable" id="tileInterest" data-stat-drill="interest" title="मासिक व्याज यादी पहा">
-        <div class="stat-tile-lbl"><span>मासिक व्याज</span><span style="font-size:0.72rem; color:var(--accent);">पहा ▸</span></div>
-        <div id="dashExpectedInterest" class="stat-tile-val" style="color:var(--accent);">₹0</div>
-      </div>
-      <div class="stat-tile tile-crimson clickable" id="tilePending" data-stat-drill="pending" title="बाकी व्याज व बाकी महिने यादी पहा">
-        <div class="stat-tile-lbl"><span>बाकी व्याज</span><span style="font-size:0.72rem; color:var(--danger);">पहा ▸</span></div>
-        <div id="dashTotalPending" class="stat-tile-val" style="color:var(--danger);">₹0</div>
-      </div>
+      <div id="borrowersList"></div>
     </section>
-
-    <!-- राऊंडेड सर्च बार व पिल फिल्टर्स -->
-    <input type="text" id="searchInput" class="search-pill-box" placeholder="🔍 नाव किंवा मोबाईल नंबर शोधा..." />
-
-    <div class="pill-strip">
-      <button type="button" class="pill-btn filter-active" data-statusfilter="all">सर्व खाती</button>
-      <button type="button" class="pill-btn" data-jobfilter="govt">Govt</button>
-      <button type="button" class="pill-btn" data-jobfilter="private">Pvt</button>
-      <button type="button" class="pill-btn pill-paid" data-statusfilter="paid">पूर्ण जमा</button>
-      <button type="button" class="pill-btn pill-partial" data-statusfilter="partial">अर्धवट</button>
-      <button type="button" class="pill-btn pill-pending" data-statusfilter="pending">बाकी</button>
-      <button type="button" class="pill-btn" data-accfilter="closed">Closed</button>
-    </div>
-
-    <!-- ग्राहक यादी -->
-    <section id="borrowersList"></section>
-
-    <span id="dashClosedCount" class="hidden"></span>
-    <span id="dashCollectedMonth" class="hidden"></span>
-    <span id="tDashTitle" class="hidden"></span>
-    <span id="tLblPrincipal" class="hidden"></span>
-    <span id="tLblExpected" class="hidden"></span>
-    <span id="tLblCollected" class="hidden"></span>
-    <span id="tLblPending" class="hidden"></span>
-    <span id="tLedgerTitle" class="hidden"></span>
-    <button id="toggleExpandAllBtn" class="hidden"></button>
-    <button id="voiceSearchBtn" class="hidden"></button>
-    <span id="voiceStatusMsg" class="hidden"></span>
-
   </main>
 
-  <!-- नवीन १: बिझनेस प्रोफाईल पॉपअप (Auto-Branding) -->
-  <div id="profileModal" class="modal-backdrop hidden">
-    <div class="modal-card" style="max-width:520px;">
-      <div class="row" style="justify-content:space-between; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border);">
-        <h3 style="margin:0; color:var(--accent);">👤 बिझनेस प्रोफाईल (Auto-Branding)</h3>
-      </div>
-      <p class="muted" style="margin-top:0;">इथे सेव्ह केलेले नाव व नंबर तुमच्या **वचनचिट्ठी**, **PDF रिपोर्ट** आणि **WhatsApp पावतीवर** आपोआप छापून येईल.</p>
-      <div style="display:flex; flex-direction:column; gap:10px;">
-        <div class="field"><label>व्यवसायाचे / फर्मचे नाव</label><input type="text" id="profBizName" placeholder="उदा. श्री गणेश फायनान्स / व्याज हिशोब वही" /></div>
-        <div class="field"><label>तुमचे पूर्ण नाव (Owner Name)</label><input type="text" id="profOwnerName" placeholder="उदा. संदीप गाडगे" /></div>
-        <div class="field"><label>तुमचा मोबाईल नंबर</label><input type="tel" id="profMobile" placeholder="10 अंकी मोबाईल नंबर" /></div>
-        <div class="field"><label>तुमचा UPI ID (QR साठी)</label><input type="text" id="profUpiId" placeholder="उदा. name@okaxis" /></div>
-        <button type="button" id="saveProfileBtn" class="success" style="width:100%; margin-top:4px;">✅ प्रोफाईल सेव्ह करा</button>
-        <div id="profMsg" class="muted" style="text-align:center;"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- नवीन २: एकत्रित Settings पॉपअप -->
-  <div id="settingsModal" class="modal-backdrop hidden">
-    <div class="modal-card" style="max-width:520px;">
-      <div class="row" style="justify-content:space-between; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border);">
-        <h3 style="margin:0; color:var(--accent);">⚙️ अ‍ॅप सेटिंग्ज (Settings)</h3>
-      </div>
-      <div style="display:flex; flex-direction:column; gap:12px;">
-        <div class="field">
-          <label>⏱️ Auto-Lock टाईमर (अ‍ॅप न वापरल्यास आपोआप लॉक):</label>
-          <select id="setAutoLockSelect">
-            <option value="120000">२ मिनिटे (2 Min)</option>
-            <option value="300000">५ मिनिटे (5 Min - शिफारस)</option>
-            <option value="600000">१० मिनिटे (10 Min)</option>
-            <option value="900000">१५ मिनिटे (15 Min)</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>📊 Default मासिक व्याज दर (% — नवीन ग्राहकासाठी आपोआप भरेल):</label>
-          <input type="number" id="setDefaultRate" step="0.1" min="0" value="2" placeholder="उदा. 2 किंवा 5" />
-        </div>
-        <button type="button" id="saveSettingsBtn" class="primary">💾 सेटिंग्ज सेव्ह करा</button>
-        <div style="height:1px; background:var(--border); margin:4px 0;"></div>
-        <div class="row">
-          <button type="button" id="setToggleHideBtn" class="sm" style="flex:1;">👁️ रकमा Hide / Show</button>
-          <button type="button" id="setToggleThemeBtn" class="sm" style="flex:1;">☀️ Dark / Light Mode</button>
-        </div>
-        <button type="button" id="setResetPassBtn" class="warn sm" style="width:100%;">🔑 Password Reset Email पाठवा</button>
-        <div id="setStatusMsg" class="muted" style="text-align:center;"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- नवीन ३: मराठी अ‍ॅप गाईड (Help & FAQ) पॉपअप -->
-  <div id="helpGuideModal" class="modal-backdrop hidden">
-    <div class="modal-card" style="max-width:600px;">
-      <div class="row" style="justify-content:space-between; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border);">
-        <h3 style="margin:0; color:var(--accent);">❓ मराठी अ‍ॅप गाईड (Help & FAQ)</h3>
-      </div>
-      <div style="display:flex; flex-direction:column; gap:10px; font-size:0.86rem; line-height:1.6;">
-        <div class="meta-box">
-          <strong>१. मोबाईलवर खऱ्या अ‍ॅपसारखे कसे इन्स्टॉल करावे?</strong><br/>
-          Chrome ब्राउझरमध्ये वरच्या उजव्या कोपऱ्यातील <code>⋮</code> वर क्लिक करा आणि <strong>"Add to Home screen"</strong> किंवा <strong>"Install app"</strong> निवडा.
-        </div>
-        <div class="meta-box">
-          <strong>२. कोणत्याही स्क्रीन किंवा पॉपअपमधून मागे कसे यावे?</strong><br/>
-          तुमच्या मोबाईलचे नेहमीचे <strong>Back (&lt;)</strong> बटण दाबा — प्रत्येक पॉपअप आणि मेन्यू आपोआप बंद होईल.
-        </div>
-        <div class="meta-box">
-          <strong>३. डेटा सुरक्षित ठेवण्यासाठी बॅकअप कसा घ्यावा?</strong><br/>
-          डाव्या <code>☰</code> मेन्यूमधील <strong>☁️ Cloud Sync, Backup & Restore</strong> मध्ये जाऊन <strong>क्लाउड डेटा सिंक</strong> किंवा <strong>SHA-256 बॅकअप (.JSON)</strong> डाउनलोड करून ठेवा.
-        </div>
-        <div class="meta-box">
-          <strong>४. एका क्लिकवर मुद्दल, व्याज आणि बाकी कसे पाहावे?</strong><br/>
-          मुख्य स्क्रीनवरील <strong>एकूण मुद्दल</strong>, <strong>मासिक व्याज</strong> किंवा <strong>बाकी व्याज</strong> या कार्ड्सवर टॅप करा — सर्व ग्राहकांची सविस्तर यादी आणि थेट <strong>📞 Call / 💬 WA</strong> बटण दिसेल.
-        </div>
-        <div class="meta-box">
-          <strong>५. एका वेळी एकाच ग्राहकाचे कार्ड उघडे राहील:</strong><br/>
-          दुसऱ्या ग्राहकाच्या कार्डवर क्लिक करताच पहिल्या ग्राहकाचे तपशील आपोआप बंद होतील, त्यामुळे चुकून दुसऱ्या खात्यात नोंद होणार नाही.
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- डॅशबोर्ड कार्ड्स (मुद्दल / मासिक व्याज / बाकी व्याज) साठी सविस्तर यादी पॉपअप -->
+  <!-- ड्रिल-डाऊन पॉपअप (मुद्दल / व्याज / बाकी) -->
   <div id="statDrillModal" class="modal-backdrop hidden">
     <div class="modal-card">
-      <div class="row" style="justify-content:space-between; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--border);">
-        <h3 id="statDrillTitle" style="margin:0;">तपशील यादी</h3>
-        <button id="statDrillPrintBtn" class="primary sm">🖨️ प्रिंट / PDF</button>
+      <div class="modal-head">
+        <h3 id="statDrillTitle">सविस्तर यादी</h3>
+        <div class="row">
+          <button type="button" id="statDrillPrintBtn" class="sm">🖨️ प्रिंट</button>
+          <button type="button" class="sm" onclick="document.getElementById('statDrillModal').classList.add('hidden')">✕</button>
+        </div>
       </div>
-      <div id="statDrillSummary" class="meta-box" style="margin-bottom:10px; font-weight:700;"></div>
-      <input type="text" id="statDrillSearch" class="search-pill-box" placeholder="🔍 या यादीत नाव शोधा..." style="margin-bottom:10px;" />
+      <div id="statDrillSummary" class="meta-box" style="font-weight:700; margin-bottom:10px;"></div>
+      <input type="text" id="statDrillSearch" placeholder="🔍 यादीत नाव शोधा..." style="width:100%; margin-bottom:10px;" />
       <div id="statDrillList"></div>
     </div>
   </div>
 
-  <!-- ☰ मेन्यूमधील ६ फीचर्ससाठी स्वतंत्र पॉपअप कंटेनर -->
+  <!-- साधने पॉपअप -->
   <div id="toolSectionModal" class="modal-backdrop hidden">
     <div class="modal-card">
-      <div class="row" style="justify-content:space-between; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border);">
-        <h3 id="toolSectionModalTitle" style="margin:0;">साधने</h3>
+      <div class="modal-head">
+        <h3 id="toolSectionModalTitle">साधने</h3>
+        <button type="button" class="sm" onclick="document.getElementById('toolSectionModal').classList.add('hidden')">✕</button>
       </div>
-
-      <!-- १. नवीन ग्राहक / कर्ज नोंद -->
-      <section class="tool-sec-pane hidden" id="addBorrowerSection">
-        <h3 id="tAddTitle" class="hidden">नवीन ग्राहक / कर्ज नोंद</h3>
-        <div class="grid-3">
-          <div class="field"><label>ग्राहकाचे नाव *</label><input type="text" id="bName" placeholder="पूर्ण नाव (कंसात जामीनदार)" /></div>
-          <div class="field"><label>कर्ज खाते नाव / क्रमांक (पर्यायी)</label><input type="text" id="bLoanLabel" placeholder="उदा. कर्ज #1 / सोने कर्ज" /></div>
-          <div class="field"><label>मोबाईल नंबर</label><input type="tel" id="bMobile" placeholder="10 अंकी नंबर" /></div>
-          <div class="field"><label>एकूण मुद्दल (₹) *</label><input type="number" id="bPrincipal" placeholder="उदा. 50000" min="0" /></div>
-          <div class="field"><label>मुद्दल दिल्याची तारीख</label><input type="date" id="bLoanDate" /></div>
-          <div class="field"><label>हिशोब सुरू महिना</label><input type="month" id="bStartYm" /></div>
-          <div class="field"><label>व्याज दर (% मासिक)</label><input type="number" id="bRate" step="0.01" value="2" /></div>
-          <div class="field"><label>महिन्याचे व्याज (₹ — ऑटो/निश्चित)</label><input type="number" id="bFixedInterest" min="0" placeholder="% नुसार आपोआप येईल" /></div>
-          <div class="field">
-            <label>व्याज पद्धत</label>
-            <select id="bInterestType">
-              <option value="reducing">Reducing Balance (उरलेल्या मुद्दलावर)</option>
-              <option value="flat">Flat Interest (मूळ मुद्दलावर)</option>
-            </select>
-          </div>
-          <div class="field"><label>दरमहा व्याजाची तारीख (1-31)</label><input type="number" id="bInterestDay" min="1" max="31" placeholder="उदा. 5" /></div>
-          <div class="field"><label>दररोजचा विलंब दंड (₹)</label><input type="number" id="bLateFee" min="0" value="0" /></div>
-          <div class="field"><label>सुरुवातीची मॅन्युअल मागील बाकी (₹)</label><input type="number" id="bCustomDue" min="0" placeholder="0" /></div>
-          <div class="field"><label>मुख्य जामीनदार</label><input type="text" id="bGuarantor" placeholder="जामीनदार १ नाव" /></div>
-          <div class="field"><label>अतिरिक्त जामीनदार (स्वल्पविरामाने)</label><input type="text" id="bExtraGuarantors" placeholder="उदा. रमेश (9822..), सुरेश" /></div>
-          <div class="field">
-            <label>नोकरीचा प्रकार</label>
-            <select id="bJobType">
-              <option value="">निवडा</option>
-              <option value="govt">सरकारी नोकरी</option>
-              <option value="private">खाजगी नोकरी</option>
-              <option value="business">व्यवसाय / इतर</option>
-            </select>
-          </div>
-          <div class="field"><label>कंपनी / डिपार्टमेंट</label><input type="text" id="bCompanyDept" placeholder="उदा. BMC / Police / TCS" /></div>
-          <div class="field"><label>Retirement Date</label><input type="date" id="bRetirementDate" /></div>
-          <div class="field"><label>वायदा तारीख १</label><input type="date" id="bPromise1" /></div>
-          <div class="field"><label>वायदा तारीख २</label><input type="date" id="bPromise2" /></div>
-          <div class="field"><label>वायदा तारीख ३</label><input type="date" id="bPromise3" /></div>
-        </div>
-        <div class="field" style="margin-top:10px;">
-          <label>ग्राहकाच्या खात्याला टीप (Note)</label>
-          <textarea id="bNote" rows="2" placeholder="महत्त्वाची टीप लिहा..."></textarea>
-        </div>
-        <div style="margin-top:12px;"><button id="addBorrowerBtn" class="primary" style="width:100%;">+ ग्राहक / कर्ज जोडा</button></div>
-      </section>
-
-      <!-- २. WhatsApp, UPI QR व सकाळचे Notification रिमाइंडर -->
-      <section class="tool-sec-pane hidden" id="remSection">
-        <h3 id="tRemTitle" class="hidden">📲 WhatsApp, UPI QR व सकाळचे Notification रिमाइंडर</h3>
-        <div class="row" style="margin-bottom:10px;">
-          <input type="tel" id="selfWaNumber" placeholder="स्वतःचा WhatsApp नंबर (9198XXXXXXXX)" style="flex:1; min-width:200px;" />
-          <button id="saveWaNumberBtn" class="primary sm">नंबर सेव्ह करा</button>
-        </div>
-        <div class="row" style="margin-bottom:10px;">
-          <input type="text" id="selfUpiId" placeholder="UPI ID (name@okaxis)" style="flex:1; min-width:190px;" />
-          <button id="saveUpiBtn" class="success sm">UPI सेव्ह करा</button>
-        </div>
-        <div class="row" style="margin-bottom:10px;">
-          <button id="waTodayPromiseBtn" class="success sm">💬 आजचे वायदे (WA)</button>
-          <button id="waPendingListBtn" class="warn sm">💬 बाकी/अर्धवट (WA)</button>
-          <button id="enableNotifBtn" class="primary sm">🔔 सकाळचे Notification</button>
-          <button id="testNotifBtn" class="sm">🧪 Test</button>
-        </div>
-        <div id="notifStatusMsg" class="muted"></div>
-        <div id="tomorrowPromiseCard" class="hidden" style="margin-top:8px;"><div id="tomorrowPromiseList"></div></div>
-      </section>
-
-      <!-- ३. रिपोर्ट्स, CSV, Share, Backup व Webhook -->
-      <section class="tool-sec-pane hidden" id="reportsSection">
-        <h3 id="tReportsTitle" class="hidden">📑 रिपोर्ट्स, CSV, Share, Backup व Webhook</h3>
-        <div class="row" style="margin-bottom:10px;">
-          <button id="printMonthlyPdfBtn" class="primary sm">🖨️ महिन्याचा PDF</button>
-          <button id="exportMonthlyCsvBtn" class="success sm">📊 महिन्याची CSV</button>
-          <button id="shareMonthlyCsvBtn" class="primary sm">📤 Share CSV</button>
-          <button id="exportAllCsvBtn" class="success sm">📑 संपूर्ण CSV</button>
-          <button id="gmailReportBtn" class="warn sm">📧 Gmail Report</button>
-        </div>
-        <div class="row" style="margin-bottom:10px;">
-          <label class="muted">Scheduled Backup:</label>
-          <select id="scheduledBackupSelect">
-            <option value="off">बंद (Manual)</option>
-            <option value="daily">दररोज (Daily)</option>
-            <option value="weekly">दर आठवड्याला (Weekly)</option>
-            <option value="monthly">दर महिन्याला (Monthly)</option>
-          </select>
-          <span id="lastBackupBadge" class="muted"></span>
-        </div>
-        <div class="row" style="margin-bottom:10px;">
-          <input type="file" id="importCsvFile" accept=".csv,text/csv" />
-          <button id="importCsvBtn" class="primary sm">📥 CSV Import</button>
-        </div>
-        <div class="row" style="margin-bottom:10px;">
-          <input type="text" id="sheetUrlInput" placeholder="Google Sheet URL किंवा ID" style="flex:1; min-width:200px;" />
-          <button id="importSheetBtn" class="primary sm">Sheet Import</button>
-        </div>
-        <div class="row" style="margin-bottom:10px;">
-          <input type="url" id="webhookUrlInput" placeholder="Google Apps Script Webhook URL" style="flex:1; min-width:200px;" />
-          <button id="saveWebhookBtn" class="sm">URL सेव्ह</button>
-          <button id="sendWebhookBtn" class="primary sm">🚀 Webhook</button>
-        </div>
-        <div class="row" style="margin-bottom:10px;">
-          <input type="password" id="backupPasskey" placeholder="Passkey (किमान 6 अक्षरे)" />
-          <button id="exportEncBtn" class="success sm">🔐 Encrypted Backup</button>
-          <input type="file" id="importEncFile" accept=".json,.txt" />
-          <button id="importEncBtn" class="sm">🔓 Restore</button>
-        </div>
+      <div id="addBorrowerSection" class="tool-sec-pane hidden">
+        <p class="muted">नवीन ग्राहक / कर्ज नोंद साधने येथे उपलब्ध आहेत.</p>
+      </div>
+      <div id="remSection" class="tool-sec-pane hidden">
         <div class="row">
-          <button id="saveLocalVaultBtn" class="warn sm">🛡️ Local Vault</button>
-          <button id="restoreLocalVaultBtn" class="sm">♻️ Vault Restore</button>
-          <button id="saveCloudBackupBtn" class="primary sm">☁️ Cloud Backup</button>
-          <button id="saveMonthlyArchiveBtn" class="primary sm">📦 Archive</button>
+          <input type="tel" id="selfWaNumber" placeholder="माझा WhatsApp नंबर (उदा. 919876543210)" />
+          <button type="button" id="saveWaNumberBtn" class="success sm">सेव्ह</button>
         </div>
-        <div id="ioMsg" class="muted" style="margin-top:8px;"></div>
-        <div id="shaDigestBox" class="meta-box hidden"></div>
-      </section>
-
-      <!-- ४. EMI Simulator -->
-      <section class="tool-sec-pane hidden" id="emiSection">
-        <div class="grid-3">
-          <div class="field"><label>मुद्दल (₹)</label><input type="number" id="emiPrincipal" value="100000" min="1" /></div>
-          <div class="field"><label>व्याज दर (%)</label><input type="number" id="emiMonthlyRate" value="2" step="0.1" min="0" /></div>
-          <div class="field"><label>महिने</label><input type="number" id="emiMonths" value="12" min="1" /></div>
-          <div class="field"><label>पद्धत</label><select id="emiType"><option value="reducing">Reducing</option><option value="flat">Flat</option></select></div>
-        </div>
-        <div style="margin-top:10px;"><button id="calcEmiBtn" class="primary">EMI मोजा</button></div>
-        <div id="emiResult" class="meta-box" style="margin-top:10px;">'EMI मोजा' दाबा.</div>
-      </section>
-
-      <!-- ५. Recycle Bin -->
-      <section class="tool-sec-pane hidden" id="recycleSection">
-        <div class="row" style="justify-content:space-between; margin-bottom:8px;">
-          <span class="muted">डिलीट केलेली खाती (Restore किंवा कायमचे डिलीट करा):</span>
-          <span id="recycleCountBadge" class="badge">0</span>
-        </div>
-        <div id="recycleBinList"></div>
-      </section>
-
-      <!-- ६. Audit Log -->
-      <section class="tool-sec-pane hidden" id="auditSection">
-        <div id="auditList" class="audit-box"></div>
-      </section>
-    </div>
-  </div>
-
-  <!-- इतर सर्व Modals -->
-  <div id="smartInfoModal" class="modal-backdrop hidden"><div class="modal-card" style="max-width:540px;"><div class="row" style="justify-content:space-between; margin-bottom:10px;"><h3 id="smartInfoTitle" style="margin:0;">माहिती</h3><button id="printSmartInfoBtn" class="primary sm">🖨️ प्रिंट</button></div><div id="smartInfoBody"></div></div></div>
-  <div id="pnlModal" class="modal-backdrop hidden"><div class="modal-card"><div class="row" style="justify-content:space-between; margin-bottom:10px;"><h3 style="margin:0;">📈 Profit & Loss अहवाल</h3></div><div id="pnlContent"></div></div></div>
-  <div id="securityModal" class="modal-backdrop hidden"><div class="modal-card"><div class="row" style="justify-content:space-between; margin-bottom:10px;"><h3 style="margin:0;">🛡️ Admin Security Dashboard</h3></div><div class="dash-grid"><div class="dash-box"><div class="dash-label">File Scans</div><div id="secScanCount" class="dash-val">0</div></div><div class="dash-box"><div class="dash-label">Quarantine</div><div id="secQuarantineCount" class="dash-val warn-text">0</div></div><div class="dash-box"><div class="dash-label">Blocked</div><div id="secBlockedCount" class="dash-val err">0</div></div><div class="dash-box"><div class="dash-label">Network</div><div id="secNetSync" class="dash-val ok" style="font-size:0.95rem;">Online</div></div></div><div class="row" style="margin-top:12px;"><button id="runDiagnosticsBtn" class="primary sm">🔍 Diagnostics</button></div><div id="diagnosticsResult" class="meta-box" style="margin-top:8px;"></div><h4 style="margin-bottom:6px;">🚨 Threat Log</h4><div id="threatLogBox" class="audit-box"></div></div></div>
-  <div id="versionModal" class="modal-backdrop hidden"><div class="modal-card"><div class="row" style="justify-content:space-between; margin-bottom:10px;"><h3 id="versionModalTitle" style="margin:0;">🕒 Version History</h3></div><div id="versionModalContent"></div></div></div>
-  <div id="notifModal" class="modal-backdrop hidden"><div class="modal-card"><div class="row" style="justify-content:space-between; margin-bottom:10px;"><h3 style="margin:0;">🔔 रिमाइंडर व थकबाकी</h3></div><div id="notifModalContent"></div></div></div>
-  <div id="docsModal" class="modal-backdrop hidden"><div class="modal-card"><div class="row" style="justify-content:space-between; margin-bottom:10px;"><h3 id="docsModalTitle" style="margin:0;">📎 Document Gallery</h3></div><div class="row" style="margin-bottom:10px;"><input type="text" id="docNameInput" placeholder="डॉक्युमेंटचे नाव" style="flex:1; min-width:180px;" /><input type="file" id="docFileInput" accept="image/jpeg,image/png,image/webp" /><button id="uploadDocBtn" class="success sm">⬆️ Upload</button></div><div id="docUploadMsg" class="muted"></div><div id="docGalleryGrid" class="doc-grid"></div></div></div>
-
-  <div id="editModal" class="modal-backdrop hidden">
-    <div class="modal-card">
-      <div class="row" style="justify-content:space-between; margin-bottom:10px;"><h3 style="margin:0;">संपूर्ण माहिती Edit करा</h3></div>
-      <input type="hidden" id="eId" />
-      <div class="grid-3">
-        <div class="field"><label>नाव *</label><input type="text" id="eName" /></div>
-        <div class="field"><label>कर्ज खाते नाव</label><input type="text" id="eLoanLabel" /></div>
-        <div class="field"><label>मोबाईल</label><input type="tel" id="eMobile" /></div>
-        <div class="field"><label>सध्याचे मुद्दल (₹)</label><input type="number" id="ePrincipal" min="0" /></div>
-        <div class="field"><label>मूळ मुद्दल (₹)</label><input type="number" id="eOriginalPrincipal" min="0" /></div>
-        <div class="field"><label>मुद्दल तारीख</label><input type="date" id="eLoanDate" /></div>
-        <div class="field"><label>सुरू महिना</label><input type="month" id="eStartYm" /></div>
-        <div class="field"><label>व्याज दर (%)</label><input type="number" id="eRate" step="0.01" /></div>
-        <div class="field"><label>महिन्याचे व्याज (₹)</label><input type="number" id="eFixedInterest" min="0" /></div>
-        <div class="field"><label>व्याज पद्धत</label><select id="eInterestType"><option value="reducing">Reducing</option><option value="flat">Flat</option></select></div>
-        <div class="field"><label>व्याज तारीख (1-31)</label><input type="number" id="eInterestDay" min="1" max="31" /></div>
-        <div class="field"><label>विलंब दंड (₹/दिन)</label><input type="number" id="eLateFee" min="0" /></div>
-        <div class="field"><label>मुख्य जामीनदार</label><input type="text" id="eGuarantor" /></div>
-        <div class="field"><label>अतिरिक्त जामीनदार</label><input type="text" id="eExtraGuarantors" /></div>
-        <div class="field"><label>नोकरी</label><select id="eJobType"><option value="">निवडा</option><option value="govt">सरकारी</option><option value="private">खाजगी</option><option value="business">व्यवसाय</option></select></div>
-        <div class="field"><label>डिपार्टमेंट / कंपनी</label><input type="text" id="eCompanyDept" /></div>
-        <div class="field"><label>Retirement Date</label><input type="date" id="eRetirementDate" /></div>
-        <div class="field"><label>वायदा १</label><input type="date" id="ePromise1" /></div>
-        <div class="field"><label>वायदा २</label><input type="date" id="ePromise2" /></div>
-        <div class="field"><label>वायदा ३</label><input type="date" id="ePromise3" /></div>
       </div>
-      <div class="field" style="margin-top:10px;"><label>टीप</label><textarea id="eNote" rows="2"></textarea></div>
-      <div class="row" style="margin-top:12px;"><button id="saveEditBtn" class="success" style="width:100%;">बदल सेव्ह करा</button></div>
+      <div id="reportsSection" class="tool-sec-pane hidden">
+        <p class="muted">हिशोब रिपोर्ट आणि बॅकअप साधने.</p>
+      </div>
+      <div id="emiSection" class="tool-sec-pane hidden">
+        <p class="muted">EMI सिम्युलेटर.</p>
+      </div>
+      <div id="recycleSection" class="tool-sec-pane hidden">
+        <p class="muted">डिलीट झालेली खाती.</p>
+      </div>
+      <div id="auditSection" class="tool-sec-pane hidden">
+        <p class="muted">ऑडिट लॉग.</p>
+      </div>
     </div>
   </div>
 
-  <div id="passbookModal" class="modal-backdrop hidden"><div class="modal-card"><div class="row" style="justify-content:space-between;"><h3 id="pbTitle" style="margin:0;">Passbook</h3></div><div class="tab-bar"><button class="tab-btn active sm" data-pbtab="passbook">📖 Passbook</button><button class="tab-btn sm" data-pbtab="timeline">🕒 Timeline</button><button class="tab-btn sm" data-pbtab="payments">💰 Payments</button><button class="tab-btn sm" data-pbtab="principals">📊 मुद्दल</button></div><div id="pbContent"></div></div></div>
+  <!-- बिझनेस प्रोफाईल पॉपअप -->
+  <div id="profileModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3>👤 बिझनेस प्रोफाईल</h3>
+        <button type="button" class="sm" onclick="document.getElementById('profileModal').classList.add('hidden')">✕</button>
+      </div>
+      <p class="muted">व्यवसाय व खात्याची माहिती.</p>
+    </div>
+  </div>
 
-  <!-- ब्राउझर कॅश रिफ्रेशसाठी V14.3 व्हर्जन -->
-  <script src="./app.js?v=14.3"></script>
-  <script src="./dashboard.js?v=14.3"></script>
+  <!-- सेटिंग्ज पॉपअप -->
+  <div id="settingsModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3>⚙️ अ‍ॅप सेटिंग्ज</h3>
+        <button type="button" class="sm" onclick="document.getElementById('settingsModal').classList.add('hidden')">✕</button>
+      </div>
+      <div class="row">
+        <button type="button" class="sm" onclick="document.body.classList.toggle('light-mode')">🌗 Light / Dark मोड</button>
+        <input type="url" id="webhookUrlInput" placeholder="Apps Script Webhook URL" />
+        <button type="button" id="saveWebhookBtn" class="primary sm">Webhook सेव्ह</button>
+      </div>
+      <div class="row" style="margin-top:10px;">
+        <input type="password" id="backupPasskey" placeholder="Backup Passkey" />
+        <button type="button" id="saveCloudBackupBtn" class="sm">Cloud Sync</button>
+        <button type="button" id="exportEncBtn" class="sm">Export Enc</button>
+        <input type="file" id="importEncFile" class="hidden" />
+        <button type="button" id="importEncBtn" class="sm">Import Enc</button>
+        <button type="button" id="restoreLocalVaultBtn" class="sm">Local Vault</button>
+        <button type="button" id="gmailReportBtn" class="sm">Gmail Report</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- मराठी मदत गाईड पॉपअप -->
+  <div id="helpGuideModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3>❓ मराठी अ‍ॅप गाईड (FAQ)</h3>
+        <button type="button" class="sm" onclick="document.getElementById('helpGuideModal').classList.add('hidden')">✕</button>
+      </div>
+      <p class="muted">डॅशबोर्ड कार्ड्सवर क्लिक करून मुद्दल, व्याज व बाकी यादी पाहता येते. तळच्या पट्टीतून महिना निहाय हिशोब आणि झटपट पेमेंट करता येते.</p>
+    </div>
+  </div>
+
+  <div id="smartInfoModal" class="modal-backdrop hidden"></div>
+  <div id="pnlModal" class="modal-backdrop hidden"></div>
+  <div id="securityModal" class="modal-backdrop hidden"></div>
+  <div id="versionModal" class="modal-backdrop hidden"></div>
+  <div id="notifModal" class="modal-backdrop hidden"></div>
+  <div id="docsModal" class="modal-backdrop hidden"></div>
+  <div id="editModal" class="modal-backdrop hidden"></div>
+  <div id="passbookModal" class="modal-backdrop hidden"></div>
+  <div id="printArea" class="hidden"></div>
+
+  <script src="./app.js"></script>
+  <script src="./dashboard.js"></script>
+  <script src="./backup-safety.js"></script>
 </body>
 </html>
