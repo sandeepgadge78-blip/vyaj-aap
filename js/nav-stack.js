@@ -1,4 +1,4 @@
-// व्याज हिशोब वही - ग्लोबल Step-by-Step Back Navigation मॅनेजर (js/nav-stack.js - V14.23)
+// व्याज हिशोब वही - ग्लोबल Step-by-Step Back Navigation मॅनेजर + Home Sync (js/nav-stack.js - V14.24)
 (function () {
   const stack = [];
   let isInternalChange = false;
@@ -174,6 +174,7 @@
         if (el) el.classList.add("hidden");
       }
     }
+    getVisibleModals().forEach((m) => m.classList.add("hidden"));
     setTimeout(() => { isInternalChange = false; notifyVisibilityChange(); }, 40);
   }
 
@@ -209,12 +210,24 @@
     return Boolean(otherDrawer);
   }
 
+  // तळाच्या 'Home' बटनावर क्लिक करताच सर्व उघडे पॉपअप आणि स्टॅक क्लिअर करा
+  function bindHomeClear() {
+    document.addEventListener("click", (ev) => {
+      const target = ev.target && ev.target.closest ? ev.target.closest("button, a") : null;
+      if (!target) return;
+      const txt = (target.textContent || "").trim().toLowerCase();
+      if (txt === "home" || txt.endsWith("home")) {
+        clearAll();
+      }
+    }, true);
+  }
+
   window.addEventListener("popstate", () => {
     stepBack();
   });
 
-  // सुरक्षित Debounced Observer
   function initNavStack() {
+    bindHomeClear();
     const obs = new MutationObserver(() => {
       if (isInternalChange) return;
       clearTimeout(syncTimer);
