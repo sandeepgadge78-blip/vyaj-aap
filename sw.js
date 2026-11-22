@@ -1,5 +1,5 @@
-// व्याज हिशोब वही - सुरक्षित आणि ऑटो-अपडेट Service Worker (v14.21)
-const CACHE_NAME = "vyaj-hishob-cache-v14-21";
+// व्याज हिशोब वही - सुरक्षित आणि ऑटो-अपडेट Service Worker (v14.22)
+const CACHE_NAME = "vyaj-hishob-cache-v14-22";
 const CORE_ASSETS = [
   "./",
   "./index.html",
@@ -11,15 +11,16 @@ const CORE_ASSETS = [
   "./js/settings-sync.js",
   "./js/cashbook.js",
   "./js/reminders.js",
+  "./js/nav-stack.js",
   "./js/analytics.js",
   "./js/receipt-card.js",
   "./js/quick-collect.js",
   "./js/ui-pro.js",
+  "./js/pro-menu.js",
   "./manifest.json",
   "./icon.png"
 ];
 
-// इन्स्टॉल होताच नवीन व्हर्जन लगेच सक्रिय करा (activate immediately)
 self.addEventListener("install", (event) => {
   self.skipWaiting();
   event.waitUntil(
@@ -29,26 +30,20 @@ self.addEventListener("install", (event) => {
   );
 });
 
-// जुने सर्व कॅश आपोआप डिलीट करा (clear all old caches)
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
+          if (key !== CACHE_NAME) return caches.delete(key);
         })
       );
     }).then(() => self.clients.claim())
   );
 });
 
-// नेटवर्क-फर्स्ट पद्धत: इंटरनेट असताना नेहमी ताजा कोड घ्या, ऑफलाइन असताना कॅश वापरा (Network-First strategy)
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
-
-  // Firebase किंवा बाह्य API कॉल्स कॅश करू नका (skip external APIs)
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
@@ -63,8 +58,6 @@ self.addEventListener("fetch", (event) => {
         }
         return networkResponse;
       })
-      .catch(() => {
-        return caches.match(event.request);
-      })
+      .catch(() => caches.match(event.request))
   );
 });
