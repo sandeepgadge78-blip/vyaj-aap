@@ -1,4 +1,4 @@
-// व्याज हिशोब वही - डेटा बॅकअप, रिस्टोर आणि सुरक्षितता मॉड्यूल
+// व्याज हिशोब वही - डेटा बॅकअप, रिस्टोर आणि सुरक्षितता मॉड्यूल (V14.5 - Clean UI)
 (function () {
   const SNAPSHOT_KEY = "vyaj_aap_auto_snapshot_v1";
 
@@ -7,9 +7,7 @@
     const snapshot = {};
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (!key) continue;
-      // स्वतःचा स्नॅपशॉट पुन्हा सेव्ह होऊ नये म्हणून वगळा (skip self snapshot key)
-      if (key === SNAPSHOT_KEY) continue;
+      if (!key || key === SNAPSHOT_KEY) continue;
       if (
         key.toLowerCase().includes("vyaj") ||
         key.toLowerCase().includes("hishob") ||
@@ -23,7 +21,7 @@
       }
     }
 
-    // कोणतीही जुनी की सापडली नाही तर सर्व localStorage घ्या (fallback to all localStorage)
+    // जुन्या कीज सापडल्या नाहीत तर सर्व localStorage घ्या (fallback to all localStorage)
     if (Object.keys(snapshot).length === 0) {
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
@@ -39,7 +37,7 @@
   function saveAutoSnapshot() {
     try {
       const payload = {
-        savedAt: new Date().toISOString(),
+        savedAt: new Date().toLocaleString("mr-IN"),
         data: collectAppData()
       };
       localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(payload));
@@ -54,15 +52,14 @@
   function exportJsonBackup() {
     try {
       const data = collectAppData();
-      const keysCount = Object.keys(data).length;
-      if (keysCount === 0) {
-        alert("बॅकअप घेण्यासाठी सध्या कोणताही डेटा आढळला नाही.");
+      if (Object.keys(data).length === 0) {
+        alert("बॅकअप घेण्यासाठी सध्या कोणताही स्थानिक डेटा आढळला नाही.");
         return;
       }
 
       const backupPackage = {
         app: "व्याज हिशोब वही (vyaj-aap)",
-        version: "v14.3-safety",
+        version: "v14.5-safety",
         exportedAt: new Date().toISOString(),
         data: data
       };
@@ -95,9 +92,10 @@
     reader.onload = function (event) {
       try {
         const parsed = JSON.parse(event.target.result);
-        const targetData = parsed && parsed.data && typeof parsed.data === "object"
-          ? parsed.data
-          : parsed;
+        const targetData =
+          parsed && parsed.data && typeof parsed.data === "object"
+            ? parsed.data
+            : parsed;
 
         if (!targetData || typeof targetData !== "object" || Array.isArray(targetData)) {
           alert("ही बॅकअप फाईल योग्य स्वरूपात नाही.");
@@ -171,46 +169,42 @@
     }
   }
 
-  // लहान फ्लोटिंग बॅकअप पॅनेल तयार करा (render compact floating safety bar)
-  function mountSafetyBar() {
-    if (document.getElementById("vyaj-safety-bar")) return;
+  // रिपोर्ट्स विभागात स्वच्छ बॅकअप पॅनेल जोडा (mount clean safety box inside #reportsSection)
+  function mountSafetyPanel() {
+    if (document.getElementById("vyaj-safety-panel")) return;
 
-    const bar = document.createElement("div");
-    bar.id = "vyaj-safety-bar";
-    bar.style.cssText = [
-      "position:fixed",
-      "bottom:12px",
-      "right:12px",
-      "z-index:9999",
-      "display:flex",
-      "gap:6px",
-      "background:#0c1120",
-      "border:1px solid #2b3a67",
-      "padding:6px 8px",
-      "border-radius:10px",
-      "box-shadow:0 6px 18px rgba(0,0,0,0.45)",
-      "font-family:sans-serif",
-      "font-size:12px"
-    ].join(";");
+    const reportsSection = document.getElementById("reportsSection");
+    if (!reportsSection) return;
 
-    const btnStyle =
-      "background:#162238;color:#e8eefc;border:1px solid #35507a;border-radius:7px;padding:5px 8px;cursor:pointer;";
+    const box = document.createElement("div");
+    box.id = "vyaj-safety-panel";
+    box.className = "meta-box";
+    box.style.marginTop = "12px";
+
+    const title = document.createElement("div");
+    title.style.fontWeight = "700";
+    title.style.marginBottom = "8px";
+    title.style.color = "var(--accent)";
+    title.textContent = "🛡️ झटपट JSON बॅकअप व ऑटो-स्नॅपशॉट (Safety Module)";
+
+    const btnRow = document.createElement("div");
+    btnRow.className = "row";
 
     const backupBtn = document.createElement("button");
     backupBtn.type = "button";
-    backupBtn.textContent = "💾 बॅकअप";
-    backupBtn.style.cssText = btnStyle;
+    backupBtn.className = "success sm";
+    backupBtn.textContent = "💾 JSON बॅकअप";
     backupBtn.onclick = exportJsonBackup;
 
     const restoreBtn = document.createElement("button");
     restoreBtn.type = "button";
-    restoreBtn.textContent = "♻️ रिस्टोर";
-    restoreBtn.style.cssText = btnStyle;
+    restoreBtn.className = "primary sm";
+    restoreBtn.textContent = "♻️ JSON रिस्टोर";
 
     const fileInput = document.createElement("input");
     fileInput.type = "file";
     fileInput.accept = ".json,application/json";
-    fileInput.style.display = "none";
+    fileInput.className = "hidden";
     fileInput.onchange = function (e) {
       if (e.target.files && e.target.files[0]) {
         restoreFromJsonFile(e.target.files[0]);
@@ -224,15 +218,18 @@
 
     const undoBtn = document.createElement("button");
     undoBtn.type = "button";
-    undoBtn.textContent = "⏪ स्नॅपशॉट";
-    undoBtn.style.cssText = btnStyle;
+    undoBtn.className = "warn sm";
+    undoBtn.textContent = "⏪ ऑटो-स्नॅपशॉट";
     undoBtn.onclick = restoreAutoSnapshot;
 
-    bar.appendChild(backupBtn);
-    bar.appendChild(restoreBtn);
-    bar.appendChild(undoBtn);
-    bar.appendChild(fileInput);
-    document.body.appendChild(bar);
+    btnRow.appendChild(backupBtn);
+    btnRow.appendChild(restoreBtn);
+    btnRow.appendChild(undoBtn);
+    btnRow.appendChild(fileInput);
+
+    box.appendChild(title);
+    box.appendChild(btnRow);
+    reportsSection.appendChild(box);
   }
 
   window.VyajSafety = {
@@ -243,8 +240,8 @@
   };
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", mountSafetyBar);
+    document.addEventListener("DOMContentLoaded", mountSafetyPanel);
   } else {
-    mountSafetyBar();
+    mountSafetyPanel();
   }
 })();
