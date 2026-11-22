@@ -1,4 +1,4 @@
-// व्याज हिशोब वही - स्मार्ट वायदा डॅशबोर्ड + FCM Push Notification मॉड्यूल (js/reminders.js - V14.11)
+// व्याज हिशोब वही - स्मार्ट वायदा डॅशबोर्ड + 1-Click QR + FCM Push (js/reminders.js - V14.12)
 (function () {
   // तुमची Firebase Web Push Certificate (VAPID Key)
   const FIREBASE_VAPID_KEY = "BD38I1uOSqyA6lfr11cE3WQkwJGXONEKQi4DiALA0ObadWcmwWGgA1pvm2ZgGwllZ4FvhzD7Dfe9g3pS42npV_M";
@@ -132,7 +132,6 @@
         } else if (dates.includes(tomorrowStr)) {
           tomorrowList.push({ id: b.id, name: b.name, mobile: b.mobile, amount: calc.totalPayable, date: tomorrowStr });
         } else {
-          // शेवटची वायदा तारीख आजच्या आधीची असेल तर 'चुकलेला वायदा' (Missed Promise)
           const latest = dates[dates.length - 1];
           if (latest < todayStr) {
             missedList.push({ id: b.id, name: b.name, mobile: b.mobile, amount: calc.totalPayable, date: latest });
@@ -183,6 +182,7 @@
               <div class="row" style="gap:5px;">
                 ${cleanMob.length >= 10 ? `<button type="button" class="success sm" onclick="window.location.href='tel:${esc(cleanMob)}'">📞</button>` : ""}
                 <button type="button" class="primary sm" data-rem-wa="${esc(item.id)}" data-name="${esc(item.name)}" data-mob="${esc(item.mobile || "")}" data-amt="${item.amount}" data-dt="${esc(item.date)}">💬 WA</button>
+                <button type="button" class="sc-btn-purple sm" data-rem-qr="${esc(item.id)}" data-amt="${item.amount}" title="UPI QR दाखवा">📱 QR</button>
                 <a href="${calUrl}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">
                   <button type="button" class="warn sm" title="फोन कॅलेंडर अलार्म">⏰</button>
                 </a>
@@ -205,6 +205,8 @@
     `;
 
     document.getElementById("enableProPushBtn")?.addEventListener("click", enableFcmPushNotifications);
+
+    // WA बटण इव्हेंट (WhatsApp button handler)
     panel.querySelectorAll("[data-rem-wa]").forEach((btn) => {
       btn.addEventListener("click", () => {
         openWaPromiseMsg(
@@ -213,6 +215,19 @@
           btn.getAttribute("data-amt"),
           btn.getAttribute("data-dt")
         );
+      });
+    });
+
+    // QR बटण इव्हेंट (1-Click UPI QR button handler)
+    panel.querySelectorAll("[data-rem-qr]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const bId = btn.getAttribute("data-rem-qr");
+        const amt = Number(btn.getAttribute("data-amt") || 0);
+        if (typeof window.openUpiQr === "function") {
+          window.openUpiQr(bId, amt);
+        } else {
+          alert("QR मॉड्यूल लोड झालेले नाही.");
+        }
       });
     });
   }
@@ -234,4 +249,3 @@
     initReminders();
   }
 })();
-
