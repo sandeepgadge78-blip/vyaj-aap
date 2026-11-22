@@ -1,1 +1,32 @@
+name: Daily Promise Reminders (10 AM, 4 PM, 6 PM IST)
+
+on:
+  schedule:
+    # सकाळी 10:00 AM IST = 04:30 UTC
+    - cron: '30 4 * * *'
+    # दुपारी 4:00 PM IST = 10:30 UTC
+    - cron: '30 10 * * *'
+    # संध्याकाळी 6:00 PM IST = 12:30 UTC
+    - cron: '30 12 * * *'
+  workflow_dispatch:
+
+jobs:
+  send-reminders:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install firebase-admin
+        run: npm install firebase-admin
+
+      - name: Run Reminder Script
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node scripts/send-reminders.js
 
