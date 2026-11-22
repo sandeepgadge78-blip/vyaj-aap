@@ -1,4 +1,4 @@
-// १. Hishob (hishob-4b548) साठी अचूक Firebase Configuration (V14.3 - Ultra-Pro + Auto-Close + Profile + Settings)
+// १. Hishob (hishob-4b548) साठी अचूक Firebase Configuration (V14.9 - Auto Extra Adjustment + Advance + Auto-Reverse)
 const firebaseConfig = {
   apiKey: "AIzaSyDYpC1Pdm9jDtmNlT2J6BOPzk88QvBo8ds",
   authDomain: "hishob-4b548.firebaseapp.com",
@@ -29,7 +29,7 @@ ensurePersistenceEnabled();
   window.addEventListener('load', () => setTimeout(hideNow, 650));
 })();
 
-// Ultra-Pro ग्राहक कार्ड (V14.3) व आतल्या तपशील कार्डसाठी CSS (Dark Neon Glass + Light Mode)
+// Ultra-Pro ग्राहक कार्ड व आतल्या तपशील कार्डसाठी CSS (Dark Neon Glass + Light Mode)
 (function injectStructuredCardStyles() {
   if (document.getElementById('hishobStructuredCardCss')) return;
   const st = document.createElement('style');
@@ -112,6 +112,14 @@ ensurePersistenceEnabled();
     .sc-subbox {
       margin-top: 8px; padding: 8px 10px; border-radius: 8px;
       background: var(--card); border: 1px solid var(--border); font-size: 0.8rem;
+    }
+    .sc-extra-banner {
+      margin-top: 7px; padding: 7px 10px; border-radius: 8px;
+      background: rgba(14, 165, 233, 0.14); border: 1px solid rgba(56, 189, 248, 0.4);
+      font-size: 0.79rem; line-height: 1.5; color: var(--text);
+    }
+    .sc-extra-banner.adv {
+      background: rgba(16, 185, 129, 0.14); border-color: rgba(16, 185, 129, 0.45);
     }
     .sc-pay-box {
       margin-top: 8px; padding: 8px 10px; border-radius: 8px;
@@ -659,7 +667,7 @@ async function appendAuditLog(action, details) {
   try { await db.collection('users').doc(state.user.uid).collection('auditLogs').add({ action, details, by: state.user.email || state.user.uid, ts: new Date().toISOString() }); } catch (_) {}
 }
 
-// ५. हिशोब गणित, Trust Rating व Retirement Badge
+// ५. हिशोब गणित, एक्स्ट्रा अ‍ॅडजस्टमेंट ट्रॅकिंग, Trust Rating व Retirement Badge
 function compareYm(a, b) { return String(a || '').localeCompare(String(b || '')); }
 function nextYm(ym) { const [y, m] = ym.split('-').map(Number); return m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, '0')}`; }
 function calculateLateFee(borrower, targetYm, isFullyPaid) {
@@ -679,34 +687,98 @@ function getMonthlyInterestAmount(borrower) {
   const principal = Number(borrower.principal || 0), base = borrower.interestType === 'flat' ? Number(borrower.originalPrincipal || principal) : principal;
   return Math.round((base * Number(borrower.rate || 0)) / 100);
 }
+
 function computeLedgerUpToMonth(borrower, targetYm) {
   const principal = Number(borrower.principal || 0), originalPrincipal = Number(borrower.originalPrincipal || principal), interestType = borrower.interestType === 'flat' ? 'flat' : 'reducing';
-  if (borrower.accountStatus === 'closed') return { principal: 0, originalPrincipal, interestType, monthlyInterest: 0, paidThisMonth: 0, collectedInMonth: 0, remainingThisMonth: 0, status: 'closed', isPaid: true, pastDue: 0, lateDays: 0, lateFee: 0, totalPayable: 0 };
-  const monthlyInterest = getMonthlyInterestAmount(borrower), paidMonths = borrower.paidMonths || {}, partialPayments = borrower.partialPayments || {}, customPastDues = borrower.customPastDues || {}, customCashPaid = borrower.customCashPaid || {};
-  let runningPastDue = 0, cursor = borrower.startYm || targetYm, guard = 0;
+  if (borrower.accountStatus === 'closed') {
+    return {
+      principal: 0, originalPrincipal, interestType, monthlyInterest: 0, paidThisMonth: 0, collectedInMonth: 0,
+      remainingThisMonth: 0, status: 'closed', isPaid: true, pastDue: 0, lateDays: 0, lateFee: 0, totalPayable: 0,
+      pastPendingMonths: [], extraOutList: [], extraInList: []
+    };
+  }
+  const monthlyInterest = getMonthlyInterestAmount(borrower);
+  const paidMonths = borrower.paidMonths || {};
+  const partialPayments = borrower.partialPayments || {};
+  const customPastDues = borrower.customPastDues || {};
+  const customCashPaid = borrower.customCashPaid || {};
+  const extraOutMap = borrower.extraOut || {};
+  const extraInMap = borrower.extraIn || {};
+
+  const extraOutList = Array.isArray(extraOutMap[targetYm]) ? extraOutMap[targetYm] : [];
+  const extraInList = Array.isArray(extraInMap[targetYm]) ? extraInMap[targetYm] : [];
+  // चालू महिन्यातून इतर महिन्यांत गेलेली एक्स्ट्रा रक्कम (custom वगळून)
+  const extraOutNonCustom = extraOutList.filter(x => x.kind !== 'past_custom').reduce((s, x) => s + Number(x.amount || 0), 0);
+
+  let runningPastDue = 0;
+  let cursor = borrower.startYm || targetYm;
+  let guard = 0;
+  const pastPendingMonths = [];
+
   while (compareYm(cursor, targetYm) <= 0 && guard < 240) {
     guard++;
     const paidThisMonth = Boolean(paidMonths[cursor]) ? monthlyInterest : Math.min(monthlyInterest, Number(partialPayments[cursor] || 0));
-    const remainingThisMonth = Math.max(0, monthlyInterest - paidThisMonth), pastPaidThisMonth = Number(customCashPaid[cursor] || 0);
+    const remainingThisMonth = Math.max(0, monthlyInterest - paidThisMonth);
+    const pastPaidThisMonth = Number(customCashPaid[cursor] || 0);
+
     if (Object.prototype.hasOwnProperty.call(customPastDues, cursor)) runningPastDue += Number(customPastDues[cursor] || 0);
     if (Object.prototype.hasOwnProperty.call(customCashPaid, cursor)) runningPastDue = Math.max(0, runningPastDue - pastPaidThisMonth);
+
     if (cursor === targetYm) {
       let status = 'pending';
       if (remainingThisMonth === 0 && monthlyInterest > 0) status = 'paid';
       else if (paidThisMonth > 0 && remainingThisMonth > 0) status = 'partial';
       const lateInfo = calculateLateFee(borrower, targetYm, status === 'paid');
-      return { principal, originalPrincipal, interestType, monthlyInterest, paidThisMonth, collectedInMonth: paidThisMonth + pastPaidThisMonth, remainingThisMonth, status, isPaid: status === 'paid', pastDue: Math.max(0, runningPastDue), lateDays: lateInfo.lateDays, lateFee: lateInfo.lateFee, totalPayable: Math.max(0, runningPastDue) + remainingThisMonth + lateInfo.lateFee };
+      return {
+        principal, originalPrincipal, interestType, monthlyInterest, paidThisMonth,
+        collectedInMonth: paidThisMonth + pastPaidThisMonth + extraOutNonCustom,
+        remainingThisMonth, status, isPaid: status === 'paid',
+        pastDue: Math.max(0, runningPastDue), lateDays: lateInfo.lateDays, lateFee: lateInfo.lateFee,
+        totalPayable: Math.max(0, runningPastDue) + remainingThisMonth + lateInfo.lateFee,
+        pastPendingMonths, extraOutList, extraInList
+      };
     }
-    if (remainingThisMonth > 0) runningPastDue += remainingThisMonth;
+
+    // मागील महिन्याचा सविस्तर हिशोब (बाकी असल्यास किंवा एक्स्ट्रा रकमेने कमी झाला असल्यास)
+    const cursorExtraIn = Array.isArray(extraInMap[cursor]) ? extraInMap[cursor] : [];
+    if (remainingThisMonth > 0) {
+      runningPastDue += remainingThisMonth;
+      pastPendingMonths.push({
+        ym: cursor,
+        monthlyInterest,
+        paid: paidThisMonth,
+        remaining: remainingThisMonth,
+        extraIn: cursorExtraIn
+      });
+    } else if (cursorExtraIn.length > 0) {
+      // एक्स्ट्रा पैशाने पूर्ण क्लिअर झालेला मागील महिना
+      pastPendingMonths.push({
+        ym: cursor,
+        monthlyInterest,
+        paid: paidThisMonth,
+        remaining: 0,
+        extraIn: cursorExtraIn
+      });
+    }
+
     cursor = nextYm(cursor);
   }
+
   const paidThisMonth = Boolean(paidMonths[targetYm]) ? monthlyInterest : Math.min(monthlyInterest, Number(partialPayments[targetYm] || 0));
-  const remainingThisMonth = Math.max(0, monthlyInterest - paidThisMonth), pastPaidThisMonth = Number(customCashPaid[targetYm] || 0);
+  const remainingThisMonth = Math.max(0, monthlyInterest - paidThisMonth);
+  const pastPaidThisMonth = Number(customCashPaid[targetYm] || 0);
   let status = 'pending';
   if (remainingThisMonth === 0 && monthlyInterest > 0) status = 'paid';
   else if (paidThisMonth > 0 && remainingThisMonth > 0) status = 'partial';
   const lateInfo = calculateLateFee(borrower, targetYm, status === 'paid');
-  return { principal, originalPrincipal, interestType, monthlyInterest, paidThisMonth, collectedInMonth: paidThisMonth + pastPaidThisMonth, remainingThisMonth, status, isPaid: status === 'paid', pastDue: Math.max(0, runningPastDue), lateDays: lateInfo.lateDays, lateFee: lateInfo.lateFee, totalPayable: Math.max(0, runningPastDue) + remainingThisMonth + lateInfo.lateFee };
+  return {
+    principal, originalPrincipal, interestType, monthlyInterest, paidThisMonth,
+    collectedInMonth: paidThisMonth + pastPaidThisMonth + extraOutNonCustom,
+    remainingThisMonth, status, isPaid: status === 'paid',
+    pastDue: Math.max(0, runningPastDue), lateDays: lateInfo.lateDays, lateFee: lateInfo.lateFee,
+    totalPayable: Math.max(0, runningPastDue) + remainingThisMonth + lateInfo.lateFee,
+    pastPendingMonths, extraOutList, extraInList
+  };
 }
 
 function getTrustBadgeHtml(calc) {
@@ -860,37 +932,226 @@ document.getElementById('uploadDocBtn')?.addEventListener('click', async () => {
 });
 document.getElementById('docGalleryGrid')?.addEventListener('click', async (e) => { const btn = e.target.closest('button[data-deldoc]'); if (!btn || !state.currentDocsBorrowerId || !confirm('डिलीट करायचे का?')) return; await getBorrowerDoc(state.currentDocsBorrowerId).collection('documents').doc(btn.getAttribute('data-deldoc')).delete(); loadBorrowerDocs(state.currentDocsBorrowerId); });
 
-// १०. ग्राहक अ‍ॅक्शन्स
+// १०. ग्राहक अ‍ॅक्शन्स (Auto Extra Adjustment + Advance + Auto-Reverse सह)
 function getBorrowerDoc(borrowerId) { return db.collection('users').doc(state.user.uid).collection('borrowers').doc(borrowerId); }
 
 async function smartCollectMonthPayment(borrowerId, ym, monthlyInterest, alreadyPaid) {
   if (!state.user || !checkRateLimit('SMART_PAY')) return;
+  const b = state.borrowers.find(x => x.id === borrowerId);
+  if (!b) return;
+
   const inputEl = document.getElementById(`quickPayInput_${borrowerId}`);
   const amt = Number(inputEl ? inputEl.value : 0);
   if (!amt || amt <= 0) { alert('कृपया योग्य जमा रक्कम (₹) टाका.'); return; }
+
   const nowIso = new Date().toISOString();
-  const nextTotal = Number(alreadyPaid || 0) + amt;
-  const isNowFull = monthlyInterest > 0 && nextTotal >= monthlyInterest;
-  const updatePayload = {
-    paymentHistory: firebase.firestore.FieldValue.arrayUnion({
-      date: nowIso, ym, type: isNowFull ? 'FULL_INTEREST' : 'PARTIAL_INTEREST',
-      amount: amt, note: `${ym} ${isNowFull ? 'पूर्ण व्याज जमा' : 'अर्धवट जमा'}`
-    })
-  };
-  if (isNowFull) {
-    updatePayload[`paidMonths.${ym}`] = { paidAt: nowIso, amount: monthlyInterest };
-    updatePayload[`partialPayments.${ym}`] = firebase.firestore.FieldValue.delete();
-  } else {
-    updatePayload[`partialPayments.${ym}`] = nextTotal;
+  const paidMonths = { ...(b.paidMonths || {}) };
+  const partialPayments = { ...(b.partialPayments || {}) };
+  const customPastDues = b.customPastDues || {};
+  const customCashPaid = { ...(b.customCashPaid || {}) };
+  const extraOut = { ...(b.extraOut || {}) };
+  const extraIn = { ...(b.extraIn || {}) };
+
+  const mInt = Number(monthlyInterest || getMonthlyInterestAmount(b) || 0);
+  const curPaid = Boolean(paidMonths[ym]) ? mInt : Math.min(mInt, Number(partialPayments[ym] || alreadyPaid || 0));
+  const remForThisMonth = Math.max(0, mInt - curPaid);
+  const applyToCurrent = mInt > 0 ? Math.min(amt, remForThisMonth) : amt;
+  let extraLeft = Math.max(0, amt - applyToCurrent);
+
+  const updatePayload = {};
+  const newTransfers = [];
+
+  // पायरी १: चालू महिन्याची जमा नोंद
+  const newCurPaid = curPaid + applyToCurrent;
+  const isNowFull = mInt > 0 && newCurPaid >= mInt;
+  if (applyToCurrent > 0 || isNowFull) {
+    if (isNowFull) {
+      updatePayload[`paidMonths.${ym}`] = { paidAt: nowIso, amount: mInt };
+      updatePayload[`partialPayments.${ym}`] = firebase.firestore.FieldValue.delete();
+      paidMonths[ym] = { paidAt: nowIso, amount: mInt };
+      delete partialPayments[ym];
+    } else {
+      updatePayload[`partialPayments.${ym}`] = newCurPaid;
+      partialPayments[ym] = newCurPaid;
+    }
   }
+
+  // पायरी २: एक्स्ट्रा रक्कम असल्यास आधी मागील बाकी महिन्यांतून (जुना महिना आधी) कमी करा
+  if (extraLeft > 0 && mInt > 0) {
+    let cursor = b.startYm || ym;
+    let guard = 0;
+    while (compareYm(cursor, ym) < 0 && extraLeft > 0 && guard < 240) {
+      guard++;
+      const cPaid = Boolean(paidMonths[cursor]) ? mInt : Math.min(mInt, Number(partialPayments[cursor] || 0));
+      const cRem = Math.max(0, mInt - cPaid);
+      if (cRem > 0) {
+        const applyAmt = Math.min(extraLeft, cRem);
+        const nextCPaid = cPaid + applyAmt;
+        if (nextCPaid >= mInt) {
+          updatePayload[`paidMonths.${cursor}`] = { paidAt: nowIso, amount: mInt, fromExtra: ym };
+          updatePayload[`partialPayments.${cursor}`] = firebase.firestore.FieldValue.delete();
+          paidMonths[cursor] = { paidAt: nowIso, amount: mInt, fromExtra: ym };
+          delete partialPayments[cursor];
+        } else {
+          updatePayload[`partialPayments.${cursor}`] = nextCPaid;
+          partialPayments[cursor] = nextCPaid;
+        }
+        newTransfers.push({ fromYm: ym, toYm: cursor, amount: applyAmt, kind: 'past', ts: nowIso });
+        extraLeft -= applyAmt;
+      }
+      cursor = nextYm(cursor);
+    }
+
+    // पायरी ३: अजून एक्स्ट्रा शिल्लक असल्यास मॅन्युअल मागील बाकी (customPastDues) मधून कमी करा
+    if (extraLeft > 0) {
+      let totalCustomDue = 0;
+      let totalCustomPaid = 0;
+      Object.entries(customPastDues).forEach(([k, v]) => { if (compareYm(k, ym) <= 0) totalCustomDue += Number(v || 0); });
+      Object.entries(customCashPaid).forEach(([k, v]) => { if (compareYm(k, ym) <= 0) totalCustomPaid += Number(v || 0); });
+      const netCustomDue = Math.max(0, totalCustomDue - totalCustomPaid);
+      if (netCustomDue > 0) {
+        const applyCustom = Math.min(extraLeft, netCustomDue);
+        const nextCustomCash = Number(customCashPaid[ym] || 0) + applyCustom;
+        updatePayload[`customCashPaid.${ym}`] = nextCustomCash;
+        customCashPaid[ym] = nextCustomCash;
+        newTransfers.push({ fromYm: ym, toYm: 'custom', amount: applyCustom, kind: 'past_custom', ts: nowIso });
+        extraLeft -= applyCustom;
+      }
+    }
+
+    // पायरी ४: मागील काहीच बाकी नसेल तर उरलेले एक्स्ट्रा पुढच्या महिन्यासाठी अ‍ॅडव्हान्स म्हणून टाका
+    let futureCursor = nextYm(ym);
+    let fGuard = 0;
+    while (extraLeft > 0 && fGuard < 60) {
+      fGuard++;
+      const fPaid = Boolean(paidMonths[futureCursor]) ? mInt : Math.min(mInt, Number(partialPayments[futureCursor] || 0));
+      const fRem = Math.max(0, mInt - fPaid);
+      if (fRem > 0) {
+        const applyAdv = Math.min(extraLeft, fRem);
+        const nextFPaid = fPaid + applyAdv;
+        if (nextFPaid >= mInt) {
+          updatePayload[`paidMonths.${futureCursor}`] = { paidAt: nowIso, amount: mInt, fromExtra: ym };
+          updatePayload[`partialPayments.${futureCursor}`] = firebase.firestore.FieldValue.delete();
+          paidMonths[futureCursor] = { paidAt: nowIso, amount: mInt, fromExtra: ym };
+          delete partialPayments[futureCursor];
+        } else {
+          updatePayload[`partialPayments.${futureCursor}`] = nextFPaid;
+          partialPayments[futureCursor] = nextFPaid;
+        }
+        newTransfers.push({ fromYm: ym, toYm: futureCursor, amount: applyAdv, kind: 'advance', ts: nowIso });
+        extraLeft -= applyAdv;
+      }
+      futureCursor = nextYm(futureCursor);
+    }
+  }
+
+  // एक्स्ट्रा नोंदी (extraOut व extraIn) सेव्ह करा जेणेकरून दोन्ही महिन्यांत स्पष्ट दिसेल
+  if (newTransfers.length > 0) {
+    const existingOut = Array.isArray(extraOut[ym]) ? [...extraOut[ym]] : [];
+    updatePayload[`extraOut.${ym}`] = [...existingOut, ...newTransfers];
+
+    const groupedIn = {};
+    newTransfers.forEach(tr => {
+      if (tr.toYm && tr.toYm !== 'custom') {
+        if (!groupedIn[tr.toYm]) groupedIn[tr.toYm] = Array.isArray(extraIn[tr.toYm]) ? [...extraIn[tr.toYm]] : [];
+        groupedIn[tr.toYm].push(tr);
+      }
+    });
+    Object.entries(groupedIn).forEach(([targetMonth, arr]) => {
+      updatePayload[`extraIn.${targetMonth}`] = arr;
+    });
+  }
+
+  // Passbook / Payment History साठी स्पष्ट टीप तयार करा
+  let historyNote = `${ym} ${isNowFull ? 'पूर्ण व्याज जमा' : 'अर्धवट जमा'}`;
+  if (newTransfers.length > 0) {
+    const parts = newTransfers.map(tr => {
+      if (tr.kind === 'past') return `एक्स्ट्रा ₹${tr.amount} → ${formatMonthMarathi(tr.toYm)} बाकी कपात`;
+      if (tr.kind === 'past_custom') return `एक्स्ट्रा ₹${tr.amount} → मागील बाकी कपात`;
+      return `एक्स्ट्रा ₹${tr.amount} → ${formatMonthMarathi(tr.toYm)} अ‍ॅडव्हान्स`;
+    });
+    historyNote = `${ym} जमा ₹${amt} (${parts.join(', ')})`;
+  }
+
+  updatePayload.paymentHistory = firebase.firestore.FieldValue.arrayUnion({
+    date: nowIso, ym, type: newTransfers.length > 0 ? 'EXTRA_ADJUSTED' : (isNowFull ? 'FULL_INTEREST' : 'PARTIAL_INTEREST'),
+    amount: amt, note: historyNote
+  });
+
   await getBorrowerDoc(borrowerId).update(updatePayload);
-  await appendAuditLog(isNowFull ? 'PAYMENT_MARKED' : 'PARTIAL_PAYMENT', `${borrowerId} (${ym}) ₹${amt}`);
+  await appendAuditLog(isNowFull ? 'PAYMENT_MARKED' : 'PARTIAL_PAYMENT', `${b.name || borrowerId} (${ym}) ₹${amt}${newTransfers.length ? ' + एक्स्ट्रा अ‍ॅडजस्ट' : ''}`);
 }
 
+// Reset करताना या महिन्यातून गेलेले एक्स्ट्रा पैसेही आपोआप Reverse करा (Auto-Reverse)
 async function resetMonthPayment(borrowerId, ym) {
   if (!state.user || !checkRateLimit('RESET_PAY')) return;
-  if (!confirm(`${formatMonthMarathi(ym)} ची जमा नोंद Reset करायची का?`)) return;
-  await getBorrowerDoc(borrowerId).update({ [`paidMonths.${ym}`]: firebase.firestore.FieldValue.delete(), [`partialPayments.${ym}`]: firebase.firestore.FieldValue.delete() });
+  const b = state.borrowers.find(x => x.id === borrowerId);
+  if (!b) return;
+
+  const outList = (b.extraOut && Array.isArray(b.extraOut[ym])) ? b.extraOut[ym] : [];
+  const confirmMsg = outList.length > 0
+    ? `${formatMonthMarathi(ym)} ची जमा नोंद आणि त्यातून इतर महिन्यांत गेलेले एक्स्ट्रा पैसेही परत (Reverse) Reset करायचे का?`
+    : `${formatMonthMarathi(ym)} ची जमा नोंद Reset करायची का?`;
+  if (!confirm(confirmMsg)) return;
+
+  const mInt = getMonthlyInterestAmount(b);
+  const paidMonths = { ...(b.paidMonths || {}) };
+  const partialPayments = { ...(b.partialPayments || {}) };
+  const customCashPaid = { ...(b.customCashPaid || {}) };
+  const extraIn = { ...(b.extraIn || {}) };
+
+  const updatePayload = {
+    [`paidMonths.${ym}`]: firebase.firestore.FieldValue.delete(),
+    [`partialPayments.${ym}`]: firebase.firestore.FieldValue.delete()
+  };
+
+  if (outList.length > 0) {
+    // प्रत्येक ट्रान्सफर रक्कम परत वजा करा
+    let customRevertTotal = 0;
+    const targetRevertMap = {};
+
+    outList.forEach(tr => {
+      if (tr.kind === 'past_custom') {
+        customRevertTotal += Number(tr.amount || 0);
+      } else if (tr.toYm) {
+        targetRevertMap[tr.toYm] = (targetRevertMap[tr.toYm] || 0) + Number(tr.amount || 0);
+      }
+    });
+
+    if (customRevertTotal > 0) {
+      const nextCustom = Math.max(0, Number(customCashPaid[ym] || 0) - customRevertTotal);
+      updatePayload[`customCashPaid.${ym}`] = nextCustom > 0 ? nextCustom : firebase.firestore.FieldValue.delete();
+    }
+
+    Object.entries(targetRevertMap).forEach(([tYm, revAmt]) => {
+      const curPaid = Boolean(paidMonths[tYm]) ? mInt : Number(partialPayments[tYm] || 0);
+      const nextPaid = Math.max(0, curPaid - revAmt);
+      updatePayload[`paidMonths.${tYm}`] = firebase.firestore.FieldValue.delete();
+      if (nextPaid >= mInt && mInt > 0) {
+        updatePayload[`paidMonths.${tYm}`] = { paidAt: new Date().toISOString(), amount: mInt };
+        updatePayload[`partialPayments.${tYm}`] = firebase.firestore.FieldValue.delete();
+      } else if (nextPaid > 0) {
+        updatePayload[`partialPayments.${tYm}`] = nextPaid;
+      } else {
+        updatePayload[`partialPayments.${tYm}`] = firebase.firestore.FieldValue.delete();
+      }
+
+      if (Array.isArray(extraIn[tYm])) {
+        const remainingIn = extraIn[tYm].filter(x => x.fromYm !== ym);
+        updatePayload[`extraIn.${tYm}`] = remainingIn.length > 0 ? remainingIn : firebase.firestore.FieldValue.delete();
+      }
+    });
+
+    updatePayload[`extraOut.${ym}`] = firebase.firestore.FieldValue.delete();
+  }
+
+  // जर या महिन्यात बाहेरून आलेले extraIn असतील तर तेही क्लिअर करा
+  if (b.extraIn && b.extraIn[ym]) {
+    updatePayload[`extraIn.${ym}`] = firebase.firestore.FieldValue.delete();
+  }
+
+  await getBorrowerDoc(borrowerId).update(updatePayload);
+  await appendAuditLog('PAYMENT_RESET', `${b.name || borrowerId} (${ym}) Reset${outList.length ? ' + एक्स्ट्रा Reverse' : ''}`);
 }
 
 async function addManualPendingForMonth(borrowerId) {
@@ -1040,7 +1301,6 @@ function toggleBorrowerCardDetails(id) {
 
   const isCurrentlyHidden = targetEl.classList.contains('hidden');
 
-  // आधी उघडलेली सर्व इतर कार्ड्स आपोआप बंद करा
   document.querySelectorAll('#borrowersList [id^="cardDetails_"]').forEach(el => {
     if (el.id !== `cardDetails_${id}`) {
       el.classList.add('hidden');
@@ -1059,7 +1319,7 @@ function toggleBorrowerCardDetails(id) {
   }
 }
 
-// १२. UI Render + लाईव्ह वसुली प्रोग्रेस बार अपडेट
+// १२. UI Render + लाईव्ह वसुली प्रोग्रेस बार अपडेट + एक्स्ट्रा/अ‍ॅडव्हान्स तपशील
 function renderBorrowers() {
   const container = document.getElementById('borrowersList'), recycleContainer = document.getElementById('recycleBinList');
   const activeYm = document.getElementById('activeYm').value || currentYmDefault(), query = (document.getElementById('searchInput').value || '').trim();
@@ -1095,7 +1355,6 @@ function renderBorrowers() {
   document.getElementById('dashExpectedInterest').textContent = fmtAmt(totalExpectedInterest);
   document.getElementById('dashTotalPending').textContent = fmtAmt(totalPending);
 
-  // लाईव्ह मासिक वसुली प्रोग्रेस बार अपडेट
   const collPct = totalExpectedInterest > 0 ? Math.min(100, Math.round((totalCollectedMonth / totalExpectedInterest) * 100)) : 0;
   const pctTextEl = document.getElementById('heroCollectionPctText');
   const barFillEl = document.getElementById('heroCollectionBarFill');
@@ -1159,6 +1418,52 @@ function renderBorrowers() {
         : calc.status === 'partial'
           ? `<span class="warn-text" style="font-weight:700;">🟡 ${escapeHtml(activeYmDisp)} - जमा: ${fmtAmt(calc.paidThisMonth)} | बाकी: ${fmtAmt(calc.remainingThisMonth)}</span>`
           : `<span class="err" style="font-weight:700;">❌ ${escapeHtml(activeYmDisp)} - बाकी: ${fmtAmt(calc.remainingThisMonth)}</span>`;
+
+      // विभाग ४ साठी एक्स्ट्रा दिलेले (extraOut) व मागील महिन्यातून आलेले अ‍ॅडव्हान्स (extraIn) तपशील
+      let extraOutHtml = '';
+      if (calc.extraOutList && calc.extraOutList.length > 0) {
+        const lines = calc.extraOutList.map(tr => {
+          if (tr.kind === 'past') {
+            return `➕ एक्स्ट्रा <strong>${fmtAmt(tr.amount)}</strong> → <strong>${escapeHtml(formatMonthMarathi(tr.toYm))}</strong> च्या बाकीमधून कमी केले`;
+          }
+          if (tr.kind === 'past_custom') {
+            return `➕ एक्स्ट्रा <strong>${fmtAmt(tr.amount)}</strong> → मागील मॅन्युअल बाकीमधून कमी केले`;
+          }
+          return `➕ या महिन्यात <strong>${fmtAmt(tr.amount)}</strong> एक्स्ट्रा दिले → <strong>${escapeHtml(formatMonthMarathi(tr.toYm))}</strong> साठी अ‍ॅडव्हान्स`;
+        });
+        extraOutHtml = `<div class="sc-extra-banner">${lines.join('<br/>')}</div>`;
+      }
+
+      let extraInHtml = '';
+      if (calc.extraInList && calc.extraInList.length > 0) {
+        const lines = calc.extraInList.map(tr => {
+          const fromLabel = escapeHtml(formatMonthMarathi(tr.fromYm));
+          const remTxt = calc.remainingThisMonth > 0
+            ? ` — उरलेले <strong>${fmtAmt(calc.remainingThisMonth)}</strong> जमा करायचे आहेत.`
+            : ` — या महिन्याचे व्याज पूर्ण जमा झाले आहे.`;
+          if (tr.kind === 'advance') {
+            return `💡 मागील महिन्यात (<strong>${fromLabel}</strong>) तुम्ही <strong>${fmtAmt(tr.amount)}</strong> एक्स्ट्रा दिले होते${remTxt}`;
+          }
+          return `💡 <strong>${fromLabel}</strong> मधून <strong>${fmtAmt(tr.amount)}</strong> एक्स्ट्रा या महिन्यात जमा झाले${remTxt}`;
+        });
+        extraInHtml = `<div class="sc-extra-banner adv">${lines.join('<br/>')}</div>`;
+      }
+
+      // विभाग ५ साठी मागील बाकी महिने व एक्स्ट्रा कपातीची महिनानिहाय यादी
+      let pastBreakdownHtml = '';
+      if (calc.pastPendingMonths && calc.pastPendingMonths.length > 0) {
+        const rowsHtml = calc.pastPendingMonths.map(pm => {
+          const mName = escapeHtml(formatMonthMarathi(pm.ym));
+          const adjNote = (pm.extraIn && pm.extraIn.length > 0)
+            ? ` <span style="color:var(--accent);">(${pm.extraIn.map(x => `${escapeHtml(formatMonthMarathi(x.fromYm))} मधून ${fmtAmt(x.amount)} जमा`).join(', ')})</span>`
+            : '';
+          if (pm.remaining > 0) {
+            return `<div>• <strong>${mName}:</strong> बाकी <strong class="err">${fmtAmt(pm.remaining)}</strong>${adjNote}</div>`;
+          }
+          return `<div>• <strong>${mName}:</strong> <span class="ok">पूर्ण क्लिअर</span>${adjNote}</div>`;
+        }).join('');
+        pastBreakdownHtml = `<div class="sc-subbox" style="margin-top:6px; line-height:1.55;">${rowsHtml}</div>`;
+      }
 
       const suggestedPayAmt = calc.remainingThisMonth > 0 ? calc.remainingThisMonth : calc.monthlyInterest;
 
@@ -1255,9 +1560,11 @@ function renderBorrowers() {
                     <div class="sc-right">
                       <input type="number" id="quickPayInput_${b.id}" value="${suggestedPayAmt}" min="1" style="width:95px; padding:6px 8px;" />
                       <button type="button" data-action="smart-collect" data-id="${b.id}" data-ym="${activeYm}" data-interest="${calc.monthlyInterest}" data-paidamt="${calc.paidThisMonth}" class="success sm">जमा करा</button>
-                      ${calc.paidThisMonth > 0 ? `<button type="button" data-action="reset-pay" data-id="${b.id}" data-ym="${activeYm}" class="danger sm" title="Reset">↺</button>` : ''}
+                      ${(calc.paidThisMonth > 0 || (calc.extraOutList && calc.extraOutList.length > 0)) ? `<button type="button" data-action="reset-pay" data-id="${b.id}" data-ym="${activeYm}" class="danger sm" title="Reset">↺</button>` : ''}
                     </div>
                   </div>
+                  ${extraOutHtml}
+                  ${extraInHtml}
                 </div>
 
                 <div class="sc-sec">
@@ -1272,6 +1579,7 @@ function renderBorrowers() {
                         </div>
                         <button type="button" data-action="add-manual-month" data-id="${b.id}" class="primary sm">+/✏️ बाकी लिहा</button>
                       </div>
+                      ${pastBreakdownHtml}
                       ${calc.pastDue > 0 ? `
                         <div class="sc-left" style="margin-top:6px;">
                           <button type="button" data-action="pay-past-prompt" data-id="${b.id}" data-ym="${activeYm}" data-past="${calc.pastDue}" class="success sm">💰 बाकी कपात</button>
@@ -1459,7 +1767,20 @@ async function performFullLockAndLogout() {
   if (typeof state.unsubscribeAudit === 'function') { state.unsubscribeAudit(); state.unsubscribeAudit = null; }
   state.borrowers = []; state.auditLogs = [];
   try { await auth.signOut(); } catch (_) {}
-  try { localStorage.removeItem('vyaj_v11_audit'); Object.keys(localStorage).forEach(k => { if ((k.startsWith('vyaj_') || k.startsWith('hishob_')) && k !== 'hishob_emergency_vault' && k !== 'hishob_biz_profile') localStorage.removeItem(k); }); sessionStorage.clear(); } catch (_) {}
+  try {
+    localStorage.removeItem('vyaj_v11_audit');
+    Object.keys(localStorage).forEach(k => {
+      const keepKey =
+        k === 'hishob_emergency_vault' ||
+        k === 'hishob_biz_profile' ||
+        k.startsWith('vyaj_aap_pin_') ||
+        k.startsWith('vyaj_aap_settings_') ||
+        k.startsWith('vyaj_aap_cashbook_') ||
+        k.startsWith('vyaj_aap_auto_snapshot_');
+      if ((k.startsWith('vyaj_') || k.startsWith('hishob_')) && !keepKey) localStorage.removeItem(k);
+    });
+    sessionStorage.clear();
+  } catch (_) {}
   try { await db.terminate(); await db.clearPersistence(); } catch (_) {}
   window.location.reload();
 }
