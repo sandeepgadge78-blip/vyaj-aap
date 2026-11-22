@@ -3,13 +3,20 @@
   "short_name": "हिशोब वही",
   "description": "सुरक्षित व्याज व कर्ज हिशोब अ‍ॅप",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#05070e",
   "theme_color": "#05070e",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/2830/2830284.png",
+      "src": "./icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
