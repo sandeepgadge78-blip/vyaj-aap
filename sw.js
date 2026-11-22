@@ -1,22 +1,60 @@
-// Hishob Service Worker (V14.3)
-const CACHE_NAME = 'hishob-v14-3';
+// व्याज हिशोब वही - सुरक्षित आणि ऑटो-अपडेट Service Worker (v14.5)
+const CACHE_NAME = "vyaj-hishob-cache-v14-5";
+const CORE_ASSETS = [
+  "./",
+  "./index.html",
+  "./app.js",
+  "./dashboard.js",
+  "./manifest.json",
+  "./icon.png"
+];
 
-self.addEventListener('install', (event) => {
+// इन्स्टॉल होताच नवीन व्हर्जन लगेच सक्रिय करा (activate immediately)
+self.addEventListener("install", (event) => {
   self.skipWaiting();
-});
-
-self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    )
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(CORE_ASSETS).catch(() => {});
+    })
   );
-  self.clients.claim();
 });
 
-self.addEventListener('fetch', (event) => {
-  // नेटवर्कवरून ताजा डेटा घ्या, नेटवर्क नसेल तर कॅश वापरा
+// जुने सर्व कॅश आपोआप डिलीट करा (clear all old caches)
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) => {
+      return Promise.all(
+        keys.map((key) => {
+          if (key !== CACHE_NAME) {
+            return caches.delete(key);
+          }
+        })
+      );
+    }).then(() => self.clients.claim())
+  );
+});
+
+// नेटवर्क-फर्स्ट पद्धत: इंटरनेट असताना नेहमी ताजा कोड घ्या, ऑफलाइन असताना कॅश वापरा (Network-First strategy)
+self.addEventListener("fetch", (event) => {
+  if (event.request.method !== "GET") return;
+
+  // Firebase किंवा बाह्य API कॉल्स कॅश करू नका (skip external APIs)
+  const url = new URL(event.request.url);
+  if (url.origin !== self.location.origin) return;
+
   event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request))
+    fetch(event.request)
+      .then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const responseClone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseClone);
+          });
+        }
+        return networkResponse;
+      })
+      .catch(() => {
+        return caches.match(event.request);
+      })
   );
 });
