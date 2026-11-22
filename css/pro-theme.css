@@ -1,4 +1,4 @@
-/* व्याज हिशोब वही - Unique Smoked Black Glass & Eye-Comfort Day/Night Theme (css/pro-theme.css - V14.20) */
+/* व्याज हिशोब वही - Smoked Black Glass + Eye-Comfort Theme + Reports Hub & Toggles (css/pro-theme.css - V14.21) */
 
 :root {
   /* Night Mode: डोळ्यांना आराम देणारे Smoked Obsidian Black Glass रंग */
@@ -19,7 +19,7 @@
   --glass-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
 }
 
-/* रात्रीसाठी मॅट ब्लॅक स्मोक ग्लास पार्श्वभूमी (भडक निळा रंग पूर्ण बंद) */
+/* रात्रीसाठी मॅट ब्लॅक स्मोक ग्लास पार्श्वभूमी */
 body {
   background-color: #090a0d !important;
   background-image:
@@ -65,7 +65,7 @@ body.light-mode header {
   box-shadow: 0 2px 10px rgba(31, 36, 45, 0.06);
 }
 
-/* सर्व Primary बटणे भडक निळ्याऐवजी स्लीक Smoked Glass मध्ये */
+/* Primary व Action बटणे */
 button.primary {
   background: linear-gradient(135deg, #262a34, #1b1e26) !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
@@ -100,7 +100,7 @@ body.light-mode #smartPromiseDashPanel {
   border-left: 3px solid #be123c !important;
 }
 
-/* मुख्य महिना कार्ड - Unique Smoked Black Glass (निळा रंग काढला) */
+/* मुख्य महिना कार्ड - Unique Smoked Black Glass */
 .month-hero-card {
   background: linear-gradient(155deg, rgba(30, 33, 42, 0.92) 0%, rgba(16, 18, 24, 0.95) 60%, rgba(12, 13, 18, 0.98) 100%) !important;
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
@@ -118,7 +118,7 @@ body.light-mode .month-hero-card {
   font-weight: 700;
 }
 
-/* 'नोव्हेंबर 2026' स्पष्ट व चमकदार अक्षरात (Night = Off-White, Day = Charcoal) */
+/* 'नोव्हेंबर 2026' स्पष्ट व चमकदार अक्षरात */
 .month-hero-title,
 #bigActiveMonthTitle {
   background: none !important;
@@ -137,7 +137,7 @@ body.light-mode #bigActiveMonthTitle {
   text-shadow: none !important;
 }
 
-/* पाचही अ‍ॅक्शन बटणे (फास्ट वसुली, PDF, Excel, Backup, कॅशबुक) एकाच ओळीत न कापता बसतील */
+/* पाचही अ‍ॅक्शन बटणे एकाच ओळीत सुटसुटीत */
 .month-hero-links {
   display: flex !important;
   flex-wrap: nowrap !important;
@@ -179,18 +179,14 @@ body.light-mode .hero-prog-wrap {
   background: #eae6dd !important;
   border: 1px solid #d5cfc2 !important;
 }
-.hero-prog-head {
-  color: var(--muted) !important;
-}
+.hero-prog-head { color: var(--muted) !important; }
 .hero-prog-fill {
   background: linear-gradient(90deg, #2dd4bf, #4ade80) !important;
   box-shadow: 0 0 8px rgba(74, 222, 128, 0.45) !important;
 }
 
-/* २x२ डॅशबोर्ड कार्ड्स - Smoked Matte Glass */
-.grid-2x2 {
-  gap: 10px;
-}
+/* २x२ डॅशबोर्ड कार्ड्स */
+.grid-2x2 { gap: 10px; }
 .stat-tile {
   background: linear-gradient(160deg, rgba(24, 27, 34, 0.9), rgba(14, 16, 21, 0.94)) !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
@@ -258,23 +254,11 @@ body.light-mode .pill-btn.filter-active {
   border-color: #1f242d !important;
   color: #fbfaf7 !important;
 }
-body.light-mode .pill-btn.pill-paid.filter-active {
-  background: #15803d !important;
-  border-color: #15803d !important;
-  color: #ffffff !important;
-}
-body.light-mode .pill-btn.pill-partial.filter-active {
-  background: #b45309 !important;
-  border-color: #b45309 !important;
-  color: #ffffff !important;
-}
-body.light-mode .pill-btn.pill-pending.filter-active {
-  background: #be123c !important;
-  border-color: #be123c !important;
-  color: #ffffff !important;
-}
+body.light-mode .pill-btn.pill-paid.filter-active { background: #15803d !important; border-color: #15803d !important; color: #ffffff !important; }
+body.light-mode .pill-btn.pill-partial.filter-active { background: #b45309 !important; border-color: #b45309 !important; color: #ffffff !important; }
+body.light-mode .pill-btn.pill-pending.filter-active { background: #be123c !important; border-color: #be123c !important; color: #ffffff !important; }
 
-/* ग्राहक कार्ड्स - Smoked Black Glass & Soft Day Mode */
+/* ग्राहक कार्ड्स */
 #borrowersList .borrower-item {
   background: linear-gradient(160deg, rgba(22, 25, 32, 0.9), rgba(14, 16, 21, 0.95)) !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
@@ -296,129 +280,247 @@ body.light-mode .pill-btn.pill-pending.filter-active {
   border-color: rgba(148, 163, 184, 0.25) !important;
   opacity: 0.76;
 }
+body.light-mode #borrowersList .borrower-item { background: #fbfaf7 !important; border: 1px solid #dcd7cc !important; box-shadow: 0 4px 12px rgba(31, 36, 45, 0.06); }
+body.light-mode #borrowersList .borrower-item.status-paid { background: #eef7f1 !important; border-color: #86efac !important; }
+body.light-mode #borrowersList .borrower-item.status-partial { background: #fdf6e7 !important; border-color: #fcd34d !important; }
+body.light-mode #borrowersList .borrower-item.status-closed { background: #eae6dd !important; border-color: #cbd5e1 !important; opacity: 0.8; }
 
-body.light-mode #borrowersList .borrower-item {
-  background: #fbfaf7 !important;
-  border: 1px solid #dcd7cc !important;
-  box-shadow: 0 4px 12px rgba(31, 36, 45, 0.06);
-}
-body.light-mode #borrowersList .borrower-item.status-paid {
-  background: #eef7f1 !important;
-  border-color: #86efac !important;
-}
-body.light-mode #borrowersList .borrower-item.status-partial {
-  background: #fdf6e7 !important;
-  border-color: #fcd34d !important;
-}
-body.light-mode #borrowersList .borrower-item.status-closed {
-  background: #eae6dd !important;
-  border-color: #cbd5e1 !important;
-  opacity: 0.8;
-}
-
-/* ग्राहकाचा गोल अवतार - स्लीक ग्लास चारकोल */
+/* ग्राहकाचा गोल अवतार */
 .pro-avatar-badge {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.9rem;
-  font-weight: 800;
-  color: #f8fafc;
+  width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 0.9rem; font-weight: 800; color: #f8fafc;
   background: linear-gradient(135deg, #333846, #1d2029);
   border: 1px solid rgba(255, 255, 255, 0.22);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
-  margin-right: 8px;
-  vertical-align: middle;
+  margin-right: 8px; vertical-align: middle;
 }
-body.light-mode .pro-avatar-badge {
-  background: linear-gradient(135deg, #334155, #1e293b);
-  color: #fbfaf7;
-}
+body.light-mode .pro-avatar-badge { background: linear-gradient(135deg, #334155, #1e293b); color: #fbfaf7; }
 
 /* ग्राहक कार्डमधील सर्व बटणे एकाच सरळ ओळीत */
 #borrowersList .borrower-item .pro-action-strip {
-  display: flex !important;
-  flex-wrap: nowrap !important;
-  overflow-x: auto !important;
-  align-items: center !important;
-  gap: 6px !important;
-  padding: 4px 1px 6px !important;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
+  display: flex !important; flex-wrap: nowrap !important; overflow-x: auto !important;
+  align-items: center !important; gap: 6px !important; padding: 4px 1px 6px !important;
+  -webkit-overflow-scrolling: touch; scrollbar-width: none;
 }
-#borrowersList .borrower-item .pro-action-strip::-webkit-scrollbar {
-  display: none;
-}
+#borrowersList .borrower-item .pro-action-strip::-webkit-scrollbar { display: none; }
 #borrowersList .borrower-item .pro-action-strip button,
 #borrowersList .borrower-item .pro-action-strip a {
-  flex: 0 0 auto !important;
-  white-space: nowrap !important;
-  border-radius: 999px !important;
-  padding: 6px 11px !important;
-  font-size: 0.74rem !important;
-  font-weight: 700 !important;
-  margin-left: 0 !important;
+  flex: 0 0 auto !important; white-space: nowrap !important; border-radius: 999px !important;
+  padding: 6px 11px !important; font-size: 0.74rem !important; font-weight: 700 !important; margin-left: 0 !important;
 }
 
 #borrowersList .borrower-item .meta-box {
-  border-radius: 12px !important;
-  padding: 9px 11px !important;
-  border-color: rgba(255, 255, 255, 0.08);
+  border-radius: 12px !important; padding: 9px 11px !important; border-color: rgba(255, 255, 255, 0.08);
 }
-body.light-mode #borrowersList .borrower-item .meta-box {
-  border-color: #dcd7cc;
-}
+body.light-mode #borrowersList .borrower-item .meta-box { border-color: #dcd7cc; }
 
 /* सर्व पॉपअपमधील '✕ बंद' बटणे लपवा */
 .modal-card button[id*="Close"],
 .modal-card button[id*="close"],
-.modal-card .ui-pro-hide-close {
-  display: none !important;
-}
+.modal-card .ui-pro-hide-close { display: none !important; }
 
-/* स्लिम Unique Smoked Black Glass '＋ New' बटण */
+/* स्लिम Smoked Black Glass '＋ New' बटण */
 #uiProNewBtn {
-  position: fixed;
-  right: 12px;
-  bottom: 66px;
-  z-index: 35;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 8px 14px;
-  border-radius: 999px;
-  font-size: 0.8rem;
-  font-weight: 800;
-  letter-spacing: 0.3px;
-  color: #f8fafc;
-  background: rgba(24, 27, 34, 0.82);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  position: fixed; right: 12px; bottom: 66px; z-index: 35;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 8px 14px; border-radius: 999px; font-size: 0.8rem; font-weight: 800; letter-spacing: 0.3px;
+  color: #f8fafc; background: rgba(24, 27, 34, 0.82);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.24);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.22);
-  cursor: pointer;
-  transition: transform 0.15s ease, opacity 0.2s ease;
+  cursor: pointer; transition: transform 0.15s ease, opacity 0.2s ease;
 }
-#uiProNewBtn:active {
-  transform: scale(0.94);
-}
-body.light-mode #uiProNewBtn {
-  background: rgba(31, 36, 45, 0.9);
-  border-color: rgba(31, 36, 45, 0.3);
-  color: #fbfaf7;
-}
+#uiProNewBtn:active { transform: scale(0.94); }
+body.light-mode #uiProNewBtn { background: rgba(31, 36, 45, 0.9); border-color: rgba(31, 36, 45, 0.3); color: #fbfaf7; }
 
-/* पॉपअप कार्ड्स - Smoked Glass */
+/* पॉपअप कार्ड्स */
 .modal-card {
   background: linear-gradient(165deg, #171920, #0d0f14) !important;
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
   border-radius: 20px;
 }
-body.light-mode .modal-card {
-  background: #fbfaf7 !important;
-  border: 1px solid #d5cfc2 !important;
+body.light-mode .modal-card { background: #fbfaf7 !important; border: 1px solid #d5cfc2 !important; }
+
+/* ===== टप्पा २: ग्लोइंग SVG लाईन चार्ट स्टाईल्स ===== */
+.an-line-wrap {
+  margin-top: 10px;
+  padding: 10px 8px 6px;
+  border-radius: 14px;
+  background: rgba(10, 12, 16, 0.68);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+}
+body.light-mode .an-line-wrap {
+  background: #f4f1ea;
+  border-color: #dcd7cc;
+}
+.an-line-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+.an-chart-grid {
+  stroke: rgba(148, 163, 184, 0.18);
+  stroke-dasharray: 3 3;
+  stroke-width: 1;
+}
+body.light-mode .an-chart-grid {
+  stroke: rgba(92, 100, 112, 0.22);
+}
+.an-chart-val {
+  fill: #eceff4;
+  font-size: 9.5px;
+  font-weight: 800;
+  text-anchor: middle;
+}
+body.light-mode .an-chart-val {
+  fill: #1f242d;
+}
+.an-chart-lbl {
+  fill: #98a1b0;
+  font-size: 9.5px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+body.light-mode .an-chart-lbl {
+  fill: #5c6470;
+}
+
+/* ===== टप्पा २: ४-रंगी Eye-Comfort Reports Hub ===== */
+.pro-rep-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.pro-rep-card {
+  border-radius: 16px;
+  padding: 13px 12px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+.pro-rep-card:active { transform: scale(0.97); }
+.pro-rep-card.rep-emerald {
+  background: linear-gradient(145deg, rgba(22, 101, 52, 0.55), rgba(13, 35, 24, 0.9));
+  border-color: rgba(74, 222, 128, 0.35);
+}
+.pro-rep-card.rep-teal {
+  background: linear-gradient(145deg, rgba(15, 118, 110, 0.55), rgba(14, 34, 36, 0.9));
+  border-color: rgba(45, 212, 191, 0.35);
+}
+.pro-rep-card.rep-coral {
+  background: linear-gradient(145deg, rgba(159, 18, 57, 0.52), rgba(38, 16, 22, 0.9));
+  border-color: rgba(240, 113, 120, 0.35);
+}
+.pro-rep-card.rep-amber {
+  background: linear-gradient(145deg, rgba(161, 98, 7, 0.52), rgba(36, 27, 14, 0.9));
+  border-color: rgba(234, 182, 118, 0.35);
+}
+body.light-mode .pro-rep-card.rep-emerald { background: linear-gradient(145deg, #e7f6ec, #d4eedc); border-color: #86efac; }
+body.light-mode .pro-rep-card.rep-teal { background: linear-gradient(145deg, #e5f5f3, #cdebe7); border-color: #5eead4; }
+body.light-mode .pro-rep-card.rep-coral { background: linear-gradient(145deg, #fcecef, #f8d7de); border-color: #fda4af; }
+body.light-mode .pro-rep-card.rep-amber { background: linear-gradient(145deg, #fbf3e2, #f5e4c3); border-color: #fcd34d; }
+
+.pro-rep-icon { font-size: 1.25rem; margin-bottom: 5px; display: block; }
+.pro-rep-title { font-size: 0.76rem; color: var(--muted); font-weight: 700; }
+.pro-rep-val { font-size: 1.18rem; font-weight: 900; color: var(--text); margin-top: 3px; }
+.pro-rep-sub { font-size: 0.7rem; font-weight: 700; margin-top: 4px; color: var(--accent-2); }
+
+.pro-quick-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pro-quick-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 13px;
+  border-radius: 13px;
+  background: var(--meta-bg);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.86rem;
+  color: var(--text);
+  transition: border-color 0.18s ease, transform 0.14s ease;
+}
+.pro-quick-item:active { transform: scale(0.98); }
+.pro-quick-item:hover { border-color: var(--accent); }
+
+/* ===== टप्पा २: आधुनिक Toggle Switch Settings UI ===== */
+.pro-toggle-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.pro-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 13px;
+  background: var(--meta-bg);
+  border: 1px solid var(--border);
+}
+.pro-toggle-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pro-toggle-title {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.pro-toggle-desc {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.pro-switch {
+  position: relative;
+  display: inline-block;
+  width: 46px;
+  height: 26px;
+  flex-shrink: 0;
+}
+.pro-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+.pro-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background: rgba(148, 163, 184, 0.3);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  transition: background 0.22s ease;
+}
+.pro-slider::before {
+  content: "";
+  position: absolute;
+  height: 20px;
+  width: 20px;
+  left: 2px;
+  bottom: 2px;
+  background: #f8fafc;
+  border-radius: 50%;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+  transition: transform 0.22s ease;
+}
+.pro-switch input:checked + .pro-slider {
+  background: #15803d;
+  border-color: #4ade80;
+}
+.pro-switch input:checked + .pro-slider::before {
+  transform: translateX(20px);
 }
