@@ -1,4 +1,4 @@
-// व्याज हिशोब वही - Glowing SVG Line Chart + SVG Ring % + 100% Synced चालू महिना/ग्राहकनिहाय इतिहास + Reports Hub (js/analytics.js - V14.21)
+// व्याज हिशोब वही - Glowing SVG Line Chart + SVG Ring % + 100% Synced चालू महिना/ग्राहकनिहाय इतिहास + NavStack Sub-Step (js/analytics.js - V14.22)
 (function () {
   const MARATHI_SHORT_MONTHS = ["जाने", "फेब्रु", "मार्च", "एप्रि", "मे", "जून", "जुलै", "ऑग", "सप्टें", "ऑक्टो", "नोव्हें", "डिसें"];
   const MARATHI_FULL_MONTHS = ["जानेवारी", "फेब्रुवारी", "मार्च", "एप्रिल", "मे", "जून", "जुलै", "ऑगस्ट", "सप्टेंबर", "ऑक्टोबर", "नोव्हेंबर", "डिसेंबर"];
@@ -9,14 +9,9 @@
   let selectedHistoryBorrowerId = null;
   let currentMonthEntries = [];
   let latestSummaryStats = {
-    activeCount: 0,
-    totalPrincipal: 0,
-    totalExpected: 0,
-    totalCollected: 0,
-    totalPending: 0,
-    lifetimeProfit: 0,
-    highRiskCount: 0,
-    recoveryPct: 0
+    activeCount: 0, totalPrincipal: 0, totalExpected: 0,
+    totalCollected: 0, totalPending: 0, lifetimeProfit: 0,
+    highRiskCount: 0, recoveryPct: 0
   };
 
   function injectAnalyticsStyles() {
@@ -117,7 +112,6 @@
     return String(Math.round(n));
   }
 
-  // ग्लोइंग SVG लाईन व एरिया चार्ट तयार करा (Smooth Bezier Curve Line Chart)
   function buildGlowingLineChartSvg(last6, monthTotals) {
     const maxVal = Math.max(1, ...last6.map((m) => Number(monthTotals[m.ym] || 0)));
     const baseY = 102;
@@ -131,7 +125,6 @@
       return { x, y, val, label: m.label };
     });
 
-    // वळणदार (Smooth Cubic Bezier) पाथ तयार करा
     let lineD = `M ${pts[0].x},${pts[0].y}`;
     for (let i = 0; i < pts.length - 1; i++) {
       const p1 = pts[i];
@@ -169,16 +162,11 @@
               </feMerge>
             </filter>
           </defs>
-
-          <!-- पार्श्वभूमी ग्रीड रेषा -->
           <line x1="16" y1="30" x2="304" y2="30" class="an-chart-grid"></line>
           <line x1="16" y1="66" x2="304" y2="66" class="an-chart-grid"></line>
           <line x1="16" y1="${baseY}" x2="304" y2="${baseY}" class="an-chart-grid"></line>
-
-          <!-- एरिया ग्रेडियंट व ग्लोइंग लाईन -->
           <path d="${areaD}" fill="url(#vyajAreaGrad)"></path>
           <path d="${lineD}" fill="none" stroke="url(#vyajLineGrad)" stroke-width="2.8" stroke-linecap="round" filter="url(#vyajGlow)"></path>
-
           ${dotsHtml}
         </svg>
       </div>
@@ -285,10 +273,7 @@
 
   async function deletePaymentEntry(borrowerId, entryIndex) {
     const user = typeof firebase !== "undefined" && firebase.auth ? firebase.auth().currentUser : null;
-    if (!user || !window.HishobBridge) {
-      alert("कृपया आधी लॉगिन करा.");
-      return;
-    }
+    if (!user || !window.HishobBridge) { alert("कृपया आधी लॉगिन करा."); return; }
 
     const borrowers = window.HishobBridge.getBorrowers() || [];
     const borrower = borrowers.find((b) => b.id === borrowerId);
@@ -305,17 +290,10 @@
     const updatedHistory = borrower.paymentHistory.filter((_, idx) => idx !== entryIndex);
 
     try {
-      await firebase
-        .firestore()
-        .collection("users")
-        .doc(user.uid)
-        .collection("borrowers")
-        .doc(borrowerId)
-        .update({
-          paymentHistory: updatedHistory,
-          updatedAt: new Date().toISOString()
-        });
-
+      await firebase.firestore().collection("users").doc(user.uid).collection("borrowers").doc(borrowerId).update({
+        paymentHistory: updatedHistory,
+        updatedAt: new Date().toISOString()
+      });
       borrower.paymentHistory = updatedHistory;
       renderAnalyticsCard();
       renderInterestContributorsContent();
@@ -351,7 +329,10 @@
     document.body.appendChild(modal);
 
     modal.addEventListener("click", (e) => {
-      if (e.target === modal) modal.classList.add("hidden");
+      if (e.target === modal) {
+        modal.classList.add("hidden");
+        if (window.VyajNavStack) window.VyajNavStack.popIfTop("interestContributorsModal");
+      }
     });
 
     document.getElementById("icTabMonthBtn").addEventListener("click", () => {
@@ -471,10 +452,7 @@
       if (calcCur.collectedInMonth > curHistSum) {
         combinedHist.push({
           amount: calcCur.collectedInMonth - curHistSum,
-          date: activeYm,
-          ym: activeYm,
-          mode: "खातेवही नोंद",
-          isLedgerSync: true
+          date: activeYm, ym: activeYm, mode: "खातेवही नोंद", isLedgerSync: true
         });
       }
 
@@ -505,6 +483,7 @@
 
       document.getElementById("icBackToCustListBtn")?.addEventListener("click", () => {
         selectedHistoryBorrowerId = null;
+        if (window.VyajNavStack) window.VyajNavStack.popIfTop("ic_cust_detail");
         renderInterestContributorsContent();
       });
 
@@ -592,9 +571,16 @@
       })
       .join("");
 
+    // नावावर क्लिक करताच Step-by-Step Back साठी Sub-Step नोंदवा
     container.querySelectorAll("[data-open-hist-bid]").forEach((row) => {
       row.addEventListener("click", () => {
         selectedHistoryBorrowerId = row.getAttribute("data-open-hist-bid");
+        if (window.VyajNavStack) {
+          window.VyajNavStack.pushSubStep("ic_cust_detail", () => {
+            selectedHistoryBorrowerId = null;
+            renderInterestContributorsContent();
+          });
+        }
         renderInterestContributorsContent();
       });
     });
@@ -653,14 +639,9 @@
             bHistMonthSum += amt;
             currentMonthInterestSum += amt;
             monthEntries.push({
-              borrowerId: b.id,
-              historyIndex: idx,
-              name: b.name || "ग्राहक",
-              mobile: b.mobile || "",
-              amount: amt,
-              date: pDate,
-              mode: p.mode || "Cash",
-              isLedgerSync: false
+              borrowerId: b.id, historyIndex: idx,
+              name: b.name || "ग्राहक", mobile: b.mobile || "",
+              amount: amt, date: pDate, mode: p.mode || "Cash", isLedgerSync: false
             });
           }
 
@@ -687,25 +668,17 @@
             monthTotals[activeYm] += extraAmt;
           }
           monthEntries.push({
-            borrowerId: b.id,
-            historyIndex: -1,
-            name: b.name || "ग्राहक",
-            mobile: b.mobile || "",
-            amount: extraAmt,
-            date: activeYm,
-            mode: "खातेवही नोंद",
-            isLedgerSync: true
+            borrowerId: b.id, historyIndex: -1,
+            name: b.name || "ग्राहक", mobile: b.mobile || "",
+            amount: extraAmt, date: activeYm, mode: "खातेवही नोंद", isLedgerSync: true
           });
         }
 
         if (calc.monthlyInterest > 0 && calc.totalPayable >= calc.monthlyInterest * 2) {
           const approxMonths = Math.floor(calc.totalPayable / calc.monthlyInterest);
           highRiskList.push({
-            id: b.id,
-            name: b.name || "ग्राहक",
-            mobile: b.mobile || "",
-            totalPayable: calc.totalPayable,
-            approxMonths
+            id: b.id, name: b.name || "ग्राहक", mobile: b.mobile || "",
+            totalPayable: calc.totalPayable, approxMonths
           });
         }
       });
@@ -718,16 +691,10 @@
 
     const pct = totalExpected > 0 ? Math.min(100, Math.round((totalCollected / totalExpected) * 100)) : 0;
 
-    // Reports Hub साठी ताजी आकडेवारी शेअर करा
     latestSummaryStats = {
-      activeCount,
-      totalPrincipal,
-      totalExpected,
-      totalCollected,
-      totalPending: totalPendingSum,
-      lifetimeProfit: lifetimeInterestProfit,
-      highRiskCount: highRiskList.length,
-      recoveryPct: pct
+      activeCount, totalPrincipal, totalExpected, totalCollected,
+      totalPending: totalPendingSum, lifetimeProfit: lifetimeInterestProfit,
+      highRiskCount: highRiskList.length, recoveryPct: pct
     };
     window.VyajAnalyticsStats = latestSummaryStats;
     window.openVyajInterestList = openInterestContributorsModal;
@@ -809,9 +776,7 @@
     document.getElementById("openPaidInterestListBtn")?.addEventListener("click", openInterestContributorsModal);
 
     document.getElementById("openProReportsHubBtn")?.addEventListener("click", () => {
-      if (typeof window.openProReportsHub === "function") {
-        window.openProReportsHub();
-      }
+      if (typeof window.openProReportsHub === "function") window.openProReportsHub();
     });
 
     document.getElementById("toggleAnChartBtn")?.addEventListener("click", () => {
