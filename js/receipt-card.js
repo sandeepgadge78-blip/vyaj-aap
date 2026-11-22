@@ -1,424 +1,393 @@
-// व्याज हिशोब वही - ब्रँडेड WhatsApp पावती कार्ड + मागील बाकी महिन्यांची नावे (js/receipt-card.js - V14.13)
+// व्याज हिशोब वही - Business Pro Invoice पावती + ऑटो UPI QR कोड + PNG/PDF/WhatsApp (js/receipt-card.js - V14.22)
 (function () {
-  const MARATHI_MONTHS = [
-    "जानेवारी", "फेब्रुवारी", "मार्च", "एप्रिल", "मे", "जून",
-    "जुलै", "ऑगस्ट", "सप्टेंबर", "ऑक्टोबर", "नोव्हेंबर", "डिसेंबर"
-  ];
+  const MARATHI_MONTHS = ["जानेवारी", "फेब्रुवारी", "मार्च", "एप्रिल", "मे", "जून", "जुलै", "ऑगस्ट", "सप्टेंबर", "ऑक्टोबर", "नोव्हेंबर", "डिसेंबर"];
+  let currentReceiptCtx = null;
 
-  const MARATHI_SHORT_MONTHS = [
-    "जाने", "फेब्रु", "मार्च", "एप्रि", "मे", "जून",
-    "जुलै", "ऑग", "सप्टें", "ऑक्टो", "नोव्हें", "डिसें"
-  ];
+  function esc(str) {
+    return String(str || "").replace(/[&<>"']/g, (m) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[m]));
+  }
 
-  let lastGeneratedBlob = null;
-  let lastGeneratedFileName = "vyaj-pavati.png";
-
-  function formatMonthMr(ym, short = false) {
+  function formatMonthMr(ym) {
     if (!ym || !String(ym).includes("-")) return String(ym || "");
     const [y, m] = String(ym).split("-");
-    const idx = parseInt(m, 10) - 1;
-    const arr = short ? MARATHI_SHORT_MONTHS : MARATHI_MONTHS;
-    return `${arr[idx] || m} ${y}`;
+    return `${MARATHI_MONTHS[parseInt(m, 10) - 1] || m} ${y}`;
   }
 
-  function formatRs(val) {
-    return `₹${Number(val || 0).toLocaleString("en-IN")}`;
-  }
-
-  function getTodayFormatted() {
+  function todayFormatted() {
     const d = new Date();
-    const dd = String(d.getDate()).padStart(2, "0");
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const yy = d.getFullYear();
-    return `${dd}/${mm}/${yy}`;
+    return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
   }
 
-  function getBizProfile() {
-    try {
-      const p = JSON.parse(localStorage.getItem("hishob_biz_profile") || "{}");
-      return {
-        bizName: (p.bizName || "").trim() || "व्याज हिशोब वही",
-        ownerName: (p.ownerName || "").trim(),
-        mobile: (p.mobile || "").trim()
-      };
-    } catch (_) {
-      return { bizName: "व्याज हिशोब वही", ownerName: "", mobile: "" };
-    }
+  function getBizBranding() {
+    const bizName = document.getElementById("profBizName")?.value?.trim() || localStorage.getItem("vyaj_biz_name") || "व्याज हिशोब वही";
+    const ownerName = document.getElementById("profOwnerName")?.value?.trim() || localStorage.getItem("vyaj_owner_name") || "";
+    const bizMobile = document.getElementById("profMobile")?.value?.trim() || localStorage.getItem("vyaj_biz_mobile") || "";
+    const upiId = document.getElementById("profUpiId")?.value?.trim() ||
+      document.getElementById("selfUpiId")?.value?.trim() ||
+      localStorage.getItem("vyaj_upi_id") || "";
+    return { bizName, ownerName, bizMobile, upiId };
   }
 
-  // मागील बाकी महिन्यांची यादी काढा (extract pending past month names before activeYm)
-  function getPastPendingMonthNames(borrower, calc, activeYm) {
-    if (!calc || Number(calc.pastDue || 0) <= 0) return [];
-
-    // १. जर calc ऑब्जेक्टमध्ये आधीच बाकी महिन्यांची यादी असेल तर ती वापरा
-    const rawList =
-      calc.pastPendingMonths ||
-      calc.pendingPastMonths ||
-      calc.unpaidMonths ||
-      calc.pendingMonths ||
-      null;
-
-    if (Array.isArray(rawList) && rawList.length > 0) {
-      const names = rawList
-        .map((item) => {
-          if (typeof item === "string") return item < activeYm ? formatMonthMr(item, true) : null;
-          if (item && item.ym && item.ym < activeYm) return formatMonthMr(item.ym, true);
-          return null;
-        })
-        .filter(Boolean);
-      if (names.length > 0) return names;
-    }
-
-    // २. नसेल तर activeYm च्या आधीच्या महिन्यांचा अंदाज काढा (fallback calculation)
-    const monthlyInt = Number(calc.monthlyInterest || 0);
-    const pastDue = Number(calc.pastDue || 0);
-    if (monthlyInt <= 0 || !activeYm || !activeYm.includes("-")) return [];
-
-    const approxCount = Math.min(12, Math.max(1, Math.ceil(pastDue / monthlyInt)));
-    let [y, m] = activeYm.split("-").map(Number);
-    const startYm = borrower && borrower.startYm ? String(borrower.startYm) : "";
-    const result = [];
-
-    for (let i = 0; i < approxCount; i++) {
-      m -= 1;
-      if (m <= 0) {
-        m = 12;
-        y -= 1;
-      }
-      const ymStr = `${y}-${String(m).padStart(2, "0")}`;
-      if (startYm && ymStr < startYm) break;
-      result.unshift(formatMonthMr(ymStr, true));
-    }
-    return result;
+  function buildUpiQrUrl(upiId, bizName, amount, note) {
+    if (!upiId) return "";
+    const amtParam = Number(amount || 0) > 0 ? `&am=${Math.round(Number(amount))}` : "";
+    const upiUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(bizName || "Vyaj Hishob")}${amtParam}&cu=INR&tn=${encodeURIComponent(note || "Interest Payment")}`;
+    return `https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=6&data=${encodeURIComponent(upiUri)}`;
   }
 
-  // गोल कोपऱ्याचा चौकोन काढण्यासाठी मदत (helper to draw rounded rect on canvas)
-  function drawRoundRect(ctx, x, y, w, h, r) {
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.lineTo(x + w - r, y);
-    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-    ctx.lineTo(x + w, y + h - r);
-    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-    ctx.lineTo(x + r, y + h);
-    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-    ctx.lineTo(x, y + r);
-    ctx.quadraticCurveTo(x, y, x + r, y);
-    ctx.closePath();
-  }
-
-  // Canvas वर प्रोफेशनल ब्रँडेड पावती तयार करा (generate HD branded receipt PNG)
-  function generateReceiptCanvas(borrower, calc, activeYm) {
-    const pastMonthNames = getPastPendingMonthNames(borrower, calc, activeYm);
-    const hasPastNames = pastMonthNames.length > 0;
-
-    const canvas = document.createElement("canvas");
-    const W = 800;
-    const H = hasPastNames ? 1040 : 980;
-    canvas.width = W;
-    canvas.height = H;
-    const ctx = canvas.getContext("2d");
-
-    const prof = getBizProfile();
-    const monthLabel = formatMonthMr(activeYm);
-    const todayStr = getTodayFormatted();
-    const receiptNo = `VH-${String(Date.now()).slice(-6)}`;
-
-    // १. पार्श्वभूमी (Clean Premium Off-White Paper Background)
-    ctx.fillStyle = "#f8fafc";
-    ctx.fillRect(0, 0, W, H);
-
-    // बाहेरील बॉर्डर (Outer Card Frame)
-    ctx.fillStyle = "#ffffff";
-    drawRoundRect(ctx, 28, 28, W - 56, H - 56, 24);
-    ctx.fill();
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = "#cbd5e1";
-    ctx.stroke();
-
-    // २. वरचा ब्रँडेड हेडर (Navy-Teal Gradient Header)
-    const grad = ctx.createLinearGradient(28, 28, W - 28, 220);
-    grad.addColorStop(0, "#0f172a");
-    grad.addColorStop(0.6, "#1e293b");
-    grad.addColorStop(1, "#0369a1");
-    ctx.fillStyle = grad;
-    drawRoundRect(ctx, 28, 28, W - 56, 195, 24);
-    ctx.fill();
-    ctx.fillRect(28, 195, W - 56, 28);
-
-    // व्यवसायाचे नाव (Auto-Branding)
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 40px system-ui, -apple-system, sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(prof.bizName, W / 2, 102);
-
-    // मालकाचे नाव व मोबाईल
-    const subLine = [prof.ownerName, prof.mobile ? `📞 ${prof.mobile}` : ""].filter(Boolean).join("  •  ");
-    if (subLine) {
-      ctx.fillStyle = "#cbd5e1";
-      ctx.font = "600 22px system-ui, -apple-system, sans-serif";
-      ctx.fillText(subLine, W / 2, 142);
-    }
-
-    // पावती टायटल पिल (Official Receipt Pill)
-    ctx.fillStyle = "rgba(56, 189, 248, 0.22)";
-    drawRoundRect(ctx, W / 2 - 190, 162, 380, 42, 21);
-    ctx.fill();
-    ctx.fillStyle = "#38bdf8";
-    ctx.font = "bold 21px system-ui, -apple-system, sans-serif";
-    ctx.fillText("🧾 अधिकृत व्याज पावती (RECEIPT)", W / 2, 190);
-
-    // ३. पावती क्रमांक व दिनांक (Receipt No & Date)
-    ctx.textAlign = "left";
-    ctx.fillStyle = "#475569";
-    ctx.font = "600 22px system-ui, -apple-system, sans-serif";
-    ctx.fillText(`पावती क्र.: ${receiptNo}`, 62, 268);
-
-    ctx.textAlign = "right";
-    ctx.fillText(`दिनांक: ${todayStr}`, W - 62, 268);
-
-    // विभाजक रेषा
-    ctx.strokeStyle = "#e2e8f0";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(60, 290);
-    ctx.lineTo(W - 60, 290);
-    ctx.stroke();
-
-    // ४. ग्राहकाचा तपशील बॉक्स (Customer Info Box)
-    ctx.fillStyle = "#f1f5f9";
-    drawRoundRect(ctx, 60, 312, W - 120, 128, 16);
-    ctx.fill();
-
-    ctx.textAlign = "left";
-    ctx.fillStyle = "#64748b";
-    ctx.font = "600 20px system-ui, -apple-system, sans-serif";
-    ctx.fillText("ग्राहकाचे नाव:", 86, 350);
-
-    ctx.fillStyle = "#0f172a";
-    ctx.font = "bold 32px system-ui, -apple-system, sans-serif";
-    ctx.fillText(String(borrower.name || "ग्राहक").slice(0, 32), 86, 392);
-
-    ctx.fillStyle = "#475569";
-    ctx.font = "600 21px system-ui, -apple-system, sans-serif";
-    ctx.fillText(`मोबाईल: ${borrower.mobile || "-"}`, 86, 426);
-
-    ctx.textAlign = "right";
-    ctx.fillStyle = "#0284c7";
-    ctx.font = "bold 24px system-ui, -apple-system, sans-serif";
-    ctx.fillText(`महिना: ${monthLabel}`, W - 86, 426);
-
-    // ५. आर्थिक तपशील तक्ता (Financial Summary Table)
-    const rows = [
-      { label: "एकूण मुद्दल (Principal)", val: formatRs(calc.principal), color: "#0f172a" },
-      { label: `मासिक व्याज (${Number(borrower.rate || 0)}% दराने)`, val: formatRs(calc.monthlyInterest), color: "#0369a1" },
-      { label: `${monthLabel} — जमा रक्कम`, val: formatRs(calc.paidThisMonth), color: "#059669", bold: true },
-      { label: "मागील बाकी व्याज", val: formatRs(calc.pastDue), color: calc.pastDue > 0 ? "#dc2626" : "#475569", isPastRow: true }
-    ];
-
-    let yPos = 476;
-    rows.forEach((row) => {
-      const boxH = row.isPastRow && hasPastNames ? 96 : 62;
-
-      ctx.fillStyle = row.isPastRow && hasPastNames ? "#fff1f2" : "#ffffff";
-      drawRoundRect(ctx, 60, yPos, W - 120, boxH, 12);
-      ctx.fill();
-      ctx.lineWidth = 1.5;
-      ctx.strokeStyle = row.isPastRow && hasPastNames ? "#fecdd3" : "#e2e8f0";
-      ctx.stroke();
-
-      ctx.textAlign = "left";
-      ctx.fillStyle = "#334155";
-      ctx.font = "600 23px system-ui, -apple-system, sans-serif";
-      ctx.fillText(row.label, 84, yPos + 39);
-
-      ctx.textAlign = "right";
-      ctx.fillStyle = row.color;
-      ctx.font = `${row.bold ? "900" : "bold"} 26px system-ui, -apple-system, sans-serif`;
-      ctx.fillText(row.val, W - 84, yPos + 40);
-
-      // मागील बाकी महिन्यांची नावे दाखवा (show pending past month names)
-      if (row.isPastRow && hasPastNames) {
-        const monthsText = `बाकी महिने: ${pastMonthNames.join(", ")}`;
-        const trimmed = monthsText.length > 58 ? monthsText.slice(0, 55) + "..." : monthsText;
-        ctx.textAlign = "left";
-        ctx.fillStyle = "#be123c";
-        ctx.font = "600 19px system-ui, -apple-system, sans-serif";
-        ctx.fillText(trimmed, 84, yPos + 74);
-      }
-
-      yPos += boxH + 12;
-    });
-
-    // ६. एकूण बाकी / स्थिती हायलाईट बॉक्स (Total Pending & Status Box)
-    const isPaid = calc.totalPayable <= 0;
-    ctx.fillStyle = isPaid ? "#dcfce7" : "#fee2e2";
-    drawRoundRect(ctx, 60, yPos + 8, W - 120, 88, 16);
-    ctx.fill();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = isPaid ? "#16a34a" : "#ef4444";
-    ctx.stroke();
-
-    ctx.textAlign = "left";
-    ctx.fillStyle = isPaid ? "#166534" : "#991b1b";
-    ctx.font = "bold 25px system-ui, -apple-system, sans-serif";
-    ctx.fillText(isPaid ? "✅ स्थिती: संपूर्ण हिशोब जमा" : "⚠️ एकूण देय बाकी रक्कम:", 86, yPos + 61);
-
-    ctx.textAlign = "right";
-    ctx.font = "900 34px system-ui, -apple-system, sans-serif";
-    ctx.fillText(isPaid ? "₹0" : formatRs(calc.totalPayable), W - 86, yPos + 63);
-
-    // ७. फूटर (Thank You & Digital Verification Footer)
-    ctx.textAlign = "center";
-    ctx.fillStyle = "#64748b";
-    ctx.font = "600 20px system-ui, -apple-system, sans-serif";
-    ctx.fillText("वेळेवर सहकार्य केल्याबद्दल धन्यवाद!", W / 2, H - 82);
-
-    ctx.fillStyle = "#94a3b8";
-    ctx.font = "500 17px system-ui, -apple-system, sans-serif";
-    ctx.fillText(`ही संगणकीकृत डिजिटल पावती आहे • ${prof.bizName}`, W / 2, H - 50);
-
-    return canvas;
-  }
-
-  // पावती प्रीव्ह्यू पॉपअप तयार करा (create Receipt Preview Modal)
-  function ensureReceiptModal() {
-    let modal = document.getElementById("brandedReceiptModal");
+  // Invoice पावती Modal तयार करा
+  function ensureInvoiceModal() {
+    let modal = document.getElementById("proInvoiceModal");
     if (modal) return modal;
 
     modal = document.createElement("div");
-    modal.id = "brandedReceiptModal";
+    modal.id = "proInvoiceModal";
     modal.className = "modal-backdrop hidden";
     modal.innerHTML = `
-      <div class="modal-card" style="max-width:520px; text-align:center;">
-        <div class="row" style="justify-content:space-between; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--border);">
-          <h3 style="margin:0; color:var(--accent);">🧾 ब्रँडेड पावती कार्ड</h3>
-          <button type="button" id="closeBrandedReceiptBtn" class="danger sm">✕ बंद</button>
+      <div class="modal-card" style="max-width:470px; padding:14px;">
+        <div class="row" style="justify-content:space-between; margin-bottom:10px;">
+          <h3 style="margin:0; font-size:0.96rem; color:var(--text);">🧾 डिजिटल Invoice पावती</h3>
+          <span class="badge paid">QR Ready</span>
         </div>
-        <div style="background:var(--meta-bg); padding:10px; border-radius:12px; border:1px solid var(--border);">
-          <img id="brandedReceiptPreviewImg" alt="पावती फोटो" style="width:100%; max-width:420px; border-radius:10px; box-shadow:0 6px 20px rgba(0,0,0,0.4);" />
+
+        <div id="proInvoicePaper" class="inv-paper"></div>
+
+        <div class="row" style="margin-top:12px; gap:8px;">
+          <button type="button" id="invDownloadPngBtn" class="primary" style="flex:1;">📥 फोटो (PNG)</button>
+          <button type="button" id="invPrintPdfBtn" class="success" style="flex:1;">🖨️ PDF / प्रिंट</button>
+          <button type="button" id="invShareWaBtn" class="warn" style="flex:1;">💬 WhatsApp</button>
         </div>
-        <div class="row" style="margin-top:12px; justify-content:center; gap:8px;">
-          <button type="button" id="shareBrandedReceiptBtn" class="success" style="flex:1; min-width:160px;">📲 WhatsApp / Share करा</button>
-          <button type="button" id="downloadBrandedReceiptBtn" class="primary" style="flex:1; min-width:140px;">⬇️ फोटो सेव्ह करा</button>
-        </div>
-        <div id="brandedReceiptStatus" class="muted" style="margin-top:8px; font-size:0.8rem;"></div>
       </div>
     `;
     document.body.appendChild(modal);
 
     modal.addEventListener("click", (e) => {
-      if (e.target === modal) modal.classList.add("hidden");
-    });
-
-    document.getElementById("closeBrandedReceiptBtn").addEventListener("click", () => {
-      modal.classList.add("hidden");
-    });
-
-    // फोटो डाउनलोड करा (download PNG)
-    document.getElementById("downloadBrandedReceiptBtn").addEventListener("click", () => {
-      if (!lastGeneratedBlob) return;
-      const url = URL.createObjectURL(lastGeneratedBlob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = lastGeneratedFileName;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1500);
-      const st = document.getElementById("brandedReceiptStatus");
-      if (st) st.textContent = "✅ पावती फोटो तुमच्या फोनमध्ये सेव्ह झाला!";
-    });
-
-    // थेट WhatsApp / Mobile Share करा (Web Share API with file)
-    document.getElementById("shareBrandedReceiptBtn").addEventListener("click", async () => {
-      const st = document.getElementById("brandedReceiptStatus");
-      if (!lastGeneratedBlob) return;
-      try {
-        const file = new File([lastGeneratedBlob], lastGeneratedFileName, { type: "image/png" });
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            title: "अधिकृत व्याज पावती",
-            text: "आपली व्याज हिशोब पावती पहा.",
-            files: [file]
-          });
-          if (st) st.textContent = "✅ पावती शेअर केली!";
-          return;
-        }
-      } catch (err) {
-        if (err && err.name === "AbortError") return;
+      if (e.target === modal) {
+        modal.classList.add("hidden");
+        if (window.VyajNavStack) window.VyajNavStack.popIfTop("proInvoiceModal");
       }
-      document.getElementById("downloadBrandedReceiptBtn").click();
-      if (st) st.textContent = "फोटो सेव्ह झाला आहे — आता तो WhatsApp वर पाठवा.";
     });
+
+    document.getElementById("invDownloadPngBtn")?.addEventListener("click", downloadInvoicePng);
+    document.getElementById("invPrintPdfBtn")?.addEventListener("click", printInvoicePdf);
+    document.getElementById("invShareWaBtn")?.addEventListener("click", shareInvoiceWhatsApp);
 
     return modal;
   }
 
-  // पावती तयार करून पॉपअपमध्ये दाखवा (open receipt preview for borrower)
-  function openBrandedReceipt(borrowerId) {
+  // विशिष्ट ग्राहकाची Invoice पावती उघडा
+  function openInvoiceReceipt(borrowerId) {
     if (!window.HishobBridge) return;
     const borrowers = window.HishobBridge.getBorrowers() || [];
-    const borrower = borrowers.find((x) => x.id === borrowerId);
-    if (!borrower) return;
+    const b = borrowers.find((x) => x.id === borrowerId);
+    if (!b) return;
 
-    const activeYm = (document.getElementById("activeYm") && document.getElementById("activeYm").value) || new Date().toISOString().slice(0, 7);
-    const calc = window.HishobBridge.computeLedgerUpToMonth(borrower, activeYm);
+    const activeYm = document.getElementById("activeYm")?.value || new Date().toISOString().slice(0, 7);
+    const calc = window.HishobBridge.computeLedgerUpToMonth(b, activeYm);
+    const brand = getBizBranding();
 
-    const canvas = generateReceiptCanvas(borrower, calc, activeYm);
-    const modal = ensureReceiptModal();
-    const imgEl = document.getElementById("brandedReceiptPreviewImg");
-    const st = document.getElementById("brandedReceiptStatus");
-    if (st) st.textContent = "";
+    const principal = Number(b.principal || 0);
+    const monthlyInt = Number(calc.monthlyInterest || 0);
+    const paidThisMonth = Number(calc.collectedInMonth || 0);
+    const pendingAmt = Math.max(0, Number(calc.totalPayable || 0));
 
-    const safeName = String(borrower.name || "customer").replace(/[^a-zA-Z0-9\u0900-\u097F]+/g, "_").slice(0, 24);
-    lastGeneratedFileName = `pavati_${safeName}_${activeYm}.png`;
+    let statusText = "PENDING (बाकी)";
+    let statusClass = "inv-stamp-pending";
+    if (pendingAmt <= 0 && paidThisMonth > 0) {
+      statusText = "PAID (पूर्ण जमा)";
+      statusClass = "inv-stamp-paid";
+    } else if (paidThisMonth > 0 && pendingAmt > 0) {
+      statusText = "PARTIAL (अर्धवट)";
+      statusClass = "inv-stamp-partial";
+    }
 
-    imgEl.src = canvas.toDataURL("image/png");
-    canvas.toBlob((blob) => {
-      lastGeneratedBlob = blob;
-    }, "image/png");
+    const invNo = `INV-${activeYm.replace("-", "")}-${String(b.id || "001").slice(-4).toUpperCase()}`;
+    const qrAmount = pendingAmt > 0 ? pendingAmt : monthlyInt;
+    const qrUrl = buildUpiQrUrl(brand.upiId, brand.bizName, qrAmount, `${b.name} ${activeYm}`);
+
+    currentReceiptCtx = {
+      b, calc, brand, activeYm, principal, monthlyInt, paidThisMonth, pendingAmt,
+      statusText, statusClass, invNo, qrAmount, qrUrl, dateStr: todayFormatted()
+    };
+
+    const modal = ensureInvoiceModal();
+    const paper = document.getElementById("proInvoicePaper");
+    if (paper) {
+      paper.innerHTML = `
+        <div class="inv-head">
+          <div>
+            <div class="inv-biz">${esc(brand.bizName)}</div>
+            ${brand.ownerName ? `<div class="inv-owner">${esc(brand.ownerName)}${brand.bizMobile ? " • " + esc(brand.bizMobile) : ""}</div>` : ""}
+          </div>
+          <div style="text-align:right;">
+            <div class="inv-no">#${esc(invNo)}</div>
+            <div class="inv-dt">${esc(currentReceiptCtx.dateStr)}</div>
+          </div>
+        </div>
+
+        <div class="inv-cust-row">
+          <div>
+            <div class="inv-lbl">ग्राहक नाव</div>
+            <div class="inv-cust-name">${esc(b.name)}</div>
+            ${b.mobile ? `<div class="inv-sub">📞 ${esc(b.mobile)}</div>` : ""}
+          </div>
+          <div style="text-align:right;">
+            <div class="inv-lbl">खातेवही महिना</div>
+            <div class="inv-cust-name">${esc(formatMonthMr(activeYm))}</div>
+          </div>
+        </div>
+
+        <table class="inv-table">
+          <thead>
+            <tr><th>तपशील</th><th style="text-align:right;">रक्कम (₹)</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>चालू मुद्दल (Principal)</td><td style="text-align:right; font-weight:700;">₹${principal.toLocaleString("en-IN")}</td></tr>
+            <tr><td>मासिक व्याज (Monthly Interest)</td><td style="text-align:right; font-weight:700;">₹${monthlyInt.toLocaleString("en-IN")}</td></tr>
+            <tr><td>या महिन्यात जमा व्याज</td><td style="text-align:right; font-weight:800; color:#15803d;">₹${paidThisMonth.toLocaleString("en-IN")}</td></tr>
+            <tr class="inv-total-row">
+              <td>एकूण बाकी रक्कम (Pending)</td>
+              <td style="text-align:right; color:${pendingAmt > 0 ? "#be123c" : "#15803d"};">₹${pendingAmt.toLocaleString("en-IN")}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="inv-foot">
+          <div class="inv-qr-box">
+            ${qrUrl
+              ? `<img src="${esc(qrUrl)}" alt="UPI QR" crossorigin="anonymous" /><div class="inv-upi-txt">UPI: ${esc(brand.upiId)}</div>`
+              : `<div class="inv-no-upi">UPI QR साठी प्रोफाईलमध्ये<br/>UPI ID सेव्ह करा</div>`}
+          </div>
+          <div class="inv-stamp-col">
+            <div class="inv-stamp ${statusClass}">${esc(statusText)}</div>
+            <div class="inv-sign-note">डिजिटल पावती • व्याज हिशोब वही</div>
+          </div>
+        </div>
+      `;
+    }
 
     modal.classList.remove("hidden");
-    try { history.pushState({ hishobOverlay: "brandedReceiptModal" }, ""); } catch (_) {}
   }
 
-  // प्रत्येक ग्राहकाच्या कार्डमध्ये '💬 ग्राहक WA' शेजारी '🧾 पावती फोटो' बटण जोडा
-  function injectReceiptButtons() {
-    const waBtns = document.querySelectorAll('#borrowersList button[data-action="wa-receipt"]');
-    waBtns.forEach((waBtn) => {
-      const parent = waBtn.parentElement;
-      if (!parent || parent.querySelector('button[data-branded-receipt]')) return;
+  // Canvas वरून PNG फोटो तयार करून डाउनलोड करा
+  async function downloadInvoicePng() {
+    if (!currentReceiptCtx) return;
+    const c = currentReceiptCtx;
+    const canvas = document.createElement("canvas");
+    canvas.width = 720;
+    canvas.height = 960;
+    const ctx = canvas.getContext("2d");
 
-      const bId = waBtn.getAttribute("data-id");
+    // पांढरा स्वच्छ बॅकग्राउंड
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // वरची गडद पट्टी
+    ctx.fillStyle = "#181b22";
+    ctx.fillRect(0, 0, canvas.width, 150);
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 32px system-ui, sans-serif";
+    ctx.fillText(c.brand.bizName, 36, 68);
+
+    ctx.fillStyle = "#cbd5e1";
+    ctx.font = "18px system-ui, sans-serif";
+    const ownerLine = [c.brand.ownerName, c.brand.bizMobile].filter(Boolean).join(" • ");
+    if (ownerLine) ctx.fillText(ownerLine, 36, 104);
+
+    ctx.textAlign = "right";
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "bold 18px system-ui, sans-serif";
+    ctx.fillText("#" + c.invNo, 684, 66);
+    ctx.fillText("तारीख: " + c.dateStr, 684, 102);
+    ctx.textAlign = "left";
+
+    // ग्राहक माहिती
+    ctx.fillStyle = "#64748b";
+    ctx.font = "18px system-ui, sans-serif";
+    ctx.fillText("ग्राहक नाव:", 36, 200);
+    ctx.fillStyle = "#0f172a";
+    ctx.font = "bold 28px system-ui, sans-serif";
+    ctx.fillText(c.b.name || "-", 36, 236);
+
+    ctx.textAlign = "right";
+    ctx.fillStyle = "#64748b";
+    ctx.font = "18px system-ui, sans-serif";
+    ctx.fillText("महिना:", 684, 200);
+    ctx.fillStyle = "#0f172a";
+    ctx.font = "bold 24px system-ui, sans-serif";
+    ctx.fillText(formatMonthMr(c.activeYm), 684, 236);
+    ctx.textAlign = "left";
+
+    // तक्ता
+    const rows = [
+      ["चालू मुद्दल (Principal)", `₹${c.principal.toLocaleString("en-IN")}`, "#0f172a"],
+      ["मासिक व्याज (Monthly Interest)", `₹${c.monthlyInt.toLocaleString("en-IN")}`, "#0f172a"],
+      ["या महिन्यात जमा व्याज", `₹${c.paidThisMonth.toLocaleString("en-IN")}`, "#15803d"],
+      ["एकूण बाकी रक्कम (Pending)", `₹${c.pendingAmt.toLocaleString("en-IN")}`, c.pendingAmt > 0 ? "#be123c" : "#15803d"]
+    ];
+
+    let y = 300;
+    ctx.strokeStyle = "#e2e8f0";
+    ctx.lineWidth = 2;
+    rows.forEach(([lbl, val, col], idx) => {
+      if (idx === 3) {
+        ctx.fillStyle = "#f8fafc";
+        ctx.fillRect(36, y - 34, 648, 56);
+      }
+      ctx.fillStyle = "#334155";
+      ctx.font = idx === 3 ? "bold 23px system-ui, sans-serif" : "21px system-ui, sans-serif";
+      ctx.fillText(lbl, 48, y);
+
+      ctx.textAlign = "right";
+      ctx.fillStyle = col;
+      ctx.font = "bold 25px system-ui, sans-serif";
+      ctx.fillText(val, 672, y);
+      ctx.textAlign = "left";
+
+      ctx.beginPath();
+      ctx.moveTo(36, y + 22);
+      ctx.lineTo(684, y + 22);
+      ctx.stroke();
+      y += 74;
+    });
+
+    // स्टेटस शिक्का
+    const stampCol = c.pendingAmt <= 0 && c.paidThisMonth > 0 ? "#15803d" : c.paidThisMonth > 0 ? "#b45309" : "#be123c";
+    ctx.strokeStyle = stampCol;
+    ctx.lineWidth = 3;
+    ctx.strokeRect(400, 660, 280, 62);
+    ctx.fillStyle = stampCol;
+    ctx.font = "bold 22px system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(c.statusText, 540, 699);
+
+    ctx.fillStyle = "#64748b";
+    ctx.font = "16px system-ui, sans-serif";
+    ctx.fillText("डिजिटल पावती • व्याज हिशोब वही", 540, 756);
+    ctx.textAlign = "left";
+
+    // QR इमेज काढण्याचा प्रयत्न करा
+    const finishDownload = () => {
+      try {
+        const a = document.createElement("a");
+        a.download = `Pavati_${(c.b.name || "Customer").replace(/\s+/g, "_")}_${c.activeYm}.png`;
+        a.href = canvas.toDataURL("image/png");
+        a.click();
+      } catch (_) {
+        alert("PNG सेव्ह करताना अडचण आली; कृपया '🖨️ PDF / प्रिंट' वापरा.");
+      }
+    };
+
+    if (c.qrUrl) {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        ctx.drawImage(img, 48, 635, 190, 190);
+        ctx.fillStyle = "#334155";
+        ctx.font = "bold 16px system-ui, sans-serif";
+        ctx.fillText("UPI: " + c.brand.upiId, 48, 852);
+        finishDownload();
+      };
+      img.onerror = () => finishDownload();
+      img.src = c.qrUrl;
+    } else {
+      finishDownload();
+    }
+  }
+
+  function printInvoicePdf() {
+    const paper = document.getElementById("proInvoicePaper");
+    const printArea = document.getElementById("printArea");
+    if (!paper || !printArea) return;
+    printArea.innerHTML = `<div style="max-width:540px; margin:0 auto; font-family:system-ui,sans-serif;">${paper.innerHTML}</div>`;
+    window.print();
+  }
+
+  function shareInvoiceWhatsApp() {
+    if (!currentReceiptCtx) return;
+    const c = currentReceiptCtx;
+    const clean = String(c.b.mobile || "").replace(/\D/g, "");
+    const target = clean.length === 10 ? "91" + clean : clean;
+    const lines = [
+      `*${c.brand.bizName}* — डिजिटल पावती`,
+      `पावती क्र.: #${c.invNo} | तारीख: ${c.dateStr}`,
+      `ग्राहक: *${c.b.name}*`,
+      `महिना: ${formatMonthMr(c.activeYm)}`,
+      `-------------------------`,
+      `मुद्दल: ₹${c.principal.toLocaleString("en-IN")}`,
+      `मासिक व्याज: ₹${c.monthlyInt.toLocaleString("en-IN")}`,
+      `जमा व्याज: ₹${c.paidThisMonth.toLocaleString("en-IN")}`,
+      `एकूण बाकी: *₹${c.pendingAmt.toLocaleString("en-IN")}*`,
+      `स्थिती: ${c.statusText}`,
+      c.brand.upiId ? `UPI ID: ${c.brand.upiId}` : "",
+      `धन्यवाद!`
+    ].filter(Boolean).join("\n");
+
+    const url = target.length >= 10
+      ? `https://wa.me/${target}?text=${encodeURIComponent(lines)}`
+      : `https://wa.me/?text=${encodeURIComponent(lines)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
+  // प्रत्येक ग्राहक कार्डवर '🧾 पावती' बटण जोडा (सिंगल-लाईन अ‍ॅक्शन स्ट्रिपमध्ये)
+  function injectReceiptButtons() {
+    if (!window.HishobBridge) return;
+    const listEl = document.getElementById("borrowersList");
+    if (!listEl) return;
+
+    const borrowers = window.HishobBridge.getBorrowers() || [];
+    listEl.querySelectorAll(".borrower-item").forEach((card) => {
+      if (card.querySelector("[data-pro-invoice-btn]")) return;
+
+      const bId = card.getAttribute("data-id") || card.getAttribute("data-bid") || (() => {
+        const nameEl = card.querySelector("strong, h4, h3");
+        const nm = (nameEl?.textContent || "").trim();
+        const found = borrowers.find((x) => String(x.name || "").trim() === nm);
+        return found ? found.id : "";
+      })();
+      if (!bId) return;
+
+      const strip = card.querySelector(".pro-action-strip") || card.querySelector(".row:last-of-type");
+      if (!strip) return;
+
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "sc-btn-teal sm";
-      btn.setAttribute("data-branded-receipt", bId);
-      btn.textContent = "🧾 पावती फोटो";
-      btn.style.marginLeft = "5px";
-
-      btn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        openBrandedReceipt(bId);
+      btn.className = "primary sm";
+      btn.setAttribute("data-pro-invoice-btn", bId);
+      btn.textContent = "🧾 पावती";
+      btn.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        openInvoiceReceipt(bId);
       });
-
-      waBtn.insertAdjacentElement("afterend", btn);
+      strip.appendChild(btn);
     });
   }
 
-  window.openBrandedReceiptCard = openBrandedReceipt;
+  window.openInvoiceReceipt = openInvoiceReceipt;
+  window.openReceiptCard = openInvoiceReceipt;
 
-  function initReceiptCard() {
+  // जर reminders.js ने openUpiQr मागितले आणि ते नसेल, तर Invoice QR उघडा
+  if (typeof window.openUpiQr !== "function") {
+    window.openUpiQr = function (bId) {
+      openInvoiceReceipt(bId);
+    };
+  }
+
+  function initReceipts() {
     const listEl = document.getElementById("borrowersList");
     if (listEl) {
-      const obs = new MutationObserver(() => injectReceiptButtons());
+      const obs = new MutationObserver(() => setTimeout(injectReceiptButtons, 40));
       obs.observe(listEl, { childList: true, subtree: true });
     }
-    setTimeout(injectReceiptButtons, 1500);
+    setTimeout(injectReceiptButtons, 1700);
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initReceiptCard);
+    document.addEventListener("DOMContentLoaded", initReceipts);
   } else {
-    initReceiptCard();
+    initReceipts();
   }
 })();
