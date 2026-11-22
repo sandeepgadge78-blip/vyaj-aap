@@ -1,5 +1,5 @@
-// व्याज हिशोब वही - सुरक्षित आणि ऑटो-अपडेट Service Worker (v14.22)
-const CACHE_NAME = "vyaj-hishob-cache-v14-22";
+// व्याज हिशोब वही - सुरक्षित आणि ऑटो-अपडेट Service Worker (v14.23)
+const CACHE_NAME = "vyaj-hishob-cache-v14-23";
 const CORE_ASSETS = [
   "./",
   "./index.html",
