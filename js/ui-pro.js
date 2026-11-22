@@ -1,4 +1,4 @@
-// व्याज हिशोब वही - All-in-One Business Pro UI, Unified Menu + Feature Search, Step-by-Step Back, Reports Hub & Toggle Settings (js/ui-pro.js - V14.25)
+// व्याज हिशोब वही - All-in-One Business Pro UI, Unified Menu + Feature Search, Step-by-Step Back, Reports Hub & Toggle Settings + Language Switcher (js/ui-pro.js - V14.26)
 (function () {
   const RECENT_KEY = "vyaj_recent_features_v1";
   let enhanceTimer = null;
@@ -131,6 +131,11 @@
       body.light-mode .pro-acc-item { background: #fbfaf7 !important; border-color: #eae6dd !important; }
       .pro-acc-right { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); }
       .pro-menu-ver { text-align: center; font-size: 0.68rem; color: var(--muted); margin-top: 14px; opacity: 0.75; }
+      .pro-lang-select {
+        width: auto !important; min-width: 105px; padding: 6px 9px !important;
+        font-size: 0.82rem !important; font-weight: 700; border-radius: 9px !important;
+        background: var(--card-2) !important; color: var(--text) !important; border: 1px solid var(--border) !important;
+      }
     `;
     document.head.appendChild(st);
   }
@@ -311,7 +316,7 @@
   window.addEventListener("popstate", () => VyajNavStack.stepBack());
 
   // =========================================================================
-  // भाग २: जुना निळा ड्रॉवर शोधून कायमचा लपवा (डोममधून डिलीट न करता)
+  // भाग २: जुना निळा ड्रॉवर शोधून कायमचा लपवा (DOM मधून डिलीट न करता)
   // =========================================================================
   function suppressLegacyDrawer() {
     Array.from(document.body.children).forEach((el) => {
@@ -389,8 +394,8 @@
     { id: "reports_hub", icon: "📊", label: "रिपोर्ट्स हब", cat: "quick", kw: "report reports hub dashboard summary pdf excel रिपोर्ट्स हब अहवाल", run: () => openProReportsHub() },
     { id: "cashbook", icon: "📒", label: "कॅशबुक (वसुली)", cat: "quick", kw: "cashbook daily cash rokad book aajchi vasuli कॅशबुक रोकड वही आजची वसुली", run: () => { if (!triggerLegacyByText(["कॅशबुक", "daily cashbook", "आजची वसुली"])) openSimpleModal("cashbookModal"); } },
 
-    // ⚙️ General (सामान्य)
-    { id: "settings", icon: "⚙️", label: "अ‍ॅप सेटिंग्ज (Toggle / Theme)", cat: "general", kw: "settings theme dark light mode night day hide auto lock rate सेटिंग्ज थीम", run: () => openSimpleModal("settingsModal") },
+    // ⚙️ General (सामान्य — Theme, भाषा आणि Toggle सेटिंग्ज)
+    { id: "settings", icon: "⚙️", label: "अ‍ॅप सेटिंग्ज (Theme / भाषा)", cat: "general", kw: "settings theme dark light mode night day hide auto lock rate language lang bhasha marathi hindi english सेटिंग्ज थीम भाषा मराठी हिंदी इंग्लिश", run: () => openSimpleModal("settingsModal") },
     { id: "profile", icon: "👤", label: "बिझनेस प्रोफाईल व UPI ID", cat: "general", kw: "profile business owner name upi qr branding प्रोफाईल व्यवसाय", run: () => openSimpleModal("profileModal") },
     { id: "help", icon: "❓", label: "मराठी अ‍ॅप गाईड (Help & FAQ)", cat: "general", kw: "help guide faq tutorial info मदत गाईड माहिती", run: () => openSimpleModal("helpGuideModal") },
 
@@ -504,7 +509,7 @@
       </div>
 
       <div class="pro-menu-search-wrap">
-        <input type="text" id="proMenuSearchInput" class="pro-menu-search-input" placeholder="🔍 फीचर शोधा (backup, pdf, emi, passbook, lock)..." autocomplete="off" />
+        <input type="text" id="proMenuSearchInput" class="pro-menu-search-input" placeholder="🔍 फीचर शोधा (backup, pdf, भाषा, emi, lock)..." autocomplete="off" />
         <div id="proMenuRecentStrip" class="pro-menu-recent-strip hidden"></div>
         <div id="proMenuSearchResults" class="pro-menu-search-results hidden"></div>
       </div>
@@ -515,7 +520,7 @@
       <div class="pro-menu-sec-lbl">📂 सर्व विभाग</div>
       <div class="pro-menu-acc-list" id="proMenuAccList"></div>
 
-      <div class="pro-menu-ver">व्याज हिशोब वही • Business Pro V14.25</div>
+      <div class="pro-menu-ver">व्याज हिशोब वही • Business Pro V14.26</div>
     `;
     document.body.appendChild(drawer);
 
@@ -713,7 +718,7 @@
         }
       }
 
-      // २. हेडरमधील डाव्या ☰ बटनावर क्लिक पकडा (कोणत्याही टॅगमध्ये असले तरी)
+      // २. हेडरमधील डाव्या ☰ बटनावर क्लिक पकडा
       const header = target.closest("header");
       if (!header) return;
       if (
@@ -747,7 +752,7 @@
   }
 
   // =========================================================================
-  // भाग ४: डॅशबोर्ड पॉलिश, ४-रंगी Reports Hub, Toggle Settings व Glass New
+  // भाग ४: डॅशबोर्ड पॉलिश, ४-रंगी Reports Hub, Toggle Settings + भाषा व Glass New
   // =========================================================================
   function cleanDuplicateControls() {
     document.querySelectorAll("button, a, div").forEach((el) => {
@@ -886,6 +891,7 @@
   }
   window.openProReportsHub = openProReportsHub;
 
+  // Settings पॉपअपमध्ये Toggle Switches आणि भाषा निवड (Language Switcher) जोडा
   function upgradeSettingsWithToggles() {
     const settingsModal = document.getElementById("settingsModal");
     if (!settingsModal) return;
@@ -900,6 +906,17 @@
         toggleGroup.id = "proSettingsToggles";
         toggleGroup.className = "pro-toggle-group";
         toggleGroup.innerHTML = `
+          <div class="pro-toggle-row">
+            <div class="pro-toggle-info">
+              <span class="pro-toggle-title">🌐 अ‍ॅपची भाषा (Language)</span>
+              <span class="pro-toggle-desc">मराठी / हिंदी / English निवडा</span>
+            </div>
+            <select id="proSettingsLangSelect" class="pro-lang-select" aria-label="अ‍ॅपची भाषा निवडा">
+              <option value="mr">मराठी</option>
+              <option value="hi">हिंदी</option>
+              <option value="en">English</option>
+            </select>
+          </div>
           <div class="pro-toggle-row">
             <div class="pro-toggle-info">
               <span class="pro-toggle-title">🌙 Smoked Night Mode</span>
@@ -924,6 +941,21 @@
         `;
         targetRow.parentNode.insertBefore(toggleGroup, targetRow);
 
+        // भाषा बदलताच मूळ langSelect ट्रिगर करा (Zero Load)
+        document.getElementById("proSettingsLangSelect")?.addEventListener("change", (ev) => {
+          const newLang = ev.target.value;
+          const origLang = document.getElementById("langSelect");
+          if (origLang) {
+            origLang.value = newLang;
+            origLang.dispatchEvent(new Event("change", { bubbles: true }));
+          }
+          const msgEl = document.getElementById("setStatusMsg");
+          if (msgEl) {
+            const labels = { mr: "मराठी", hi: "हिंदी", en: "English" };
+            msgEl.textContent = `🌐 भाषा "${labels[newLang] || newLang}" सेव्ह केली आहे!`;
+          }
+        });
+
         document.getElementById("proToggleDark")?.addEventListener("change", () => {
           (oldThemeBtn || document.getElementById("toggleThemeBtn"))?.click();
           setTimeout(syncSettingsToggleStates, 80);
@@ -947,7 +979,14 @@
     syncSettingsToggleStates();
   }
 
+  // केवळ बदल असल्यासच Toggle आणि Language स्थिती सिंक करा (Infinite Loop टाळण्यासाठी)
   function syncSettingsToggleStates() {
+    const langSel = document.getElementById("proSettingsLangSelect");
+    const origLang = document.getElementById("langSelect");
+    if (langSel && origLang && origLang.value && langSel.value !== origLang.value) {
+      langSel.value = origLang.value;
+    }
+
     const darkChk = document.getElementById("proToggleDark");
     const themeDesc = document.getElementById("proThemeDesc");
     if (darkChk) {
