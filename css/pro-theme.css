@@ -1,95 +1,143 @@
-/* व्याज हिशोब वही - Business Pro Royal Indigo Neon Glass Theme (css/pro-theme.css - V14.19 Fix) */
+/* व्याज हिशोब वही - Unique Smoked Black Glass & Eye-Comfort Day/Night Theme (css/pro-theme.css - V14.20) */
 
 :root {
-  --bg: #050816;
-  --card: rgba(15, 22, 46, 0.78);
-  --card-solid: #0c1228;
-  --card-2: rgba(24, 34, 68, 0.88);
-  --text: #f8fafc;
-  --muted: #94a3c0;
-  --accent: #38bdf8;
-  --accent-2: #10b981;
-  --pro-indigo: #6366f1;
-  --pro-purple: #8b5cf6;
-  --pro-blue: #2563eb;
-  --border: rgba(99, 102, 241, 0.28);
-  --meta-bg: rgba(17, 25, 52, 0.82);
-  --glass-shadow: 0 10px 32px rgba(2, 6, 23, 0.55);
+  /* Night Mode: डोळ्यांना आराम देणारे Smoked Obsidian Black Glass रंग */
+  --bg: #090a0d;
+  --card: rgba(20, 22, 28, 0.84);
+  --card-solid: #13151b;
+  --card-2: rgba(30, 33, 42, 0.9);
+  --text: #eceff4;
+  --muted: #98a1b0;
+  --accent: #7dd3fc;
+  --accent-2: #4ade80;
+  --gold: #eab676;
+  --purple: #c4b5fd;
+  --danger: #f07178;
+  --warn: #e5a952;
+  --border: rgba(255, 255, 255, 0.11);
+  --meta-bg: rgba(15, 17, 22, 0.78);
+  --glass-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
 }
 
-/* गडद नेव्ही-पर्पल निऑन पार्श्वभूमी */
+/* रात्रीसाठी मॅट ब्लॅक स्मोक ग्लास पार्श्वभूमी (भडक निळा रंग पूर्ण बंद) */
 body {
-  background-color: #050816;
+  background-color: #090a0d !important;
   background-image:
-    radial-gradient(circle at 14% 6%, rgba(99, 102, 241, 0.24), transparent 36%),
-    radial-gradient(circle at 86% 12%, rgba(139, 92, 246, 0.22), transparent 38%),
-    radial-gradient(circle at 50% 88%, rgba(37, 99, 235, 0.16), transparent 44%);
+    radial-gradient(circle at 18% 8%, rgba(255, 255, 255, 0.045), transparent 40%),
+    radial-gradient(circle at 82% 20%, rgba(148, 163, 184, 0.04), transparent 42%),
+    radial-gradient(circle at 50% 90%, rgba(255, 255, 255, 0.025), transparent 45%) !important;
   background-attachment: fixed;
-  padding-bottom: 105px;
+  color: var(--text);
+  padding-bottom: 100px;
 }
 
+/* Day Mode: डोळ्यांना न टोचणारा Warm Eye-Comfort Paper थीम */
 body.light-mode {
-  --bg: #f1f5f9;
-  --card: #ffffff;
-  --card-solid: #ffffff;
-  --card-2: #e2e8f0;
-  --text: #0f172a;
-  --muted: #475569;
-  --border: #cbd5e1;
-  --meta-bg: #f8fafc;
-  background-color: #f1f5f9;
-  background-image: none;
+  --bg: #f3f1ec;
+  --card: #fbfaf7;
+  --card-solid: #fbfaf7;
+  --card-2: #eae6dd;
+  --text: #1f242d;
+  --muted: #5c6470;
+  --accent: #0f766e;
+  --accent-2: #15803d;
+  --gold: #a16207;
+  --purple: #6d28d9;
+  --danger: #be123c;
+  --warn: #b45309;
+  --border: #dcd7cc;
+  --meta-bg: #f4f1ea;
+  --glass-shadow: 0 4px 14px rgba(31, 36, 45, 0.07);
+  background-color: #f3f1ec !important;
+  background-image: none !important;
+  color: #1f242d !important;
 }
 
-/* हेडर पॉलिश */
+/* स्वच्छ Frosted Black Glass हेडर */
 header {
-  background: rgba(7, 11, 28, 0.84);
-  border-bottom: 1px solid rgba(99, 102, 241, 0.28);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  background: rgba(12, 13, 18, 0.88) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
 }
 body.light-mode header {
-  background: rgba(255, 255, 255, 0.92);
-  border-bottom-color: #cbd5e1;
+  background: rgba(251, 250, 247, 0.94) !important;
+  border-bottom: 1px solid #dcd7cc !important;
+  box-shadow: 0 2px 10px rgba(31, 36, 45, 0.06);
 }
 
-/* वरचा वायदा पॅनेल थोडा कॉम्पॅक्ट करा */
+/* सर्व Primary बटणे भडक निळ्याऐवजी स्लीक Smoked Glass मध्ये */
+button.primary {
+  background: linear-gradient(135deg, #262a34, #1b1e26) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #f1f5f9 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35) !important;
+}
+body.light-mode button.primary {
+  background: linear-gradient(135deg, #2d3748, #1f2937) !important;
+  border-color: #1f2937 !important;
+  color: #fbfaf7 !important;
+}
+button.success {
+  background: linear-gradient(135deg, #166534, #15803d) !important;
+  border-color: rgba(74, 222, 128, 0.35) !important;
+}
+button.danger {
+  background: linear-gradient(135deg, #9f1239, #be123c) !important;
+  border-color: rgba(240, 113, 120, 0.35) !important;
+}
+
+/* वरचा वायदा अलर्ट बॉक्स */
 #smartPromiseDashPanel {
   padding: 10px 12px !important;
   margin-bottom: 10px !important;
+  background: rgba(20, 22, 28, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-left: 3px solid #f07178 !important;
+}
+body.light-mode #smartPromiseDashPanel {
+  background: #fbfaf7 !important;
+  border-color: #dcd7cc !important;
+  border-left: 3px solid #be123c !important;
 }
 
-/* मुख्य महिना कार्ड - Business Pro ग्रेडियंट कार्ड */
+/* मुख्य महिना कार्ड - Unique Smoked Black Glass (निळा रंग काढला) */
 .month-hero-card {
-  background: linear-gradient(135deg, rgba(79, 70, 229, 0.94) 0%, rgba(37, 99, 235, 0.9) 52%, rgba(124, 58, 237, 0.92) 100%);
-  border: 1px solid rgba(165, 180, 252, 0.38);
-  border-radius: 22px;
-  padding: 14px 10px;
-  box-shadow: 0 14px 36px rgba(79, 70, 229, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.24);
+  background: linear-gradient(155deg, rgba(30, 33, 42, 0.92) 0%, rgba(16, 18, 24, 0.95) 60%, rgba(12, 13, 18, 0.98) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 20px !important;
+  padding: 14px 8px !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.14) !important;
 }
 body.light-mode .month-hero-card {
-  background: linear-gradient(135deg, #4f46e5 0%, #2563eb 55%, #7c3aed 100%);
-  border-color: rgba(99, 102, 241, 0.4);
-  color: #ffffff;
+  background: linear-gradient(155deg, #fbfaf7 0%, #f1ede4 100%) !important;
+  border: 1px solid #d5cfc2 !important;
+  box-shadow: 0 6px 20px rgba(31, 36, 45, 0.08), inset 0 1px 0 #ffffff !important;
 }
 .month-hero-sub {
-  color: rgba(224, 231, 255, 0.92);
+  color: var(--muted) !important;
   font-weight: 700;
 }
 
-/* 'नोव्हेंबर 2026' चमकदार व स्पष्ट पांढऱ्या रंगात (Fix) */
+/* 'नोव्हेंबर 2026' स्पष्ट व चमकदार अक्षरात (Night = Off-White, Day = Charcoal) */
 .month-hero-title,
 #bigActiveMonthTitle {
   background: none !important;
   -webkit-background-clip: border-box !important;
   background-clip: border-box !important;
-  -webkit-text-fill-color: #ffffff !important;
-  color: #ffffff !important;
+  -webkit-text-fill-color: #f8fafc !important;
+  color: #f8fafc !important;
   filter: none !important;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35) !important;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.45) !important;
   letter-spacing: 0.4px;
 }
+body.light-mode .month-hero-title,
+body.light-mode #bigActiveMonthTitle {
+  -webkit-text-fill-color: #1f242d !important;
+  color: #1f242d !important;
+  text-shadow: none !important;
+}
 
-/* पाचही अ‍ॅक्शन बटणे एकाच सरळ ओळीत सुटसुटीत (Fix) */
+/* पाचही अ‍ॅक्शन बटणे (फास्ट वसुली, PDF, Excel, Backup, कॅशबुक) एकाच ओळीत न कापता बसतील */
 .month-hero-links {
   display: flex !important;
   flex-wrap: nowrap !important;
@@ -103,166 +151,172 @@ body.light-mode .month-hero-card {
 }
 .month-hero-links::-webkit-scrollbar { display: none; }
 .month-hero-links button {
-  flex: 1 0 auto !important;
+  flex: 1 1 auto !important;
   white-space: nowrap !important;
-  padding: 5px 7px !important;
-  font-size: 0.68rem !important;
+  padding: 5px 5px !important;
+  font-size: 0.64rem !important;
   font-weight: 700 !important;
+  letter-spacing: -0.2px;
   border-radius: 999px !important;
-  background: rgba(15, 23, 42, 0.36) !important;
-  border: 1px solid rgba(255, 255, 255, 0.28) !important;
-  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.07) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  color: #eceff4 !important;
   backdrop-filter: blur(8px);
 }
-.month-hero-links button:hover {
-  background: rgba(255, 255, 255, 0.2) !important;
-  border-color: #ffffff !important;
+body.light-mode .month-hero-links button {
+  background: #ffffff !important;
+  border: 1px solid #d5cfc2 !important;
+  color: #1f242d !important;
 }
 
 /* वसुली प्रोग्रेस बॉक्स */
 .hero-prog-wrap {
-  background: rgba(5, 8, 22, 0.34);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.32) !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  border-radius: 12px !important;
+}
+body.light-mode .hero-prog-wrap {
+  background: #eae6dd !important;
+  border: 1px solid #d5cfc2 !important;
 }
 .hero-prog-head {
-  color: #e2e8f0;
+  color: var(--muted) !important;
 }
 .hero-prog-fill {
-  background: linear-gradient(90deg, #34d399, #38bdf8, #a78bfa);
-  box-shadow: 0 0 12px rgba(52, 211, 153, 0.7);
+  background: linear-gradient(90deg, #2dd4bf, #4ade80) !important;
+  box-shadow: 0 0 8px rgba(74, 222, 128, 0.45) !important;
 }
 
-/* २x२ डॅशबोर्ड कार्ड्स */
+/* २x२ डॅशबोर्ड कार्ड्स - Smoked Matte Glass */
 .grid-2x2 {
-  gap: 11px;
+  gap: 10px;
 }
 .stat-tile {
-  background: linear-gradient(155deg, rgba(20, 29, 60, 0.88), rgba(11, 17, 38, 0.92));
-  border: 1px solid rgba(99, 102, 241, 0.26);
-  border-top: 2px solid var(--pro-purple);
-  border-radius: 18px;
-  padding: 14px 13px;
-  box-shadow: 0 8px 24px rgba(2, 6, 23, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  background: linear-gradient(160deg, rgba(24, 27, 34, 0.9), rgba(14, 16, 21, 0.94)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-top: 2px solid rgba(196, 181, 253, 0.65) !important;
+  border-radius: 16px !important;
+  padding: 13px 12px !important;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.07) !important;
 }
-.stat-tile.tile-gold { border-top-color: #fbbf24; }
-.stat-tile.tile-cyan { border-top-color: #38bdf8; }
-.stat-tile.tile-crimson { border-top-color: #f43f5e; }
+.stat-tile.tile-gold { border-top-color: rgba(234, 182, 118, 0.75) !important; }
+.stat-tile.tile-cyan { border-top-color: rgba(125, 211, 252, 0.75) !important; }
+.stat-tile.tile-crimson { border-top-color: rgba(240, 113, 120, 0.75) !important; }
 body.light-mode .stat-tile {
-  background: #ffffff;
-  border-color: #cbd5e1;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+  background: #fbfaf7 !important;
+  border: 1px solid #dcd7cc !important;
+  box-shadow: 0 4px 12px rgba(31, 36, 45, 0.06) !important;
 }
 
-/* Analytics व वायदा कार्ड */
+/* Analytics व इतर कार्ड्स */
 .an-card, .card {
-  background: linear-gradient(160deg, rgba(17, 25, 52, 0.86), rgba(10, 15, 34, 0.9));
-  border: 1px solid rgba(99, 102, 241, 0.26);
-  border-radius: 18px;
+  background: linear-gradient(160deg, rgba(22, 25, 32, 0.88), rgba(14, 16, 21, 0.94)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 16px !important;
 }
 body.light-mode .an-card,
 body.light-mode .card {
-  background: #ffffff;
-  border-color: #cbd5e1;
+  background: #fbfaf7 !important;
+  border: 1px solid #dcd7cc !important;
 }
 
-/* सर्च बार व पिल फिल्टर्स (Dark + Light Mode) */
+/* सर्च बार व पिल फिल्टर्स */
 .search-pill-box {
-  background: rgba(15, 22, 46, 0.88) !important;
-  border: 1px solid rgba(99, 102, 241, 0.34) !important;
+  background: rgba(20, 22, 28, 0.92) !important;
+  border: 1px solid rgba(255, 255, 255, 0.13) !important;
   border-radius: 14px !important;
   padding: 11px 15px !important;
+  color: #eceff4 !important;
 }
 body.light-mode .search-pill-box {
-  background: #ffffff !important;
-  border-color: #cbd5e1 !important;
-  color: #0f172a !important;
+  background: #fbfaf7 !important;
+  border: 1px solid #d5cfc2 !important;
+  color: #1f242d !important;
 }
 .pill-btn {
   border-radius: 999px;
-  padding: 6px 14px;
+  padding: 6px 13px;
   font-size: 0.78rem;
   font-weight: 700;
-  background: rgba(19, 28, 58, 0.85);
-  border: 1px solid rgba(99, 102, 241, 0.28);
-  color: #f8fafc;
+  background: rgba(24, 27, 34, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
 }
 body.light-mode .pill-btn {
-  background: #ffffff;
-  border: 1px solid #cbd5e1;
-  color: #0f172a;
+  background: #fbfaf7;
+  border: 1px solid #d5cfc2;
+  color: #1f242d;
 }
 .pill-btn.filter-active {
-  background: linear-gradient(135deg, #4f46e5, #2563eb);
-  border-color: #818cf8;
-  color: #ffffff;
-  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.45);
+  background: #eceff4 !important;
+  border-color: #eceff4 !important;
+  color: #090a0d !important;
+  box-shadow: 0 3px 10px rgba(255, 255, 255, 0.16) !important;
 }
 body.light-mode .pill-btn.filter-active {
-  background: linear-gradient(135deg, #4f46e5, #2563eb);
-  border-color: #4f46e5;
-  color: #ffffff;
+  background: #1f242d !important;
+  border-color: #1f242d !important;
+  color: #fbfaf7 !important;
 }
 body.light-mode .pill-btn.pill-paid.filter-active {
-  background: #15803d;
-  border-color: #16a34a;
-  color: #ffffff;
+  background: #15803d !important;
+  border-color: #15803d !important;
+  color: #ffffff !important;
 }
 body.light-mode .pill-btn.pill-partial.filter-active {
-  background: #d97706;
-  border-color: #f59e0b;
-  color: #ffffff;
+  background: #b45309 !important;
+  border-color: #b45309 !important;
+  color: #ffffff !important;
 }
 body.light-mode .pill-btn.pill-pending.filter-active {
-  background: #dc2626;
-  border-color: #ef4444;
-  color: #ffffff;
+  background: #be123c !important;
+  border-color: #be123c !important;
+  color: #ffffff !important;
 }
 
-/* ग्राहक कार्ड्स - Business Pro Customer Row व अवतार */
+/* ग्राहक कार्ड्स - Smoked Black Glass & Soft Day Mode */
 #borrowersList .borrower-item {
-  background: linear-gradient(160deg, rgba(18, 27, 56, 0.88), rgba(10, 15, 34, 0.92));
-  border: 1px solid rgba(99, 102, 241, 0.28);
-  border-radius: 18px !important;
+  background: linear-gradient(160deg, rgba(22, 25, 32, 0.9), rgba(14, 16, 21, 0.95)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 16px !important;
   padding: 13px !important;
   margin-bottom: 11px !important;
-  box-shadow: 0 8px 24px rgba(2, 6, 23, 0.45);
-  transition: transform 0.15s ease, border-color 0.2s ease;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
 }
 #borrowersList .borrower-item.status-paid {
-  background: linear-gradient(160deg, rgba(16, 185, 129, 0.16), rgba(10, 20, 38, 0.92));
-  border-color: rgba(16, 185, 129, 0.45);
+  background: linear-gradient(160deg, rgba(22, 101, 52, 0.18), rgba(15, 18, 22, 0.95)) !important;
+  border-color: rgba(74, 222, 128, 0.32) !important;
 }
 #borrowersList .borrower-item.status-partial {
-  background: linear-gradient(160deg, rgba(245, 158, 11, 0.16), rgba(18, 22, 42, 0.92));
-  border-color: rgba(245, 158, 11, 0.45);
+  background: linear-gradient(160deg, rgba(180, 83, 9, 0.18), rgba(18, 19, 24, 0.95)) !important;
+  border-color: rgba(229, 169, 82, 0.35) !important;
 }
 #borrowersList .borrower-item.status-closed {
-  background: rgba(71, 85, 105, 0.22);
-  border-color: rgba(148, 163, 184, 0.35);
-  opacity: 0.78;
+  background: rgba(38, 42, 52, 0.42) !important;
+  border-color: rgba(148, 163, 184, 0.25) !important;
+  opacity: 0.76;
 }
 
 body.light-mode #borrowersList .borrower-item {
-  background: #ffffff;
-  border-color: #cbd5e1;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+  background: #fbfaf7 !important;
+  border: 1px solid #dcd7cc !important;
+  box-shadow: 0 4px 12px rgba(31, 36, 45, 0.06);
 }
 body.light-mode #borrowersList .borrower-item.status-paid {
-  background: rgba(34, 197, 94, 0.11);
-  border-color: #16a34a;
+  background: #eef7f1 !important;
+  border-color: #86efac !important;
 }
 body.light-mode #borrowersList .borrower-item.status-partial {
-  background: rgba(245, 158, 11, 0.13);
-  border-color: #d97706;
+  background: #fdf6e7 !important;
+  border-color: #fcd34d !important;
 }
 body.light-mode #borrowersList .borrower-item.status-closed {
-  background: #e2e8f0;
-  border-color: #94a3b8;
+  background: #eae6dd !important;
+  border-color: #cbd5e1 !important;
   opacity: 0.8;
 }
 
-/* ग्राहकाचा गोल अवतार */
+/* ग्राहकाचा गोल अवतार - स्लीक ग्लास चारकोल */
 .pro-avatar-badge {
   width: 34px;
   height: 34px;
@@ -271,14 +325,18 @@ body.light-mode #borrowersList .borrower-item.status-closed {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.92rem;
-  font-weight: 900;
-  color: #ffffff;
-  background: linear-gradient(135deg, #6366f1, #2563eb, #a855f7);
-  border: 1.5px solid rgba(199, 210, 254, 0.55);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #f8fafc;
+  background: linear-gradient(135deg, #333846, #1d2029);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
   margin-right: 8px;
   vertical-align: middle;
+}
+body.light-mode .pro-avatar-badge {
+  background: linear-gradient(135deg, #334155, #1e293b);
+  color: #fbfaf7;
 }
 
 /* ग्राहक कार्डमधील सर्व बटणे एकाच सरळ ओळीत */
@@ -301,7 +359,7 @@ body.light-mode #borrowersList .borrower-item.status-closed {
   white-space: nowrap !important;
   border-radius: 999px !important;
   padding: 6px 11px !important;
-  font-size: 0.75rem !important;
+  font-size: 0.74rem !important;
   font-weight: 700 !important;
   margin-left: 0 !important;
 }
@@ -309,10 +367,10 @@ body.light-mode #borrowersList .borrower-item.status-closed {
 #borrowersList .borrower-item .meta-box {
   border-radius: 12px !important;
   padding: 9px 11px !important;
-  border-color: rgba(99, 102, 241, 0.22);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 body.light-mode #borrowersList .borrower-item .meta-box {
-  border-color: #cbd5e1;
+  border-color: #dcd7cc;
 }
 
 /* सर्व पॉपअपमधील '✕ बंद' बटणे लपवा */
@@ -322,26 +380,26 @@ body.light-mode #borrowersList .borrower-item .meta-box {
   display: none !important;
 }
 
-/* स्लिम व कॉम्पॅक्ट UI Glass '＋ New' बटण (Fix) */
+/* स्लिम Unique Smoked Black Glass '＋ New' बटण */
 #uiProNewBtn {
   position: fixed;
   right: 12px;
-  bottom: 68px;
+  bottom: 66px;
   z-index: 35;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   padding: 8px 14px;
   border-radius: 999px;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 800;
   letter-spacing: 0.3px;
-  color: #ffffff;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.8), rgba(37, 99, 235, 0.78));
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(165, 180, 252, 0.58);
-  box-shadow: 0 8px 22px rgba(79, 70, 229, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  color: #f8fafc;
+  background: rgba(24, 27, 34, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.22);
   cursor: pointer;
   transition: transform 0.15s ease, opacity 0.2s ease;
 }
@@ -349,17 +407,18 @@ body.light-mode #borrowersList .borrower-item .meta-box {
   transform: scale(0.94);
 }
 body.light-mode #uiProNewBtn {
-  background: linear-gradient(135deg, #4f46e5, #2563eb);
-  color: #ffffff;
+  background: rgba(31, 36, 45, 0.9);
+  border-color: rgba(31, 36, 45, 0.3);
+  color: #fbfaf7;
 }
 
-/* पॉपअप कार्ड्स */
+/* पॉपअप कार्ड्स - Smoked Glass */
 .modal-card {
-  background: linear-gradient(165deg, #0f1733, #080d20);
-  border: 1px solid rgba(99, 102, 241, 0.38);
+  background: linear-gradient(165deg, #171920, #0d0f14) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
   border-radius: 20px;
 }
 body.light-mode .modal-card {
-  background: #ffffff;
-  border-color: #cbd5e1;
+  background: #fbfaf7 !important;
+  border: 1px solid #d5cfc2 !important;
 }
