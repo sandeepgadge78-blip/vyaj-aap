@@ -157,7 +157,7 @@ body.light-mode .card {
   border-color: #cbd5e1;
 }
 
-/* सर्च बार व पिल फिल्टर्स */
+/* सर्च बार व पिल फिल्टर्स (Dark + Light Mode) */
 .search-pill-box {
   background: rgba(15, 22, 46, 0.88) !important;
   border: 1px solid rgba(99, 102, 241, 0.34) !important;
@@ -167,6 +167,7 @@ body.light-mode .card {
 body.light-mode .search-pill-box {
   background: #ffffff !important;
   border-color: #cbd5e1 !important;
+  color: #0f172a !important;
 }
 .pill-btn {
   border-radius: 999px;
@@ -175,11 +176,38 @@ body.light-mode .search-pill-box {
   font-weight: 700;
   background: rgba(19, 28, 58, 0.85);
   border: 1px solid rgba(99, 102, 241, 0.28);
+  color: #f8fafc;
+}
+body.light-mode .pill-btn {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
 }
 .pill-btn.filter-active {
   background: linear-gradient(135deg, #4f46e5, #2563eb);
   border-color: #818cf8;
+  color: #ffffff;
   box-shadow: 0 4px 14px rgba(79, 70, 229, 0.45);
+}
+body.light-mode .pill-btn.filter-active {
+  background: linear-gradient(135deg, #4f46e5, #2563eb);
+  border-color: #4f46e5;
+  color: #ffffff;
+}
+body.light-mode .pill-btn.pill-paid.filter-active {
+  background: #15803d;
+  border-color: #16a34a;
+  color: #ffffff;
+}
+body.light-mode .pill-btn.pill-partial.filter-active {
+  background: #d97706;
+  border-color: #f59e0b;
+  color: #ffffff;
+}
+body.light-mode .pill-btn.pill-pending.filter-active {
+  background: #dc2626;
+  border-color: #ef4444;
+  color: #ffffff;
 }
 
 /* ग्राहक कार्ड्स - Business Pro Customer Row व अवतार */
@@ -200,10 +228,31 @@ body.light-mode .search-pill-box {
   background: linear-gradient(160deg, rgba(245, 158, 11, 0.16), rgba(18, 22, 42, 0.92));
   border-color: rgba(245, 158, 11, 0.45);
 }
+/* बंद (Closed) खात्यांसाठी वेगळा फिकट लूक */
+#borrowersList .borrower-item.status-closed {
+  background: rgba(71, 85, 105, 0.22);
+  border-color: rgba(148, 163, 184, 0.35);
+  opacity: 0.78;
+}
+
+/* Light Mode मध्ये ग्राहक कार्डांचे स्पष्ट रंग */
 body.light-mode #borrowersList .borrower-item {
   background: #ffffff;
   border-color: #cbd5e1;
   box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+}
+body.light-mode #borrowersList .borrower-item.status-paid {
+  background: rgba(34, 197, 94, 0.11);
+  border-color: #16a34a;
+}
+body.light-mode #borrowersList .borrower-item.status-partial {
+  background: rgba(245, 158, 11, 0.13);
+  border-color: #d97706;
+}
+body.light-mode #borrowersList .borrower-item.status-closed {
+  background: #e2e8f0;
+  border-color: #94a3b8;
+  opacity: 0.8;
 }
 
 /* ग्राहकाचा गोल अवतार (Initials Avatar Badge) */
@@ -254,6 +303,9 @@ body.light-mode #borrowersList .borrower-item {
   border-radius: 12px !important;
   padding: 9px 11px !important;
   border-color: rgba(99, 102, 241, 0.22);
+}
+body.light-mode #borrowersList .borrower-item .meta-box {
+  border-color: #cbd5e1;
 }
 
 /* सर्व पॉपअपमधील '✕ बंद' बटणे लपवा (मोबाईल Back बटण वापरा) */
