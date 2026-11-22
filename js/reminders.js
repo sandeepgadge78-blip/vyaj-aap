@@ -1,4 +1,4 @@
-// व्याज हिशोब वही - स्मार्ट वायदा डॅशबोर्ड + 1-Click QR + FCM Push (js/reminders.js - V14.12)
+// व्याज हिशोब वही - स्मार्ट वायदा डॅशबोर्ड + जवळचे वायदे सर्वात वर + 1-Click QR + FCM (js/reminders.js - V14.16)
 (function () {
   // तुमची Firebase Web Push Certificate (VAPID Key)
   const FIREBASE_VAPID_KEY = "BD38I1uOSqyA6lfr11cE3WQkwJGXONEKQi4DiALA0ObadWcmwWGgA1pvm2ZgGwllZ4FvhzD7Dfe9g3pS42npV_M";
@@ -10,11 +10,18 @@
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   }
 
-  function esc(str) {
-    return String(str || "").replace(/[&<>"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
+  function formatCleanDate(raw) {
+    if (!raw) return "-";
+    const m = String(raw).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    return m ? `${m[3]}/${m[2]}/${m[1]}` : String(raw);
   }
 
-  // Google Calendar मध्ये १-क्लिक फोन अलार्म लिंक तयार करा (create 1-click Calendar alarm URL)
+  function esc(str) {
+    return String(str || "").replace(/[&<>"']/g, (m) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[m]));
+  }
+
   function buildCalendarAlarmUrl(name, amount, dateIso) {
     const ymd = String(dateIso || getIsoDate(0)).replace(/-/g, "");
     const title = encodeURIComponent(`💰 व्याज वायदा: ${name} (₹${amount})`);
@@ -22,7 +29,6 @@
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${ymd}T100000/${ymd}T101500&details=${details}`;
   }
 
-  // WhatsApp रिमाइंडर उघडा (open WhatsApp reminder)
   function openWaPromiseMsg(name, mobile, amount, dateIso) {
     const clean = String(mobile || "").replace(/\D/g, "");
     if (clean.length < 10) {
@@ -30,11 +36,10 @@
       return;
     }
     const target = clean.length === 10 ? "91" + clean : clean;
-    const msg = `नमस्कार *${name}*,\nआपली व्याज/बाकी रक्कम *₹${amount}* देण्याची वायदा तारीख (${dateIso}) आहे.\nकृपया आज रक्कम जमा करावी. धन्यवाद!`;
+    const msg = `नमस्कार *${name}*,\nआपली व्याज/बाकी रक्कम *₹${amount}* देण्याची वायदा तारीख (${formatCleanDate(dateIso)}) आहे.\nकृपया आज रक्कम जमा करावी. धन्यवाद!`;
     window.open(`https://wa.me/${target}?text=${encodeURIComponent(msg)}`, "_blank", "noopener,noreferrer");
   }
 
-  // FCM Push Notification चालू करा व टोकन Firestore मध्ये सेव्ह करा (enable FCM & save token)
   async function enableFcmPushNotifications() {
     if (!("Notification" in window)) {
       alert("तुमच्या ब्राउझरमध्ये Notification सपोर्ट नाही.");
@@ -74,7 +79,6 @@
     }
   }
 
-  // अ‍ॅप चालू असताना १०, ४, ६ वाजता स्थानिक व्हायब्रेशन व अलर्ट (foreground/fallback alert)
   function checkLocalTimeSlotAlert(todayList) {
     if (!todayList.length) return;
     const now = new Date();
@@ -103,7 +107,6 @@
     }
   }
 
-  // डॅशबोर्डवर सर्वात वर स्मार्ट वायदा कार्ड दाखवा (render Smart Promise Card on Dashboard)
   function renderPromiseDashboard() {
     if (!window.HishobBridge) return;
     const appScreen = document.getElementById("appScreen");
@@ -113,10 +116,11 @@
     const activeYm = (document.getElementById("activeYm") && document.getElementById("activeYm").value) || getIsoDate(0).slice(0, 7);
     const todayStr = getIsoDate(0);
     const tomorrowStr = getIsoDate(1);
+    const dayAfterStr = getIsoDate(2);
 
     const missedList = [];
     const todayList = [];
-    const tomorrowList = [];
+    const upcomingList = [];
 
     borrowers
       .filter((b) => !b.isDeleted && b.accountStatus !== "closed")
@@ -129,16 +133,21 @@
 
         if (dates.includes(todayStr)) {
           todayList.push({ id: b.id, name: b.name, mobile: b.mobile, amount: calc.totalPayable, date: todayStr });
-        } else if (dates.includes(tomorrowStr)) {
-          tomorrowList.push({ id: b.id, name: b.name, mobile: b.mobile, amount: calc.totalPayable, date: tomorrowStr });
         } else {
-          const latest = dates[dates.length - 1];
-          if (latest < todayStr) {
-            missedList.push({ id: b.id, name: b.name, mobile: b.mobile, amount: calc.totalPayable, date: latest });
+          // पुढील १-२ दिवसांत येणारी वायदा तारीख असल्यास 'जवळचे वायदे' मध्ये सर्वात वर दाखवा
+          const nearDate = dates.find((dt) => dt > todayStr && dt <= dayAfterStr);
+          if (nearDate) {
+            upcomingList.push({ id: b.id, name: b.name, mobile: b.mobile, amount: calc.totalPayable, date: nearDate });
+          } else {
+            const latest = dates[dates.length - 1];
+            if (latest < todayStr) {
+              missedList.push({ id: b.id, name: b.name, mobile: b.mobile, amount: calc.totalPayable, date: latest });
+            }
           }
         }
       });
 
+    upcomingList.sort((a, b) => a.date.localeCompare(b.date));
     checkLocalTimeSlotAlert(todayList);
 
     let panel = document.getElementById("smartPromiseDashPanel");
@@ -154,10 +163,10 @@
 
     const isPushOn = localStorage.getItem("vyaj_fcm_enabled") === "true" && Notification.permission === "granted";
 
-    if (!todayList.length && !missedList.length && !tomorrowList.length) {
+    if (!todayList.length && !upcomingList.length && !missedList.length) {
       panel.innerHTML = `
         <div class="row" style="justify-content:space-between;">
-          <span class="muted">📅 आज कोणताही वायदा नाही.</span>
+          <span class="muted">📅 आज किंवा पुढील २ दिवसांत कोणताही वायदा नाही.</span>
           <button type="button" id="enableProPushBtn" class="${isPushOn ? "success" : "primary"} sm">
             ${isPushOn ? "✅ Push अलर्ट चालू" : "🔔 10/4/6 Push अलर्ट चालू करा"}
           </button>
@@ -172,12 +181,13 @@
         .map((item) => {
           const cleanMob = String(item.mobile || "").replace(/\D/g, "");
           const calUrl = buildCalendarAlarmUrl(item.name, item.amount, item.date);
+          const dayTag = item.date === tomorrowStr ? " (उद्या)" : item.date === dayAfterStr ? " (परवा)" : "";
           return `
             <div class="meta-box row" style="justify-content:space-between; margin-top:6px;">
               <div>
                 <strong>${esc(item.name)}</strong>
                 <span style="color:${badgeColor}; font-weight:800; margin-left:6px;">${window.HishobBridge.fmtAmt(item.amount)}</span>
-                <div class="muted" style="font-size:0.74rem;">तारीख: ${esc(item.date)}</div>
+                <div class="muted" style="font-size:0.74rem;">तारीख: ${esc(formatCleanDate(item.date))}${dayTag}</div>
               </div>
               <div class="row" style="gap:5px;">
                 ${cleanMob.length >= 10 ? `<button type="button" class="success sm" onclick="window.location.href='tel:${esc(cleanMob)}'">📞</button>` : ""}
@@ -192,6 +202,7 @@
         })
         .join("");
 
+    // आजचे वायदे आणि जवळचे वायदे सर्वात वर दाखवा
     panel.innerHTML = `
       <div class="row" style="justify-content:space-between; margin-bottom:8px;">
         <strong style="color:var(--accent); font-size:0.95rem;">🔔 वायदा अलर्ट डॅशबोर्ड</strong>
@@ -200,13 +211,12 @@
         </button>
       </div>
       ${todayList.length ? `<div style="margin-bottom:8px;"><strong style="color:#38bdf8;">📅 आजचे वायदे (${todayList.length}):</strong>${buildRows(todayList, "#38bdf8")}</div>` : ""}
-      ${missedList.length ? `<div style="margin-bottom:8px;"><strong style="color:#f43f5e;">🔴 चुकलेले वायदे (${missedList.length}):</strong>${buildRows(missedList, "#f43f5e")}</div>` : ""}
-      ${tomorrowList.length ? `<div><strong style="color:#fbbf24;">🌙 उद्याचे वायदे (${tomorrowList.length}):</strong>${buildRows(tomorrowList, "#fbbf24")}</div>` : ""}
+      ${upcomingList.length ? `<div style="margin-bottom:8px;"><strong style="color:#fbbf24;">⏳ जवळचे वायदे (${upcomingList.length}):</strong>${buildRows(upcomingList, "#fbbf24")}</div>` : ""}
+      ${missedList.length ? `<div><strong style="color:#f43f5e;">🔴 चुकलेले वायदे (${missedList.length}):</strong>${buildRows(missedList, "#f43f5e")}</div>` : ""}
     `;
 
     document.getElementById("enableProPushBtn")?.addEventListener("click", enableFcmPushNotifications);
 
-    // WA बटण इव्हेंट (WhatsApp button handler)
     panel.querySelectorAll("[data-rem-wa]").forEach((btn) => {
       btn.addEventListener("click", () => {
         openWaPromiseMsg(
@@ -218,7 +228,6 @@
       });
     });
 
-    // QR बटण इव्हेंट (1-Click UPI QR button handler)
     panel.querySelectorAll("[data-rem-qr]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const bId = btn.getAttribute("data-rem-qr");
@@ -232,7 +241,6 @@
     });
   }
 
-  // ग्राहक यादी अपडेट होताच वायदा डॅशबोर्ड आपोआप रिफ्रेश करा (observe borrowersList)
   function initReminders() {
     const listEl = document.getElementById("borrowersList");
     if (listEl) {
