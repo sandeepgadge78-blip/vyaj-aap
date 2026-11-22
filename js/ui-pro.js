@@ -1,4 +1,4 @@
-// व्याज हिशोब वही - Customer Avatar, Single-Line Actions, 4-Card Reports Hub, Toggle Settings, Glass New & NavStack Sync (js/ui-pro.js - V14.22)
+// व्याज हिशोब वही - Customer Avatar, Single-Line Actions, 4-Card Reports Hub, Toggle Settings, Glass New & Splash Fail-Safe (js/ui-pro.js - V14.23)
 (function () {
   let enhanceTimer = null;
 
@@ -7,6 +7,14 @@
       return window.HishobBridge.fmtAmt(n);
     }
     return "₹" + Number(n || 0).toLocaleString("en-IN");
+  }
+
+  // Splash Screen कधीही अडकू नये म्हणून सुरक्षित Auto-Hide (Fail-Safe)
+  function ensureSplashHidden() {
+    const sp = document.getElementById("splashScreen");
+    if (sp && !sp.classList.contains("splash-hide")) {
+      sp.classList.add("splash-hide");
+    }
   }
 
   // १. डुप्लिकेट बटणे आणि पॉपअपमधील '✕ बंद' बटणे लपवा
@@ -290,27 +298,31 @@
     syncSettingsToggleStates();
   }
 
+  // केवळ बदल असल्यासच DOM अपडेट करा (Infinite Loop पूर्णपणे बंद)
   function syncSettingsToggleStates() {
     const darkChk = document.getElementById("proToggleDark");
     const themeDesc = document.getElementById("proThemeDesc");
     if (darkChk) {
       const isNight = !document.body.classList.contains("light-mode");
-      darkChk.checked = isNight;
-      if (themeDesc) {
-        themeDesc.textContent = isNight ? "सध्या: Smoked Black Glass (Night)" : "सध्या: Warm Eye-Comfort Paper (Day)";
+      if (darkChk.checked !== isNight) darkChk.checked = isNight;
+      const desiredText = isNight ? "सध्या: Smoked Black Glass (Night)" : "सध्या: Warm Eye-Comfort Paper (Day)";
+      if (themeDesc && themeDesc.textContent !== desiredText) {
+        themeDesc.textContent = desiredText;
       }
     }
 
     const hideChk = document.getElementById("proToggleHideAmt");
     if (hideChk) {
       const sampleAmt = (document.getElementById("dashTotalPrincipal")?.textContent || "").trim();
-      hideChk.checked = sampleAmt.includes("*") || sampleAmt.includes("•");
+      const isHidden = sampleAmt.includes("*") || sampleAmt.includes("•");
+      if (hideChk.checked !== isHidden) hideChk.checked = isHidden;
     }
 
     const pushChk = document.getElementById("proTogglePush");
     if (pushChk) {
       const permOk = "Notification" in window && Notification.permission === "granted";
-      pushChk.checked = localStorage.getItem("vyaj_fcm_enabled") === "true" && permOk;
+      const isOn = localStorage.getItem("vyaj_fcm_enabled") === "true" && permOk;
+      if (pushChk.checked !== isOn) pushChk.checked = isOn;
     }
   }
 
@@ -358,15 +370,20 @@
   }
   window.updateVyajNewBtnVisibility = updateNewButtonVisibility;
 
+  // सुरक्षित Debounced Observer (कधीही अ‍ॅप फ्रीझ किंवा स्लो होणार नाही)
   function observeAppChanges() {
     const obs = new MutationObserver(() => {
-      updateNewButtonVisibility();
-      syncSettingsToggleStates();
       clearTimeout(enhanceTimer);
       enhanceTimer = setTimeout(() => {
-        cleanDuplicateControls();
-        enhanceCustomerCards();
-      }, 60);
+        try {
+          updateNewButtonVisibility();
+          syncSettingsToggleStates();
+          cleanDuplicateControls();
+          enhanceCustomerCards();
+        } catch (err) {
+          console.error("UI-Pro Observer Error:", err);
+        }
+      }, 90);
     });
 
     obs.observe(document.body, {
@@ -378,20 +395,29 @@
   }
 
   function initUiPro() {
-    createGlassNewButton();
-    upgradeSettingsWithToggles();
-    cleanDuplicateControls();
-    enhanceCustomerCards();
-    updateNewButtonVisibility();
-    observeAppChanges();
+    try {
+      createGlassNewButton();
+      upgradeSettingsWithToggles();
+      cleanDuplicateControls();
+      enhanceCustomerCards();
+      updateNewButtonVisibility();
+      observeAppChanges();
+    } catch (err) {
+      console.error("UI-Pro Init Error:", err);
+    }
 
+    // १ सेकंदात Splash Screen नक्की लपेल याची हमी
+    setTimeout(ensureSplashHidden, 1000);
     setTimeout(() => {
       upgradeSettingsWithToggles();
       cleanDuplicateControls();
       enhanceCustomerCards();
       updateNewButtonVisibility();
-    }, 1500);
+      ensureSplashHidden();
+    }, 1600);
   }
+
+  window.addEventListener("load", () => setTimeout(ensureSplashHidden, 600));
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", initUiPro);
