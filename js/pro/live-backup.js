@@ -1,15 +1,33 @@
-// व्याज हिशोब वही - डॅशबोर्ड Live Backup पट्टी + Manual बटण + Real-Time Auto-Backup + Offline Queue + 3 Snapshots (js/pro/live-backup.js - V14.28)
+// व्याज हिशोब वही - Lock-Safe Live Backup पट्टी + Manual बटण + Real-Time Auto-Backup + Offline Queue + 3 Snapshots (js/pro/live-backup.js - V14.32)
 (function () {
-  const SNAPSHOTS_KEY = "vyaj_backup_snapshots_v1";
-  const LAST_META_KEY = "vyaj_live_backup_meta_v1";
-  const SCHED_MODE_KEY = "vyaj_pro_sched_backup_mode";
-  const OFFLINE_QUEUE_KEY = "vyaj_pending_cloud_backup";
+  // app.js च्या performFullLockAndLogout() मध्ये सुरक्षित राहणाऱ्या कीज
+  const SNAPSHOTS_KEY = "vyaj_aap_auto_snapshot_backups_v2";
+  const LAST_META_KEY = "vyaj_aap_settings_live_backup_meta_v2";
+  const SCHED_MODE_KEY = "vyaj_aap_settings_sched_backup_mode_v2";
+  const OFFLINE_QUEUE_KEY = "vyaj_aap_settings_pending_cloud_backup_v2";
 
   let lastDataFingerprint = "";
   let fingerprintInitialized = false;
   let realtimeTimer = null;
   let observerTimer = null;
   let isBackingUp = false;
+
+  // जुन्या कीजमधील माहिती एकदाच सुरक्षित Lock-Safe कीजमध्ये हलवा
+  (function migrateLegacyKeys() {
+    try {
+      const pairs = [
+        ["vyaj_backup_snapshots_v1", SNAPSHOTS_KEY],
+        ["vyaj_live_backup_meta_v1", LAST_META_KEY],
+        ["vyaj_pro_sched_backup_mode", SCHED_MODE_KEY],
+        ["vyaj_pending_cloud_backup", OFFLINE_QUEUE_KEY]
+      ];
+      pairs.forEach(([oldK, newK]) => {
+        if (!localStorage.getItem(newK) && localStorage.getItem(oldK)) {
+          localStorage.setItem(newK, localStorage.getItem(oldK));
+        }
+      });
+    } catch (_) {}
+  })();
 
   function esc(str) {
     return String(str ?? "").replace(/[&<>"']/g, (m) => ({
@@ -40,7 +58,6 @@
     } catch (_) { return []; }
   }
 
-  // फक्त खरा डेटा बदलला तरच ओळखण्यासाठी हलका Fingerprint तयार करा (सर्च/फिल्टरवर ट्रिगर होणार नाही)
   function computeDataFingerprint() {
     if (!window.HishobBridge || typeof window.HishobBridge.getBorrowers !== "function") return "";
     const list = window.HishobBridge.getBorrowers() || [];
@@ -86,12 +103,10 @@
     document.head.appendChild(st);
   }
 
-  // शेवटच्या ३ Snapshots मध्ये सुरक्षित सेव्ह करा (जागा कमी असल्यास ऑटो-ट्रिम)
   function saveLocalSnapshot(borrowers, reason) {
     const now = Date.now();
     const lightBorrowers = borrowers.map((b) => {
       const copy = { ...b };
-      // लोकल स्टोरेज भरू नये म्हणून जड इमेज डेटा स्नॅपशॉटमधून वगळा (ते Firestore मध्ये सुरक्षित असतात)
       if (Array.isArray(copy.documents)) copy.documents = [];
       return copy;
     });
@@ -104,19 +119,15 @@
       borrowers: lightBorrowers
     };
 
-    const existing = getSnapshots();
-    const nextList = [snap, ...existing].slice(0, 3);
-
+    const nextList = [snap, ...getSnapshots()].slice(0, 3);
     try {
       localStorage.setItem(SNAPSHOTS_KEY, JSON.stringify(nextList));
     } catch (_) {
-      // जर स्टोरेज मर्यादा आली तर फक्त सर्वात ताजा १ स्नॅपशॉट ठेवा
       try { localStorage.setItem(SNAPSHOTS_KEY, JSON.stringify([snap])); } catch (__) {}
     }
     return snap;
   }
 
-  // ताजा बॅकअप घ्या (Local Snapshot + Firebase Cloud Backup + Webhook)
   async function performLiveBackup(sourceReason) {
     if (isBackingUp) return;
     if (!window.HishobBridge || typeof window.HishobBridge.getBorrowers !== "function") return;
@@ -136,14 +147,16 @@
     let cloudOk = false;
 
     try {
-      // १. लोकल ३-स्नॅपशॉट व्हॉल्टमध्ये सेव्ह करा (ऑफलाइनही चालेल)
       saveLocalSnapshot(borrowers, sourceReason || "manual");
-
       const user = typeof firebase !== "undefined" && firebase.auth ? firebase.auth().currentUser : null;
 
-      // २. इंटरनेट चालू असल्यास शांतपणे Firebase Cloud Backup घ्या
       if (navigator.onLine && user) {
         try {
+          const lightCloudBorrowers = borrowers.map((b) => {
+            const c = { ...b };
+            if (Array.isArray(c.documents)) c.documents = [];
+            return c;
+          });
           await firebase
             .firestore()
             .collection("users")
@@ -154,17 +167,16 @@
               updatedAt: new Date(now).toISOString(),
               ts: now,
               reason: sourceReason || "manual",
-              count: borrowers.length,
-              borrowers
+              count: lightCloudBorrowers.length,
+              borrowers: lightCloudBorrowers
             });
           cloudOk = true;
           localStorage.removeItem(OFFLINE_QUEUE_KEY);
         } catch (cloudErr) {
-          console.warn("Cloud Backup Subcollection Warning:", cloudErr);
+          console.warn("Cloud Backup Warning:", cloudErr);
         }
 
-        // ३. Google Apps Script Webhook URL सेव्ह असल्यास तिथेही शांतपणे पाठवा
-        const webhookUrl = (document.getElementById("webhookUrlInput")?.value || localStorage.getItem("vyaj_webhook_url") || "").trim();
+        const webhookUrl = (document.getElementById("webhookUrlInput")?.value || localStorage.getItem("hishob_webhook_url") || "").trim();
         if (webhookUrl && webhookUrl.startsWith("https://script.google.com")) {
           try {
             fetch(webhookUrl, {
@@ -181,18 +193,10 @@
           } catch (_) {}
         }
       } else {
-        // ऑफलाइन असताना रांगेत नोंदवा (नेट येताच आपोआप क्लाउडवर जाईल)
         localStorage.setItem(OFFLINE_QUEUE_KEY, "1");
       }
 
-      // मेटाडेटा व जुन्या बॅजेसशी १००% सिंक करा
-      const meta = {
-        ts: now,
-        date: isoDate,
-        count: borrowers.length,
-        cloudOk,
-        reason: sourceReason || "manual"
-      };
+      const meta = { ts: now, date: isoDate, count: borrowers.length, cloudOk, reason: sourceReason || "manual" };
       localStorage.setItem(LAST_META_KEY, JSON.stringify(meta));
       localStorage.setItem("vyaj_last_backup_date", isoDate);
 
@@ -210,7 +214,6 @@
 
   window.triggerVyajLiveBackup = performLiveBackup;
 
-  // डॅशबोर्डवरील छोटी Backup Status पट्टी तयार करा
   function ensureBackupStatusBar() {
     const appScreen = document.getElementById("appScreen");
     const heroCard = appScreen?.querySelector(".month-hero-card");
@@ -270,7 +273,6 @@
     subTxt.textContent = `${modeLabels[mode] || "Manual मोड"}${queueTag}`;
   }
 
-  // ३ Snapshots मॅनेजर पॉपअप (कोणताही बॅकअप परत आणणे किंवा JSON डाउनलोड करणे)
   function ensureSnapshotsModal() {
     let modal = document.getElementById("proSnapshotsModal");
     if (modal) return modal;
@@ -281,10 +283,10 @@
     modal.innerHTML = `
       <div class="modal-card" style="max-width:540px;">
         <div class="row" style="justify-content:space-between; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--border);">
-          <h3 style="margin:0; color:var(--accent);">🕒 शेवटचे ३ सेफ्टी बॅकअप (Snapshots)</h3>
+          <h3 style="margin:0; color:var(--accent);">🕒 शेवटचे ३ सेफ्टी बॅकअप (Lock-Safe)</h3>
           <span class="badge paid">Auto-Vault</span>
         </div>
-        <p class="muted" style="margin-top:0; font-size:0.78rem;">कोणत्याही चुकीच्या बदलातून वाचण्यासाठी मागील ३ बॅकअपपैकी कोणताही एक परत आणा किंवा .JSON फाईल डाउनलोड करा.</p>
+        <p class="muted" style="margin-top:0; font-size:0.78rem;">अ‍ॅप लॉक झाले तरी हे ३ सेफ्टी बॅकअप सुरक्षित राहतात. यातून कोणताही एक परत आणा किंवा .JSON डाउनलोड करा.</p>
         <div id="proSnapshotsList"></div>
         <div id="proSnapStatus" class="muted" style="text-align:center; margin-top:6px;"></div>
       </div>
@@ -339,8 +341,7 @@
         btn.addEventListener("click", async () => {
           const snap = snaps[Number(btn.getAttribute("data-snap-restore"))];
           if (!snap || !Array.isArray(snap.borrowers)) return;
-          const ok = confirm(`${formatBackupTime(snap.ts)} चा बॅकअप (${snap.count} खाती) अ‍ॅपमध्ये Restore करायचा का?`);
-          if (!ok) return;
+          if (!confirm(`${formatBackupTime(snap.ts)} चा बॅकअप (${snap.count} खाती) अ‍ॅपमध्ये Restore करायचा का?`)) return;
 
           const user = typeof firebase !== "undefined" && firebase.auth ? firebase.auth().currentUser : null;
           if (!user) { alert("कृपया आधी लॉगिन करा."); return; }
@@ -349,9 +350,9 @@
           try {
             const db = firebase.firestore();
             const colRef = db.collection("users").doc(user.uid).collection("borrowers");
-            for (let i = 0; i < snap.borrowers.length; i += 400) {
+            for (let i = 0; i < snap.borrowers.length; i += 25) {
               const batch = db.batch();
-              snap.borrowers.slice(i, i + 400).forEach((b) => {
+              snap.borrowers.slice(i, i + 25).forEach((b) => {
                 const docId = b.id || colRef.doc().id;
                 const payload = { ...b };
                 delete payload.id;
@@ -366,11 +367,9 @@
         });
       });
     }
-
     modal.classList.remove("hidden");
   }
 
-  // Scheduled Backup ड्रॉपडाऊनमध्ये '⚡ रिअल-टाइम (बदल होताच)' पर्याय जोडा
   function upgradeScheduledBackupSelect() {
     const sel = document.getElementById("scheduledBackupSelect");
     if (!sel) return;
@@ -382,18 +381,14 @@
     }
 
     const saved = localStorage.getItem(SCHED_MODE_KEY);
-    if (saved && sel.querySelector(`option[value="${saved}"]`)) {
-      sel.value = saved;
-    }
+    if (saved && sel.querySelector(`option[value="${saved}"]`)) sel.value = saved;
 
     if (!sel.dataset.lbBound) {
       sel.dataset.lbBound = "1";
       sel.addEventListener("change", () => {
         localStorage.setItem(SCHED_MODE_KEY, sel.value);
         updateBackupBarUi();
-        if (sel.value === "realtime") {
-          setTimeout(() => performLiveBackup("realtime_init"), 800);
-        }
+        if (sel.value === "realtime") setTimeout(() => performLiveBackup("realtime_init"), 800);
       });
     }
   }
@@ -402,19 +397,15 @@
     return localStorage.getItem(SCHED_MODE_KEY) || document.getElementById("scheduledBackupSelect")?.value || "off";
   }
 
-  // दररोज / साप्ताहिक / मासिक Scheduled Backup वेळेनुसार तपासा
   function checkScheduledBackupDue() {
     const mode = getScheduledMode();
     if (mode === "off" || mode === "realtime") return;
     const meta = getLastBackupMeta();
     const ageHrs = meta && meta.ts ? (Date.now() - Number(meta.ts)) / (1000 * 60 * 60) : 9999;
     const limit = mode === "daily" ? 23 : mode === "weekly" ? 168 : 720;
-    if (ageHrs >= limit) {
-      performLiveBackup("scheduled_" + mode);
-    }
+    if (ageHrs >= limit) performLiveBackup("scheduled_" + mode);
   }
 
-  // खरा डेटा बदलताच ६ सेकंदांनी (Smart Debounce) शांतपणे रिअल-टाइम बॅकअप घ्या
   function watchBorrowerDataChanges() {
     const listEl = document.getElementById("borrowersList");
     if (!listEl) return;
@@ -422,14 +413,12 @@
     const checkChange = () => {
       const fp = computeDataFingerprint();
       if (!fp) return;
-
       if (!fingerprintInitialized) {
         lastDataFingerprint = fp;
         fingerprintInitialized = true;
         checkScheduledBackupDue();
         return;
       }
-
       if (fp !== lastDataFingerprint) {
         lastDataFingerprint = fp;
         if (getScheduledMode() === "realtime") {
@@ -447,7 +436,6 @@
     setTimeout(checkChange, 2500);
   }
 
-  // इंटरनेट परत येताच Offline रांगेतील बॅकअप आपोआप Cloud वर सिंक करा
   window.addEventListener("online", () => {
     if (localStorage.getItem(OFFLINE_QUEUE_KEY) === "1") {
       setTimeout(() => performLiveBackup("online_sync"), 2000);
@@ -460,7 +448,6 @@
     upgradeScheduledBackupSelect();
     updateBackupBarUi();
     watchBorrowerDataChanges();
-
     setTimeout(() => {
       ensureBackupStatusBar();
       upgradeScheduledBackupSelect();
@@ -468,9 +455,6 @@
     }, 1500);
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initLiveBackup);
-  } else {
-    initLiveBackup();
-  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initLiveBackup);
+  else initLiveBackup();
 })();
