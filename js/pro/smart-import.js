@@ -1,4 +1,4 @@
-// व्याज हिशोब वही - Universal Smart Import (CSV, Excel, Google Sheet, PDF, JSON) + Column Auto-Mapper + Duplicate Guard + Undo (js/pro/smart-import.js - V14.28)
+// व्याज हिशोब वही - Universal Smart Import (CSV, Excel, Google Sheet, PDF, JSON) + Auto-Format Guard + Duplicate Guard + Undo (js/pro/smart-import.js - V14.31)
 (function () {
   const UNDO_SNAP_KEY = "vyaj_undo_import_snap_v1";
   const XLSX_CDN = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
@@ -10,7 +10,6 @@
   let activeMapping = {};
   let activeSourceLabel = "";
 
-  // अ‍ॅपचे अधिकृत रकाने व त्यांच्या मराठी/इंग्रजी नावांची यादी (Smart Auto-Mapping साठी)
   const FIELD_DEFS = [
     { key: "name", label: "ग्राहकाचे नाव *", aliases: ["name", "customer", "borrower", "ग्राहक", "नाव", "customer name", "borrower name", "ग्राहकाचे नाव", "full name", "party"] },
     { key: "mobile", label: "मोबाईल नंबर", aliases: ["mobile", "phone", "contact", "mob", "मोबाईल", "फोन", "नंबर", "mobile number", "phone number", "मोबाईल नंबर"] },
@@ -43,7 +42,6 @@
     }[m]));
   }
 
-  // बाह्य लायब्ररी फक्त गरज पडल्यावरच (On-Demand / Lazy Load) लोड करा
   function loadScriptOnce(src, globalCheck) {
     return new Promise((resolve, reject) => {
       if (globalCheck()) return resolve();
@@ -81,16 +79,10 @@
       .si-sheet-row input { flex: 1; min-width: 0; font-size: 0.8rem; }
       .si-tools-row { display: flex; flex-wrap: wrap; gap: 6px; }
       .si-msg { font-size: 0.78rem; font-weight: 700; margin-top: 7px; }
-
-      .si-stat-bar {
-        display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; text-align: center;
-      }
-      .si-stat-pill {
-        padding: 8px 6px; border-radius: 10px; background: var(--meta-bg); border: 1px solid var(--border);
-      }
+      .si-stat-bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; text-align: center; }
+      .si-stat-pill { padding: 8px 6px; border-radius: 10px; background: var(--meta-bg); border: 1px solid var(--border); }
       .si-stat-num { font-size: 1.05rem; font-weight: 900; }
       .si-stat-lbl { font-size: 0.68rem; color: var(--muted); font-weight: 700; }
-
       .si-map-grid {
         display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px;
         max-height: 200px; overflow-y: auto; padding: 8px; border-radius: 10px;
@@ -100,7 +92,6 @@
       .si-map-item { display: flex; flex-direction: column; gap: 3px; }
       .si-map-item label { font-size: 0.7rem; color: var(--muted); font-weight: 700; }
       .si-map-item select { padding: 5px 7px; font-size: 0.76rem; }
-
       .si-table-wrap { max-height: 210px; overflow: auto; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px; }
       .si-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
       .si-table th, .si-table td { border-bottom: 1px solid var(--border); padding: 6px 7px; text-align: left; white-space: nowrap; }
@@ -116,7 +107,6 @@
     el.style.color = isErr ? "var(--danger)" : "var(--accent-2)";
   }
 
-  // RFC-4180 अनुरूप CSV पार्सर (मराठी अक्षरे, स्वल्पविराम व कोट्स अचूक वाचण्यासाठी)
   function parseCsvText(text) {
     const clean = String(text || "").replace(/^\uFEFF/, "");
     const rows = [];
@@ -128,31 +118,20 @@
       const ch = clean[i];
       const next = clean[i + 1];
       if (inQuotes) {
-        if (ch === '"' && next === '"') {
-          field += '"';
-          i++;
-        } else if (ch === '"') {
-          inQuotes = false;
-        } else {
-          field += ch;
-        }
+        if (ch === '"' && next === '"') { field += '"'; i++; }
+        else if (ch === '"') inQuotes = false;
+        else field += ch;
       } else {
-        if (ch === '"') {
-          inQuotes = true;
-        } else if (ch === ",") {
-          row.push(field.trim());
-          field = "";
-        } else if (ch === "\r" && next === "\n") {
+        if (ch === '"') inQuotes = true;
+        else if (ch === ",") { row.push(field.trim()); field = ""; }
+        else if (ch === "\r" && next === "\n") {
           row.push(field.trim());
           if (row.some((c) => c !== "")) rows.push(row);
-          row = [];
-          field = "";
-          i++;
+          row = []; field = ""; i++;
         } else if (ch === "\n" || ch === "\r") {
           row.push(field.trim());
           if (row.some((c) => c !== "")) rows.push(row);
-          row = [];
-          field = "";
+          row = []; field = "";
         } else {
           field += ch;
         }
@@ -163,7 +142,6 @@
     return rows;
   }
 
-  // संख्या स्वच्छ करा (₹, स्वल्पविराम काढून)
   function cleanNum(val) {
     if (val === null || val === undefined || val === "") return 0;
     const cleaned = String(val).replace(/[₹,\s%]/g, "").trim();
@@ -171,26 +149,30 @@
     return Number.isFinite(n) ? n : 0;
   }
 
-  // तारीख YYYY-MM-DD मध्ये रूपांतरित करा
-  function normalizeDate(val) {
-    if (!val) return "";
-    if (typeof val === "number" && val > 25000 && val < 80000) {
-      // Excel Serial Date रूपांतरण
-      const d = new Date(Math.round((val - 25569) * 86400 * 1000));
-      if (!Number.isNaN(d.getTime())) return d.toISOString().slice(0, 10);
-    }
-    const s = String(val).trim();
-    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-    const dmy = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-    if (dmy) return `${dmy[3]}-${dmy[2].padStart(2, "0")}-${dmy[1].padStart(2, "0")}`;
-    return s;
+  // Auto-Format Guard: प्रत्येक फाईलमधून डेटा नेहमी अ‍ॅपच्या प्रमाणित फॉरमॅटमध्ये सेव्ह होईल
+  function cleanMobileGuard(val) {
+    if (window.VyajFieldSync?.normalizeMobileStrict) return window.VyajFieldSync.normalizeMobileStrict(val);
+    const d = String(val || "").replace(/\D/g, "");
+    if (d.length === 12 && d.startsWith("91")) return d.slice(2);
+    if (d.length === 11 && d.startsWith("0")) return d.slice(1);
+    return d.slice(-10);
   }
 
-  function normalizeJob(val) {
+  function normalizeDateGuard(val) {
+    if (window.VyajFieldSync?.normalizeDateStrict) return window.VyajFieldSync.normalizeDateStrict(val);
+    if (!val) return "";
+    const s = String(val).trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    const dmy = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+    if (dmy) return `${dmy[3]}-${dmy[2].padStart(2, "0")}-${dmy[1].padStart(2, "0")}`;
+    return "";
+  }
+
+  function normalizeJobGuard(val) {
+    if (window.VyajFieldSync?.normalizeJobStrict) return window.VyajFieldSync.normalizeJobStrict(val);
     const v = String(val || "").toLowerCase().trim();
-    if (!v) return "";
-    if (v.includes("govt") || v.includes("सरकारी") || v.includes("gov")) return "govt";
-    if (v.includes("pvt") || v.includes("private") || v.includes("खाजगी")) return "private";
+    if (v.includes("gov") || v.includes("सरकारी")) return "govt";
+    if (v.includes("pvt") || v.includes("priv") || v.includes("खाजगी")) return "private";
     if (v.includes("bus") || v.includes("व्यवसाय")) return "business";
     return v;
   }
@@ -200,7 +182,6 @@
     return v.includes("flat") ? "flat" : "reducing";
   }
 
-  // कॉलम हेडरवरून आपोआप रकाने जुळवा (Smart Auto-Mapper)
   function autoDetectMapping(headers) {
     const map = {};
     const usedIdx = new Set();
@@ -208,35 +189,22 @@
 
     FIELD_DEFS.forEach((def) => {
       let matched = -1;
-      // अचूक जुळणी आधी पहा
       for (let i = 0; i < normHeaders.length; i++) {
         if (usedIdx.has(i)) continue;
-        if (def.aliases.some((a) => normHeaders[i] === a.toLowerCase())) {
-          matched = i;
-          break;
-        }
+        if (def.aliases.some((a) => normHeaders[i] === a.toLowerCase())) { matched = i; break; }
       }
-      // आंशिक जुळणी नंतर पहा
       if (matched === -1) {
         for (let i = 0; i < normHeaders.length; i++) {
           if (usedIdx.has(i)) continue;
-          if (def.aliases.some((a) => a.length >= 3 && normHeaders[i].includes(a.toLowerCase()))) {
-            matched = i;
-            break;
-          }
+          if (def.aliases.some((a) => a.length >= 3 && normHeaders[i].includes(a.toLowerCase()))) { matched = i; break; }
         }
       }
-      if (matched !== -1) {
-        map[def.key] = matched;
-        usedIdx.add(matched);
-      } else {
-        map[def.key] = -1;
-      }
+      map[def.key] = matched;
+      if (matched !== -1) usedIdx.add(matched);
     });
     return map;
   }
 
-  // मॅपिंगनुसार ग्राहक ऑब्जेक्ट्स तयार करा
   function buildMappedRecords() {
     const curYm = document.getElementById("activeYm")?.value || new Date().toISOString().slice(0, 7);
     const defaultRate = Number(document.getElementById("setDefaultRate")?.value || 2);
@@ -256,13 +224,14 @@
       const rateRaw = getVal("rate");
       const rate = rateRaw !== "" && rateRaw !== undefined ? cleanNum(rateRaw) : defaultRate;
       const fixedInt = cleanNum(getVal("fixedInterest"));
-      const mobile = String(getVal("mobile") || "").replace(/[^\d+]/g, "").slice(-12);
-      const loanDate = normalizeDate(getVal("loanDate"));
+      const mobile = cleanMobileGuard(getVal("mobile"));
+      const loanDate = normalizeDateGuard(getVal("loanDate"));
       const rawStartYm = String(getVal("startYm") || "").trim();
       const startYm = /^\d{4}-\d{2}$/.test(rawStartYm) ? rawStartYm : (loanDate ? loanDate.slice(0, 7) : curYm);
       const statusRaw = String(getVal("accountStatus") || "").toLowerCase();
+      const rawDay = cleanNum(getVal("interestDay"));
 
-      const rec = {
+      records.push({
         name,
         mobile,
         principal,
@@ -272,27 +241,25 @@
         loanDate,
         startYm,
         interestType: normalizeInterestType(getVal("interestType")),
-        interestDay: cleanNum(getVal("interestDay")) || "",
+        interestDay: (rawDay >= 1 && rawDay <= 31) ? rawDay : "",
         lateFee: cleanNum(getVal("lateFee")),
         customDue: cleanNum(getVal("customDue")),
         loanLabel: String(getVal("loanLabel") || "").trim(),
         guarantor: String(getVal("guarantor") || "").trim(),
         extraGuarantors: String(getVal("extraGuarantors") || "").trim(),
-        jobType: normalizeJob(getVal("jobType")),
+        jobType: normalizeJobGuard(getVal("jobType")),
         companyDept: String(getVal("companyDept") || "").trim(),
-        retirementDate: normalizeDate(getVal("retirementDate")),
-        promise1: normalizeDate(getVal("promise1")),
-        promise2: normalizeDate(getVal("promise2")),
-        promise3: normalizeDate(getVal("promise3")),
+        retirementDate: normalizeDateGuard(getVal("retirementDate")),
+        promise1: normalizeDateGuard(getVal("promise1")),
+        promise2: normalizeDateGuard(getVal("promise2")),
+        promise3: normalizeDateGuard(getVal("promise3")),
         note: String(getVal("note") || "").trim(),
         accountStatus: statusRaw.includes("closed") || statusRaw.includes("बंद") ? "closed" : "active"
-      };
-      records.push(rec);
+      });
     });
     return records;
   }
 
-  // आधीच्या ग्राहकांशी तुलना करून Duplicate तपासा
   function classifyRecords(records) {
     const existing = (window.HishobBridge && window.HishobBridge.getBorrowers ? window.HishobBridge.getBorrowers() : [])
       .filter((b) => !b.isDeleted);
@@ -300,7 +267,7 @@
     const byMob = new Map();
     const byName = new Map();
     existing.forEach((b) => {
-      const m = String(b.mobile || "").replace(/\D/g, "").slice(-10);
+      const m = cleanMobileGuard(b.mobile);
       if (m.length === 10) byMob.set(m, b);
       const n = String(b.name || "").trim().toLowerCase();
       if (n) byName.set(n, b);
@@ -308,19 +275,16 @@
 
     const fresh = [];
     const duplicates = [];
-
     records.forEach((rec) => {
-      const m = String(rec.mobile || "").replace(/\D/g, "").slice(-10);
+      const m = cleanMobileGuard(rec.mobile);
       const n = String(rec.name || "").trim().toLowerCase();
       const match = (m.length === 10 && byMob.get(m)) || byName.get(n) || null;
       if (match) duplicates.push({ rec, existing: match });
       else fresh.push(rec);
     });
-
     return { fresh, duplicates };
   }
 
-  // Preview व Column Mapper पॉपअप तयार करा
   function ensurePreviewModal() {
     let modal = document.getElementById("proSmartImportModal");
     if (modal) return modal;
@@ -386,7 +350,6 @@
       if (window.VyajNavStack) window.VyajNavStack.popIfTop("proSmartImportModal");
     });
     document.getElementById("siConfirmImportBtn")?.addEventListener("click", executeSmartImport);
-
     return modal;
   }
 
@@ -450,10 +413,7 @@
   }
 
   function openPreviewWithMatrix(headers, rows, sourceLabel) {
-    if (!rows.length) {
-      setStatus("❌ या फाईलमध्ये ग्राहकांचा डेटा सापडला नाही.", true);
-      return;
-    }
+    if (!rows.length) { setStatus("❌ या फाईलमध्ये ग्राहकांचा डेटा सापडला नाही.", true); return; }
     parsedRawHeaders = headers;
     parsedRawRows = rows;
     activeMapping = autoDetectMapping(headers);
@@ -471,7 +431,6 @@
     modal.classList.remove("hidden");
   }
 
-  // Firestore मध्ये Batch Write ने सुरक्षित Import करा + Undo Snapshot सेव्ह करा
   async function executeSmartImport() {
     const user = typeof firebase !== "undefined" && firebase.auth ? firebase.auth().currentUser : null;
     if (!user) { alert("कृपया आधी लॉगिन करा."); return; }
@@ -508,32 +467,21 @@
         ops.push({
           type: "set",
           ref: docRef,
-          data: {
-            ...rec,
-            isDeleted: false,
-            paymentHistory: [],
-            principalHistory: [],
-            createdAt: nowIso,
-            updatedAt: nowIso
-          }
+          data: { ...rec, isDeleted: false, paymentHistory: [], principalHistory: [], createdAt: nowIso, updatedAt: nowIso }
         });
       });
 
       toUpdate.forEach(({ rec, existing }) => {
         const docRef = colRef.doc(existing.id);
         prevSnapshots.push({ id: existing.id, data: { ...existing } });
-        // पेमेंट हिस्ट्री व डॉक्युमेंट्स सुरक्षित ठेवून फक्त भरलेले तपशील अपडेट करा
         const patch = { updatedAt: nowIso };
         Object.keys(rec).forEach((k) => {
           const v = rec[k];
-          if (v !== "" && v !== null && v !== undefined && !(k === "principal" && v === 0)) {
-            patch[k] = v;
-          }
+          if (v !== "" && v !== null && v !== undefined && !(k === "principal" && v === 0)) patch[k] = v;
         });
         ops.push({ type: "update", ref: docRef, data: patch });
       });
 
-      // Firestore मर्यादेनुसार ४०० च्या बॅचमध्ये सेव्ह करा
       for (let i = 0; i < ops.length; i += 400) {
         const batch = db.batch();
         ops.slice(i, i + 400).forEach((op) => {
@@ -543,23 +491,16 @@
         await batch.commit();
       }
 
-      // Undo Snapshot सेव्ह करा
       try {
-        localStorage.setItem(UNDO_SNAP_KEY, JSON.stringify({
-          ts: Date.now(),
-          source: activeSourceLabel,
-          addedIds,
-          prevSnapshots
-        }));
+        localStorage.setItem(UNDO_SNAP_KEY, JSON.stringify({ ts: Date.now(), source: activeSourceLabel, addedIds, prevSnapshots }));
       } catch (_) {}
 
       updateUndoButtonState();
       document.getElementById("proSmartImportModal")?.classList.add("hidden");
       setStatus(`✅ इम्पोर्ट पूर्ण! ${toAdd.length} नवीन खाती जोडली आणि ${toUpdate.length} अपडेट झाली.`, false);
 
-      if (typeof window.triggerVyajLiveBackup === "function") {
-        setTimeout(() => window.triggerVyajLiveBackup("auto_import"), 1500);
-      }
+      if (window.VyajFieldSync?.loadRawCacheOnce) setTimeout(() => window.VyajFieldSync.loadRawCacheOnce(true), 1200);
+      if (typeof window.triggerVyajLiveBackup === "function") setTimeout(() => window.triggerVyajLiveBackup("auto_import"), 1800);
     } catch (err) {
       console.error("Smart Import Error:", err);
       if (statusEl) statusEl.textContent = "❌ सेव्ह करताना एरर आला: " + err.message;
@@ -568,7 +509,6 @@
     }
   }
 
-  // शेवटचा Import एका क्लिकवर रद्द करा (↩️ Undo Last Import)
   async function undoLastImport() {
     const user = typeof firebase !== "undefined" && firebase.auth ? firebase.auth().currentUser : null;
     if (!user) { alert("कृपया आधी लॉगिन करा."); return; }
@@ -580,17 +520,13 @@
       return;
     }
 
-    const ok = confirm(
-      `शेवटचा Import (${snap.source || "File"}) रद्द करायचा का?\n\nनवीन जोडलेली ${snap.addedIds.length} खाती काढली जातील आणि अपडेट केलेली ${snap.prevSnapshots.length} खाती पूर्ववत होतील.`
-    );
-    if (!ok) return;
+    if (!confirm(`शेवटचा Import (${snap.source || "File"}) रद्द करायचा का?`)) return;
 
     setStatus("⏳ शेवटचा Import रद्द करत आहे...", false);
     try {
       const db = firebase.firestore();
       const colRef = db.collection("users").doc(user.uid).collection("borrowers");
       const ops = [];
-
       (snap.addedIds || []).forEach((id) => ops.push({ type: "delete", ref: colRef.doc(id) }));
       (snap.prevSnapshots || []).forEach((item) => {
         const cleanData = { ...item.data };
@@ -609,9 +545,8 @@
 
       localStorage.removeItem(UNDO_SNAP_KEY);
       updateUndoButtonState();
-      setStatus("✅ शेवटचा Import यशस्वीरित्या रद्द झाला व अ‍ॅप पूर्वीसारखे झाले!", false);
+      setStatus("✅ शेवटचा Import यशस्वीरित्या रद्द झाला!", false);
     } catch (err) {
-      console.error("Undo Import Error:", err);
       setStatus("❌ Undo करताना एरर आला: " + err.message, true);
     }
   }
@@ -627,7 +562,6 @@
     btn.classList.toggle("hidden", !hasSnap);
   }
 
-  // १. फाईलचा प्रकार ओळखून प्रोसेस करा (.CSV, .XLSX/.XLS, .PDF, .JSON)
   async function handleUniversalFile(file) {
     if (!file) return;
     const name = file.name || "";
@@ -635,7 +569,6 @@
     setStatus(`⏳ "${name}" वाचत आहे...`, false);
 
     try {
-      // अ) CSV फाईल
       if (ext === "csv" || ext === "txt") {
         const text = await file.text();
         const matrix = parseCsvText(text);
@@ -645,9 +578,8 @@
         return;
       }
 
-      // ब) Excel (.xlsx / .xls) — On-Demand SheetJS लोड करा
       if (ext === "xlsx" || ext === "xls") {
-        setStatus("⏳ Excel लायब्ररी लोड होत आहे (फक्त पहिल्यांदाच लागेल)...", false);
+        setStatus("⏳ Excel लायब्ररी लोड होत आहे...", false);
         await loadScriptOnce(XLSX_CDN, () => typeof window.XLSX !== "undefined");
         const buf = await file.arrayBuffer();
         const wb = window.XLSX.read(buf, { type: "array" });
@@ -660,12 +592,10 @@
         return;
       }
 
-      // क) JSON बॅकअप (Plain JSON किंवा Encrypted JSON)
       if (ext === "json") {
         const text = await file.text();
         const parsed = JSON.parse(text);
         const arr = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.borrowers) ? parsed.borrowers : null);
-
         if (arr && arr.length) {
           const headers = FIELD_DEFS.map((d) => d.key);
           const rows = arr.map((item) => headers.map((k) => item[k] ?? ""));
@@ -673,8 +603,6 @@
           setStatus("", false);
           return;
         }
-
-        // जर ही Encrypted (Passkey) फाईल असेल, तर मूळ Encrypted Restore कडे सुरक्षित पाठवा
         const origInput = document.getElementById("importEncFile");
         const passInput = document.getElementById("backupPasskey");
         if (origInput && typeof DataTransfer !== "undefined") {
@@ -694,7 +622,6 @@
         return;
       }
 
-      // ड) PDF फाईल — On-Demand PDF.js लोड करून डिजिटल टेक्स्ट वाचा
       if (ext === "pdf") {
         setStatus("⏳ PDF वाचक लोड होत आहे...", false);
         await loadScriptOnce(PDFJS_CDN, () => typeof window.pdfjsLib !== "undefined");
@@ -703,11 +630,9 @@
         const buf = await file.arrayBuffer();
         const pdf = await window.pdfjsLib.getDocument({ data: buf }).promise;
         const lines = [];
-
         for (let p = 1; p <= Math.min(pdf.numPages, 25); p++) {
           const page = await pdf.getPage(p);
           const content = await page.getTextContent();
-          // Y-अक्षावरून एकाच ओळीतील शब्द एकत्र करा
           const rowMap = new Map();
           content.items.forEach((it) => {
             const txt = String(it.str || "").trim();
@@ -716,15 +641,12 @@
             if (!rowMap.has(yKey)) rowMap.set(yKey, []);
             rowMap.get(yKey).push({ x: it.transform[4] || 0, txt });
           });
-          Array.from(rowMap.entries())
-            .sort((a, b) => b[0] - a[0])
-            .forEach(([, items]) => {
-              items.sort((a, b) => a.x - b.x);
-              lines.push(items.map((x) => x.txt));
-            });
+          Array.from(rowMap.entries()).sort((a, b) => b[0] - a[0]).forEach(([, items]) => {
+            items.sort((a, b) => a.x - b.x);
+            lines.push(items.map((x) => x.txt));
+          });
         }
 
-        // ज्या ओळींमध्ये नाव आणि किमान एक रक्कम/मोबाईल आहे त्या गाळा
         const extractedRows = [];
         lines.forEach((cells) => {
           const fullLine = cells.join(" ");
@@ -735,13 +657,11 @@
           const amtCandidate = nums.find((n) => n.replace(/,/g, "") !== mob) || "";
           const principalVal = cleanNum(amtCandidate);
           const namePart = cells.find((c) => /[a-zA-Z\u0900-\u097F]{2,}/.test(c) && !/^(total|एकूण|मुद्दल|व्याज|sr|क्र)/i.test(c)) || "";
-          if (namePart && principalVal >= 100) {
-            extractedRows.push([namePart, mob, principalVal]);
-          }
+          if (namePart && principalVal >= 100) extractedRows.push([namePart, mob, principalVal]);
         });
 
         if (!extractedRows.length) {
-          setStatus("⚠️ या PDF मधून टेक्स्ट वाचता आले नाही. (जर हा स्कॅन/फोटो PDF असेल, तर कृपया Excel/CSV फाईल वापरा.)", true);
+          setStatus("⚠️ या PDF मधून टेक्स्ट वाचता आले नाही. (स्कॅन/फोटो PDF असल्यास कृपया Excel/CSV वापरा.)", true);
           return;
         }
         openPreviewWithMatrix(["name", "mobile", "principal"], extractedRows, "PDF");
@@ -751,27 +671,21 @@
 
       setStatus("❌ फक्त .CSV, .XLSX, .XLS, .PDF किंवा .JSON फाईल निवडा.", true);
     } catch (err) {
-      console.error("Universal File Parse Error:", err);
       setStatus("❌ फाईल वाचताना एरर आला: " + err.message, true);
     }
   }
 
-  // २. Google Sheet URL किंवा ID मधून थेट डेटा आणा
   async function handleGoogleSheetImport() {
     const raw = (document.getElementById("siSheetUrlInput")?.value || "").trim();
     if (!raw) { setStatus("कृपया Google Sheet ची लिंक किंवा ID टाका.", true); return; }
-
     const idMatch = raw.match(/\/d\/([a-zA-Z0-9-_]+)/);
     const sheetId = idMatch ? idMatch[1] : raw;
     if (sheetId.length < 15) { setStatus("❌ वैध Google Sheet लिंक किंवा ID टाका.", true); return; }
 
     setStatus("⏳ Google Sheet मधून डेटा आणत आहे...", false);
     try {
-      const url = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(sheetId)}/export?format=csv`;
-      const resp = await fetch(url);
-      if (!resp.ok) {
-        throw new Error("शीट उघडता आली नाही. Google Sheet ला 'Anyone with the link → Viewer' परवानगी द्या.");
-      }
+      const resp = await fetch(`https://docs.google.com/spreadsheets/d/${encodeURIComponent(sheetId)}/export?format=csv`);
+      if (!resp.ok) throw new Error("शीट उघडता आली नाही. 'Anyone with the link → Viewer' परवानगी द्या.");
       const text = await resp.text();
       if (text.trim().startsWith("<!DOCTYPE") || text.includes("accounts.google.com")) {
         throw new Error("ही शीट Private आहे! कृपया Share मध्ये 'Anyone with the link → Viewer' चालू करा.");
@@ -785,7 +699,6 @@
     }
   }
 
-  // ३. १-क्लिक नमुना Excel/CSV Template डाउनलोड करा
   function downloadSampleTemplate() {
     const headers = ["ग्राहकाचे नाव", "मोबाईल नंबर", "सध्याचे मुद्दल", "व्याज दर", "मासिक व्याज", "मुद्दल तारीख", "व्याज तारीख", "मुख्य जामीनदार", "नोकरीचा प्रकार", "डिपार्टमेंट", "Retirement Date", "वायदा 1", "टीप"];
     const sampleRow = ["रमेश पाटील", "9876543210", "50000", "2", "1000", "2026-11-01", "5", "सुरेश पवार (9822001122)", "govt", "BMC", "2032-05-31", "2026-12-05", "नमुना नोंद"];
@@ -795,10 +708,9 @@
     a.href = URL.createObjectURL(blob);
     a.download = "Vyaj_Hishob_Sample_Template.csv";
     a.click();
-    setStatus("✅ नमुना फाईल डाउनलोड झाली! ती Excel किंवा Google Sheets मध्ये भरून इथे अपलोड करा.", false);
+    setStatus("✅ नमुना फाईल डाउनलोड झाली!", false);
   }
 
-  // Backup स्क्रीनमध्ये (#reportsSection) स्मार्ट युनिव्हर्सल इम्पोर्ट बॉक्स जोडा
   function injectSmartImportPanel() {
     const sec = document.getElementById("reportsSection");
     if (!sec || document.getElementById("proSmartImportBox")) return;
@@ -808,7 +720,7 @@
     box.className = "si-box";
     box.innerHTML = `
       <div class="si-title">✨ स्मार्ट युनिव्हर्सल इम्पोर्ट (CSV / Excel / Google Sheet / PDF / JSON)</div>
-      <div class="si-sub">कोणतीही फाईल इथे निवडा — अ‍ॅप फाईलचा प्रकार आपोआप ओळखून सेव्ह करण्याआधी Preview दाखवेल.</div>
+      <div class="si-sub">Auto-Format Guard सह: कोणतीही फाईल अपलोड करताना डेटा आपोआप अ‍ॅपच्या अचूक फॉरमॅटमध्येच सेव्ह होईल.</div>
 
       <div class="si-file-row">
         <input type="file" id="siUniversalFile" accept=".csv,.xlsx,.xls,.pdf,.json,text/csv,application/pdf,application/json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" />
@@ -829,9 +741,7 @@
     sec.prepend(box);
 
     const fileInput = document.getElementById("siUniversalFile");
-    fileInput?.addEventListener("change", () => {
-      if (fileInput.files && fileInput.files[0]) handleUniversalFile(fileInput.files[0]);
-    });
+    fileInput?.addEventListener("change", () => { if (fileInput.files && fileInput.files[0]) handleUniversalFile(fileInput.files[0]); });
     document.getElementById("siLoadFileBtn")?.addEventListener("click", () => {
       if (fileInput?.files && fileInput.files[0]) handleUniversalFile(fileInput.files[0]);
       else setStatus("कृपया आधी वर फाईल निवडा.", true);
@@ -839,7 +749,6 @@
     document.getElementById("siSheetFetchBtn")?.addEventListener("click", handleGoogleSheetImport);
     document.getElementById("siSampleBtn")?.addEventListener("click", downloadSampleTemplate);
     document.getElementById("siUndoBtn")?.addEventListener("click", undoLastImport);
-
     updateUndoButtonState();
   }
 
