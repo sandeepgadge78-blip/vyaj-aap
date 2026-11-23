@@ -1,4 +1,4 @@
-// व्याज हिशोब वही - स्वच्छ ग्राहक कार्ड + १००% संपूर्ण ग्राहक प्रोफाईल (All Details + Raw Inspector) + ५ Advance फीचर्स (js/customer-details.js - V14.31)
+// व्याज हिशोब वही - स्वच्छ ग्राहक कार्ड + १००% संपूर्ण ग्राहक प्रोफाईल (VyajSchema सुसंगत + 1-Tap Action Strip + Raw Inspector) (js/customer-details.js - V14.32)
 (function () {
   const MARATHI_MONTHS = ["जानेवारी", "फेब्रुवारी", "मार्च", "एप्रिल", "मे", "जून", "जुलै", "ऑगस्ट", "सप्टेंबर", "ऑक्टोबर", "नोव्हेंबर", "डिसेंबर"];
   let cardEnhanceTimer = null;
@@ -11,9 +11,7 @@
 
   function fmtInr(val) {
     const n = Number(val || 0);
-    if (window.HishobBridge && typeof window.HishobBridge.fmtAmt === "function") {
-      return window.HishobBridge.fmtAmt(n);
-    }
+    if (window.HishobBridge && typeof window.HishobBridge.fmtAmt === "function") return window.HishobBridge.fmtAmt(n);
     return "₹" + n.toLocaleString("en-IN");
   }
 
@@ -82,10 +80,7 @@
     const st = document.createElement("style");
     st.id = "vyajCustomerDetailsCss";
     st.textContent = `
-      .cd-header-top {
-        display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;
-        padding-bottom: 10px; border-bottom: 1px solid var(--border); margin-bottom: 10px;
-      }
+      .cd-header-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid var(--border); margin-bottom: 10px; }
       .cd-cust-title { font-size: 1.08rem; font-weight: 900; color: var(--text); margin: 0; }
       .cd-trust-badge { font-size: 0.7rem; font-weight: 800; padding: 3px 9px; border-radius: 999px; white-space: nowrap; flex-shrink: 0; }
       .cd-trust-good { background: rgba(22, 101, 52, 0.25); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.45); }
@@ -95,20 +90,11 @@
       body.light-mode .cd-trust-good { background: #dcfce7; color: #15803d; }
       body.light-mode .cd-trust-mid { background: #fef3c7; color: #b45309; }
       body.light-mode .cd-trust-risk { background: #ffe4e6; color: #be123c; }
-
-      .cd-ret-alert {
-        padding: 8px 11px; border-radius: 11px; margin-bottom: 10px; font-size: 0.79rem; font-weight: 800;
-        background: rgba(190, 18, 60, 0.18); border: 1px solid rgba(240, 113, 120, 0.55); color: #f07178;
-      }
+      .cd-ret-alert { padding: 8px 11px; border-radius: 11px; margin-bottom: 10px; font-size: 0.79rem; font-weight: 800; background: rgba(190, 18, 60, 0.18); border: 1px solid rgba(240, 113, 120, 0.55); color: #f07178; }
       body.light-mode .cd-ret-alert { background: #ffe4e6; color: #be123c; }
-
-      .cd-action-strip {
-        display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 6px; padding-bottom: 6px; margin-bottom: 10px;
-        -webkit-overflow-scrolling: touch; scrollbar-width: none;
-      }
+      .cd-action-strip { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 6px; padding-bottom: 6px; margin-bottom: 10px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
       .cd-action-strip::-webkit-scrollbar { display: none; }
       .cd-action-strip button { flex: 0 0 auto; white-space: nowrap; border-radius: 999px; padding: 6px 11px; font-size: 0.75rem; font-weight: 700; }
-
       .cd-sec-card { background: var(--meta-bg); border: 1px solid var(--border); border-radius: 13px; padding: 10px 12px; margin-bottom: 10px; }
       .cd-sec-title { font-size: 0.78rem; font-weight: 800; color: var(--accent); margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px dashed var(--border); }
       .cd-kv-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 10px; }
@@ -116,19 +102,11 @@
       .cd-kv-item { display: flex; flex-direction: column; gap: 2px; }
       .cd-kv-lbl { font-size: 0.7rem; color: var(--muted); font-weight: 600; }
       .cd-kv-val { font-size: 0.85rem; font-weight: 700; color: var(--text); word-break: break-word; }
-      .cd-guar-row {
-        display: flex; align-items: center; justify-content: space-between; gap: 8px;
-        padding: 6px 8px; border-radius: 9px; background: rgba(255, 255, 255, 0.04);
-        border: 1px solid var(--border); margin-top: 6px;
-      }
+      .cd-guar-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 8px; border-radius: 9px; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border); margin-top: 6px; }
       body.light-mode .cd-guar-row { background: #fbfaf7; }
       .cd-summary-foot { display: flex; gap: 8px; margin-top: 10px; }
       .cd-summary-foot button { flex: 1; font-size: 0.8rem; }
-
-      .cd-raw-box {
-        margin-top: 10px; border: 1px dashed var(--border); border-radius: 12px; padding: 8px 10px;
-        background: var(--meta-bg);
-      }
+      .cd-raw-box { margin-top: 10px; border: 1px dashed var(--border); border-radius: 12px; padding: 8px 10px; background: var(--meta-bg); }
       .cd-raw-box summary { cursor: pointer; font-size: 0.78rem; font-weight: 800; color: var(--muted); }
       .cd-raw-table { width: 100%; border-collapse: collapse; font-size: 0.72rem; margin-top: 8px; }
       .cd-raw-table td { border-bottom: 1px solid var(--border); padding: 4px 6px; vertical-align: top; word-break: break-word; }
@@ -137,40 +115,16 @@
     document.head.appendChild(st);
   }
 
-  function findBorrowerForCard(card) {
-    if (window.VyajFieldSync && typeof window.VyajFieldSync.findBorrowerFromCard === "function") {
-      return window.VyajFieldSync.findBorrowerFromCard(card);
-    }
-    if (!window.HishobBridge) return null;
-    const borrowers = window.HishobBridge.getBorrowers() || [];
-    const attrId = card.getAttribute("data-pro-bid") || card.getAttribute("data-id") || card.getAttribute("data-bid");
-    if (attrId) return borrowers.find((x) => x.id === attrId) || null;
-    const nm = (card.querySelector("strong, h4, h3")?.textContent || "").replace(/^\s*#?\d+[\.\)\-\s]+/, "").trim();
-    return borrowers.find((x) => String(x.name || "").trim() === nm) || null;
-  }
-
-  function triggerCardAction(borrowerId, keywords) {
-    const listEl = document.getElementById("borrowersList");
-    if (!listEl) return false;
-    for (const card of Array.from(listEl.querySelectorAll(".borrower-item"))) {
-      const b = findBorrowerForCard(card);
-      if (!b || b.id !== borrowerId) continue;
-      for (const btn of Array.from(card.querySelectorAll("button"))) {
-        if (btn.hasAttribute("data-pro-details-btn") || btn.hasAttribute("data-pro-invoice-btn")) continue;
-        const t = (btn.textContent || "").trim().toLowerCase();
-        if (keywords.some((k) => t.includes(k))) {
-          btn.click();
-          return true;
-        }
-      }
-    }
+  // app.js च्या थेट data-action बटनांना ट्रिगर करा (१००% अचूक)
+  function triggerAppCardAction(borrowerId, dataActionName) {
+    const btn = document.querySelector(`#borrowersList button[data-action="${dataActionName}"][data-id="${borrowerId}"]`);
+    if (btn) { btn.click(); return true; }
     return false;
   }
 
   function ensureDetailsModal() {
     let modal = document.getElementById("proCustomerDetailsModal");
     if (modal) return modal;
-
     modal = document.createElement("div");
     modal.id = "proCustomerDetailsModal";
     modal.className = "modal-backdrop hidden";
@@ -189,18 +143,13 @@
   function kvRow(label, value, colorCss) {
     if (value === undefined || value === null || String(value).trim() === "") return "";
     const style = colorCss ? ` style="color:${colorCss};"` : "";
-    return `
-      <div class="cd-kv-item">
-        <span class="cd-kv-lbl">${esc(label)}</span>
-        <span class="cd-kv-val"${style}>${esc(value)}</span>
-      </div>
-    `;
+    return `<div class="cd-kv-item"><span class="cd-kv-lbl">${esc(label)}</span><span class="cd-kv-val"${style}>${esc(value)}</span></div>`;
   }
 
   function buildRawInspectorHtml(rawObj) {
     if (!rawObj || typeof rawObj !== "object") return "";
-    const stringify = window.VyajFieldSync?.stringifySafeValue || ((v) => String(v ?? ""));
-    const skipHuge = new Set(["paymentHistory", "principalHistory", "documents", "versions", "monthlyPayments", "monthlyRecords"]);
+    const stringify = window.VyajSchema?.stringifySafe || ((v) => String(v ?? ""));
+    const skipHuge = new Set(["paymentHistory", "principalHistory", "documents", "versions", "versionHistory", "paidMonths", "partialPayments", "extraPrincipals", "principalReductions"]);
 
     const rows = Object.keys(rawObj)
       .filter((k) => rawObj[k] !== undefined && rawObj[k] !== null && rawObj[k] !== "")
@@ -212,28 +161,17 @@
         return `<tr><td>${esc(k)}</td><td>${esc(stringify(rawObj[k]))}</td></tr>`;
       });
 
-    return `
-      <details class="cd-raw-box">
-        <summary>🔍 Firebase मधील मूळ नोंदी पहा (एकूण ${rows.length} रकाने)</summary>
-        <table class="cd-raw-table"><tbody>${rows.join("")}</tbody></table>
-      </details>
-    `;
+    return `<details class="cd-raw-box"><summary>🔍 Firebase मधील मूळ नोंदी पहा (एकूण ${rows.length} रकाने)</summary><table class="cd-raw-table"><tbody>${rows.join("")}</tbody></table></details>`;
   }
 
   function openProCustomerDetails(borrowerId) {
     if (!window.HishobBridge) return false;
+    const rawFound = (window.HishobBridge.getBorrowers() || []).find((x) => x.id === borrowerId);
+    if (!rawFound) return false;
 
-    const norm = window.VyajFieldSync
-      ? window.VyajFieldSync.getNormalizedBorrower(borrowerId)
-      : (() => {
-          const found = (window.HishobBridge.getBorrowers() || []).find((x) => x.id === borrowerId);
-          return found ? { std: found, extraFields: [], raw: found } : null;
-        })();
-
-    if (!norm || !norm.std) return false;
-
+    const norm = window.VyajSchema ? window.VyajSchema.normalizeBorrower(rawFound) : { std: rawFound, extraFields: [], raw: rawFound };
     const b = norm.std;
-    const rawDoc = norm.raw || b;
+    const rawDoc = norm.raw || rawFound;
     const extraFields = norm.extraFields || [];
     window.vyajLastDetailBorrowerId = b.id;
 
@@ -243,17 +181,14 @@
     const retWarn = getRetirementWarning(b.retirementDate);
 
     const hist = Array.isArray(b.paymentHistory) ? b.paymentHistory : [];
-    const totalPaidAllTime = Math.max(
-      hist.reduce((s, p) => s + Number(p.amount || 0), 0),
-      Number(calc.collectedInMonth || 0)
-    );
+    const totalPaidAllTime = Math.max(hist.reduce((s, p) => s + Number(p.amount || 0), 0), Number(calc.collectedInMonth || 0));
     const pendingAmt = Math.max(0, Number(calc.totalPayable || 0));
-    const cleanMob = String(b.mobile || "").replace(/\D/g, "");
+    const cleanMob = window.VyajSchema ? window.VyajSchema.normalizeMobile(b.mobile) : String(b.mobile || "").replace(/\D/g, "");
 
     const sec1Rows = [
       kvRow("पूर्ण नाव", b.name),
       kvRow("कर्ज खाते नाव / क्र.", b.loanLabel),
-      kvRow("मोबाईल नंबर", b.mobile),
+      kvRow("मोबाईल नंबर", cleanMob || b.mobile),
       kvRow("नोकरीचा प्रकार", jobLabel(b.jobType)),
       kvRow("कंपनी / डिपार्टमेंट", b.companyDept),
       kvRow("Retirement Date", fmtDate(b.retirementDate)),
@@ -267,11 +202,10 @@
       kvRow("मुद्दल दिल्याची तारीख", fmtDate(b.loanDate)),
       kvRow("हिशोब सुरू महिना", fmtMonthMr(b.startYm)),
       kvRow("मासिक व्याज दर", (b.rate !== undefined && b.rate !== "") ? `${b.rate}%` : ""),
-      kvRow("मासिक व्याज (₹)", fmtInr(calc.monthlyInterest || b.fixedInterest || 0), "var(--accent)"),
+      kvRow("मासिक व्याज (₹)", fmtInr(calc.monthlyInterest || b.fixedMonthlyInterest || 0), "var(--accent)"),
       kvRow("व्याज पद्धत", interestTypeLabel(b.interestType)),
       kvRow("दरमहा व्याज तारीख", b.interestDay ? `दरमहा ${b.interestDay} तारीख` : ""),
-      kvRow("दररोजचा विलंब दंड", Number(b.lateFee || 0) > 0 ? `${fmtInr(b.lateFee)} / दिवस` : ""),
-      kvRow("सुरुवातीची मागील बाकी", Number(b.customDue || 0) > 0 ? fmtInr(b.customDue) : ""),
+      kvRow("दररोजचा विलंब दंड", Number(b.lateFeePerDay || 0) > 0 ? `${fmtInr(b.lateFeePerDay)} / दिवस` : ""),
       kvRow(`चालू महिना (${fmtMonthMr(activeYm)}) जमा`, fmtInr(calc.collectedInMonth || 0), "var(--accent-2)"),
       kvRow("आजपर्यंत एकूण जमा व्याज", fmtInr(totalPaidAllTime), "var(--accent-2)"),
       kvRow("सध्याची एकूण बाकी", fmtInr(pendingAmt), pendingAmt > 0 ? "var(--danger)" : "var(--accent-2)")
@@ -289,27 +223,15 @@
       ? guarList.map((g) => {
           const nums = extractPhoneNumbers(g.text);
           const phoneBtns = nums.length
-            ? `<div class="row" style="gap:5px; flex-shrink:0;">
-                 <button type="button" class="success sm" data-cd-call="${esc(nums[0])}">📞 Call</button>
-                 <button type="button" class="primary sm" data-cd-gwa="${esc(nums[0])}">💬 WA</button>
-               </div>`
+            ? `<div class="row" style="gap:5px; flex-shrink:0;"><button type="button" class="success sm" data-cd-call="${esc(nums[0])}">📞 Call</button><button type="button" class="primary sm" data-cd-gwa="${esc(nums[0])}">💬 WA</button></div>`
             : "";
-          return `
-            <div class="cd-guar-row">
-              <div>
-                <div class="cd-kv-lbl">${esc(g.role)}</div>
-                <div class="cd-kv-val">${esc(g.text)}</div>
-              </div>
-              ${phoneBtns}
-            </div>
-          `;
+          return `<div class="cd-guar-row"><div><div class="cd-kv-lbl">${esc(g.role)}</div><div class="cd-kv-val">${esc(g.text)}</div></div>${phoneBtns}</div>`;
         }).join("")
       : `<div class="muted" style="font-size:0.8rem;">जामीनदार माहिती नोंदवलेली नाही.</div>`;
 
-    const promises = [b.promise1, b.promise2, b.promise3]
+    const promises = [b.promiseDate1, b.promiseDate2, b.promiseDate3]
       .map((p, idx) => p ? kvRow(`वायदा तारीख ${idx + 1}`, fmtDate(p), "var(--warn)") : "")
-      .filter(Boolean)
-      .join("");
+      .filter(Boolean).join("");
     const noteText = String(b.note || "").trim();
     const extraCatchRows = extraFields.map((f) => kvRow(f.label, f.value)).join("");
 
@@ -320,7 +242,7 @@
         <div class="cd-header-top">
           <div style="min-width:0;">
             <h3 class="cd-cust-title">📋 ${esc(b.name || "ग्राहक तपशील")}</h3>
-            <div class="muted" style="font-size:0.74rem; margin-top:2px;">संपूर्ण Firebase प्रोफाईल • ${esc(fmtMonthMr(activeYm))}</div>
+            <div class="muted" style="font-size:0.74rem; margin-top:2px;">संपूर्ण प्रोफाईल • ${esc(fmtMonthMr(activeYm))}</div>
           </div>
           <span class="cd-trust-badge ${trust.cls}">${esc(trust.text)}</span>
         </div>
@@ -336,34 +258,16 @@
           <button type="button" class="warn" id="cdActEdit">✏️ Edit</button>
         </div>
 
-        <div class="cd-sec-card">
-          <div class="cd-sec-title">👤 १. वैयक्तिक व नोकरी तपशील</div>
-          <div class="cd-kv-grid">${sec1Rows}</div>
-        </div>
-
-        <div class="cd-sec-card">
-          <div class="cd-sec-title">💰 २. संपूर्ण कर्ज व व्याज हिशोब</div>
-          <div class="cd-kv-grid">${sec2Rows}</div>
-        </div>
-
-        <div class="cd-sec-card">
-          <div class="cd-sec-title">🤝 ३. जामीनदार माहिती</div>
-          ${guarHtml}
-        </div>
-
+        <div class="cd-sec-card"><div class="cd-sec-title">👤 १. वैयक्तिक व नोकरी तपशील</div><div class="cd-kv-grid">${sec1Rows}</div></div>
+        <div class="cd-sec-card"><div class="cd-sec-title">💰 २. संपूर्ण कर्ज व व्याज हिशोब</div><div class="cd-kv-grid">${sec2Rows}</div></div>
+        <div class="cd-sec-card"><div class="cd-sec-title">🤝 ३. जामीनदार माहिती</div>${guarHtml}</div>
         <div class="cd-sec-card">
           <div class="cd-sec-title">📅 ४. वायदा तारखा व खात्याची टीप</div>
           ${promises ? `<div class="cd-kv-grid" style="margin-bottom:${noteText ? "8px" : "0"};">${promises}</div>` : ""}
           ${noteText ? `<div class="cd-kv-item"><span class="cd-kv-lbl">टीप (Note)</span><span class="cd-kv-val" style="white-space:pre-wrap;">${esc(noteText)}</span></div>` : ""}
           ${!promises && !noteText ? `<div class="muted" style="font-size:0.8rem;">कोणतीही वायदा तारीख किंवा टीप नाही.</div>` : ""}
         </div>
-
-        ${extraCatchRows ? `
-          <div class="cd-sec-card">
-            <div class="cd-sec-title">📦 ५. इतर Firebase तपशील (Auto-Catch)</div>
-            <div class="cd-kv-grid">${extraCatchRows}</div>
-          </div>
-        ` : ""}
+        ${extraCatchRows ? `<div class="cd-sec-card"><div class="cd-sec-title">📦 ५. इतर Firebase तपशील</div><div class="cd-kv-grid">${extraCatchRows}</div></div>` : ""}
 
         <div class="cd-summary-foot">
           <button type="button" class="primary" id="cdPrintSummaryBtn">🖨️ PDF / प्रिंट Summary</button>
@@ -385,22 +289,12 @@
         else { modal.classList.add("hidden"); fn(); }
       };
 
-      document.getElementById("cdActInvoice")?.addEventListener("click", () => {
-        stepFromDetails(() => { if (typeof window.openInvoiceReceipt === "function") window.openInvoiceReceipt(b.id); });
-      });
-      document.getElementById("cdActPassbook")?.addEventListener("click", () => {
-        stepFromDetails(() => triggerCardAction(b.id, ["passbook", "पासबुक", "लेजर"]));
-      });
-      document.getElementById("cdActDocs")?.addEventListener("click", () => {
-        stepFromDetails(() => triggerCardAction(b.id, ["doc", "डॉक्युमेंट", "कागदपत्र", "📎"]));
-      });
-      document.getElementById("cdActEdit")?.addEventListener("click", () => {
-        stepFromDetails(() => triggerCardAction(b.id, ["edit", "एडिट", "सर्व एडिट", "बदला", "✏️"]));
-      });
+      document.getElementById("cdActInvoice")?.addEventListener("click", () => stepFromDetails(() => { if (typeof window.openInvoiceReceipt === "function") window.openInvoiceReceipt(b.id); }));
+      document.getElementById("cdActPassbook")?.addEventListener("click", () => stepFromDetails(() => triggerAppCardAction(b.id, "passbook")));
+      document.getElementById("cdActDocs")?.addEventListener("click", () => stepFromDetails(() => triggerAppCardAction(b.id, "docs")));
+      document.getElementById("cdActEdit")?.addEventListener("click", () => stepFromDetails(() => triggerAppCardAction(b.id, "full-edit")));
 
-      body.querySelectorAll("[data-cd-call]").forEach((btn) => {
-        btn.addEventListener("click", () => { window.location.href = `tel:${btn.getAttribute("data-cd-call")}`; });
-      });
+      body.querySelectorAll("[data-cd-call]").forEach((btn) => btn.addEventListener("click", () => { window.location.href = `tel:${btn.getAttribute("data-cd-call")}`; }));
       body.querySelectorAll("[data-cd-gwa]").forEach((btn) => {
         btn.addEventListener("click", () => {
           const num = btn.getAttribute("data-cd-gwa");
@@ -413,22 +307,7 @@
         const printArea = document.getElementById("printArea");
         if (!printArea) return;
         const biz = document.getElementById("profBizName")?.value?.trim() || localStorage.getItem("vyaj_biz_name") || "व्याज हिशोब वही";
-        printArea.innerHTML = `
-          <div style="font-family:system-ui,sans-serif; max-width:680px; margin:0 auto;">
-            <h2 style="margin:0 0 4px;">${esc(biz)} — ग्राहक संपूर्ण तपशील</h2>
-            <div style="font-size:12px; color:#555; margin-bottom:12px;">महिना: ${esc(fmtMonthMr(activeYm))} • स्थिती: ${esc(trust.text)}</div>
-            <table>
-              <tr><th>ग्राहकाचे नाव</th><td>${esc(b.name || "-")}</td><th>मोबाईल</th><td>${esc(b.mobile || "-")}</td></tr>
-              <tr><th>नोकरी / विभाग</th><td>${esc(jobLabel(b.jobType) || "-")} ${esc(b.companyDept || "")}</td><th>रिटायरमेंट तारीख</th><td>${esc(fmtDate(b.retirementDate) || "-")}</td></tr>
-              <tr><th>मूळ मुद्दल</th><td>₹${Number(b.originalPrincipal || b.principal || 0).toLocaleString("en-IN")}</td><th>सध्याचे मुद्दल</th><td>₹${Number(b.principal || 0).toLocaleString("en-IN")}</td></tr>
-              <tr><th>व्याज दर / पद्धत</th><td>${esc(b.rate || "-")}% (${esc(interestTypeLabel(b.interestType))})</td><th>मासिक व्याज</th><td>₹${Number(calc.monthlyInterest || 0).toLocaleString("en-IN")}</td></tr>
-              <tr><th>एकूण जमा व्याज</th><td>₹${totalPaidAllTime.toLocaleString("en-IN")}</td><th>सध्याची एकूण बाकी</th><td><strong>₹${pendingAmt.toLocaleString("en-IN")}</strong></td></tr>
-              <tr><th>जामीनदार</th><td colspan="3">${esc([b.guarantor, b.extraGuarantors].filter(Boolean).join(", ") || "-")}</td></tr>
-              <tr><th>वायदा तारखा</th><td colspan="3">${esc([fmtDate(b.promise1), fmtDate(b.promise2), fmtDate(b.promise3)].filter(Boolean).join(" | ") || "-")}</td></tr>
-              <tr><th>टीप / पत्ता</th><td colspan="3">${esc([b.address, noteText].filter(Boolean).join(" | ") || "-")}</td></tr>
-            </table>
-          </div>
-        `;
+        printArea.innerHTML = `<div style="font-family:system-ui,sans-serif; max-width:680px; margin:0 auto;"><h2 style="margin:0 0 4px;">${esc(biz)} — ग्राहक संपूर्ण तपशील</h2><div style="font-size:12px; color:#555; margin-bottom:12px;">महिना: ${esc(fmtMonthMr(activeYm))} • स्थिती: ${esc(trust.text)}</div><table><tr><th>ग्राहकाचे नाव</th><td>${esc(b.name || "-")}</td><th>मोबाईल</th><td>${esc(cleanMob || "-")}</td></tr><tr><th>नोकरी / विभाग</th><td>${esc(jobLabel(b.jobType) || "-")} ${esc(b.companyDept || "")}</td><th>रिटायरमेंट तारीख</th><td>${esc(fmtDate(b.retirementDate) || "-")}</td></tr><tr><th>मूळ मुद्दल</th><td>₹${Number(b.originalPrincipal || b.principal || 0).toLocaleString("en-IN")}</td><th>सध्याचे मुद्दल</th><td>₹${Number(b.principal || 0).toLocaleString("en-IN")}</td></tr><tr><th>व्याज दर / पद्धत</th><td>${esc(b.rate || "-")}% (${esc(interestTypeLabel(b.interestType))})</td><th>मासिक व्याज</th><td>₹${Number(calc.monthlyInterest || 0).toLocaleString("en-IN")}</td></tr><tr><th>एकूण जमा व्याज</th><td>₹${totalPaidAllTime.toLocaleString("en-IN")}</td><th>सध्याची एकूण बाकी</th><td><strong>₹${pendingAmt.toLocaleString("en-IN")}</strong></td></tr><tr><th>जामीनदार</th><td colspan="3">${esc([b.guarantor, b.extraGuarantors].filter(Boolean).join(", ") || "-")}</td></tr><tr><th>वायदा तारखा</th><td colspan="3">${esc([fmtDate(b.promiseDate1), fmtDate(b.promiseDate2), fmtDate(b.promiseDate3)].filter(Boolean).join(" | ") || "-")}</td></tr><tr><th>टीप / पत्ता</th><td colspan="3">${esc([b.address, noteText].filter(Boolean).join(" | ") || "-")}</td></tr></table></div>`;
         window.print();
       });
 
@@ -437,7 +316,7 @@
         const lines = [
           `*${biz}* — ग्राहक प्रोफाईल Summary`,
           `👤 नाव: *${b.name}*`,
-          b.mobile ? `📞 मोबाईल: ${b.mobile}` : "",
+          cleanMob ? `📞 मोबाईल: ${cleanMob}` : "",
           (b.jobType || b.companyDept) ? `💼 नोकरी: ${[jobLabel(b.jobType), b.companyDept].filter(Boolean).join(" - ")}` : "",
           b.retirementDate ? `📅 रिटायरमेंट: ${fmtDate(b.retirementDate)}` : "",
           `-------------------------`,
@@ -446,33 +325,31 @@
           `💚 एकूण जमा व्याज: ₹${totalPaidAllTime.toLocaleString("en-IN")}`,
           `🔴 सध्याची एकूण बाकी: *₹${pendingAmt.toLocaleString("en-IN")}*`,
           b.guarantor ? `🤝 जामीनदार: ${[b.guarantor, b.extraGuarantors].filter(Boolean).join(", ")}` : "",
-          (b.promise1 || b.promise2 || b.promise3) ? `⏰ वायदा: ${[fmtDate(b.promise1), fmtDate(b.promise2), fmtDate(b.promise3)].filter(Boolean).join(", ")}` : "",
+          (b.promiseDate1 || b.promiseDate2 || b.promiseDate3) ? `⏰ वायदा: ${[fmtDate(b.promiseDate1), fmtDate(b.promiseDate2), fmtDate(b.promiseDate3)].filter(Boolean).join(", ")}` : "",
           noteText ? `📝 टीप: ${noteText}` : ""
         ].filter(Boolean).join("\n");
         window.open(`https://wa.me/?text=${encodeURIComponent(lines)}`, "_blank", "noopener,noreferrer");
       });
     }
-
     modal.classList.remove("hidden");
     return true;
   }
 
-  // स्वच्छ ग्राहक कार्डवर फक्त '📋 All Details' बटण जोडा (तळाचे अतिरिक्त टॅग्स पूर्ण काढले आहेत)
+  // प्रत्येक उघडलेल्या ग्राहक कार्डच्या शेवटच्या अ‍ॅक्शन बारमध्ये '📋 All Details' बटण जोडा
   function enhanceCardsWithDetails() {
     const listEl = document.getElementById("borrowersList");
     if (!listEl) return;
 
     listEl.querySelectorAll(".borrower-item").forEach((card) => {
-      // जुने कोणतेही तळाचे अतिरिक्त टॅग्स असल्यास काढून टाका
       card.querySelector("[data-pro-smart-tags]")?.remove();
 
-      const matched = findBorrowerForCard(card);
+      const matched = window.VyajSchema ? window.VyajSchema.findBorrowerFromCard(card) : null;
       if (!matched) return;
       card.setAttribute("data-pro-bid", matched.id);
 
       if (!card.querySelector("[data-pro-details-btn]")) {
-        const strip = card.querySelector(".pro-action-strip") || card.querySelector(".row:last-of-type");
-        if (strip) {
+        const lastActionRow = card.querySelector(".sc-wrap .sc-sec:last-child .sc-left") || card.querySelector(".pro-action-strip") || card.querySelector(".row:last-of-type");
+        if (lastActionRow) {
           const btn = document.createElement("button");
           btn.type = "button";
           btn.className = "primary sm";
@@ -482,37 +359,16 @@
             ev.stopPropagation();
             openProCustomerDetails(matched.id);
           });
-          strip.appendChild(btn);
+          lastActionRow.appendChild(btn);
         }
       }
     });
-  }
-
-  function interceptLegacyAllDetailsClicks() {
-    document.addEventListener("click", (ev) => {
-      const btn = ev.target && ev.target.closest ? ev.target.closest("button") : null;
-      if (!btn || btn.hasAttribute("data-pro-details-btn")) return;
-      const card = btn.closest(".borrower-item");
-      if (!card) return;
-      const txt = (btn.textContent || "").trim().toLowerCase();
-      if (txt.includes("all detail") || txt.includes("संपूर्ण माहिती") || txt === "details") {
-        const b = findBorrowerForCard(card);
-        if (b) {
-          ev.preventDefault();
-          ev.stopPropagation();
-          ev.stopImmediatePropagation();
-          openProCustomerDetails(b.id);
-        }
-      }
-    }, true);
   }
 
   window.openProCustomerDetails = openProCustomerDetails;
 
   function initCustomerDetails() {
     injectCustomerDetailsCss();
-    interceptLegacyAllDetailsClicks();
-
     const listEl = document.getElementById("borrowersList");
     if (listEl) {
       const obs = new MutationObserver(() => {
@@ -525,9 +381,6 @@
     setTimeout(enhanceCardsWithDetails, 2600);
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initCustomerDetails);
-  } else {
-    initCustomerDetails();
-  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initCustomerDetails);
+  else initCustomerDetails();
 })();
