@@ -1,4 +1,4 @@
-// व्याज हिशोब वही - १००% संपूर्ण ग्राहक प्रोफाईल (All Details + Firebase Field Sync + Raw Inspector) + स्मार्ट कार्ड टॅग्स + ५ Advance फीचर्स (js/customer-details.js - V14.30)
+// व्याज हिशोब वही - स्वच्छ ग्राहक कार्ड + १००% संपूर्ण ग्राहक प्रोफाईल (All Details + Raw Inspector) + ५ Advance फीचर्स (js/customer-details.js - V14.31)
 (function () {
   const MARATHI_MONTHS = ["जानेवारी", "फेब्रुवारी", "मार्च", "एप्रिल", "मे", "जून", "जुलै", "ऑगस्ट", "सप्टेंबर", "ऑक्टोबर", "नोव्हेंबर", "डिसेंबर"];
   let cardEnhanceTimer = null;
@@ -82,15 +82,6 @@
     const st = document.createElement("style");
     st.id = "vyajCustomerDetailsCss";
     st.textContent = `
-      .cd-smart-tags { display: flex; flex-wrap: wrap; gap: 5px; margin: 6px 0 4px; }
-      .cd-tag {
-        font-size: 0.69rem; font-weight: 700; padding: 2px 8px; border-radius: 999px;
-        background: rgba(255, 255, 255, 0.06); border: 1px solid var(--border);
-        color: var(--muted); white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis;
-      }
-      body.light-mode .cd-tag { background: #eae6dd; color: #334155; }
-      .cd-tag.cd-tag-warn { background: rgba(190, 18, 60, 0.16); border-color: rgba(240, 113, 120, 0.45); color: var(--danger); }
-
       .cd-header-top {
         display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;
         padding-bottom: 10px; border-bottom: 1px solid var(--border); margin-bottom: 10px;
@@ -154,7 +145,7 @@
     const borrowers = window.HishobBridge.getBorrowers() || [];
     const attrId = card.getAttribute("data-pro-bid") || card.getAttribute("data-id") || card.getAttribute("data-bid");
     if (attrId) return borrowers.find((x) => x.id === attrId) || null;
-    const nm = (card.querySelector("strong, h4, h3")?.textContent || "").trim();
+    const nm = (card.querySelector("strong, h4, h3")?.textContent || "").replace(/^\s*#?\d+[\.\)\-\s]+/, "").trim();
     return borrowers.find((x) => String(x.name || "").trim() === nm) || null;
   }
 
@@ -206,7 +197,6 @@
     `;
   }
 
-  // Firebase मधील मूळ (Raw) रकान्यांचा स्वच्छ तक्ता तयार करा
   function buildRawInspectorHtml(rawObj) {
     if (!rawObj || typeof rawObj !== "object") return "";
     const stringify = window.VyajFieldSync?.stringifySafeValue || ((v) => String(v ?? ""));
@@ -230,7 +220,6 @@
     `;
   }
 
-  // संपूर्ण ग्राहक प्रोफाईल (All Details) उघडा — थेट Firebase Field Sync मधून १००% डेटा
   function openProCustomerDetails(borrowerId) {
     if (!window.HishobBridge) return false;
 
@@ -261,7 +250,6 @@
     const pendingAmt = Math.max(0, Number(calc.totalPayable || 0));
     const cleanMob = String(b.mobile || "").replace(/\D/g, "");
 
-    // विभाग १: वैयक्तिक व नोकरी तपशील
     const sec1Rows = [
       kvRow("पूर्ण नाव", b.name),
       kvRow("कर्ज खाते नाव / क्र.", b.loanLabel),
@@ -273,7 +261,6 @@
       kvRow("खाते स्थिती", b.accountStatus === "closed" ? "बंद (Closed)" : "सक्रिय (Active)")
     ].filter(Boolean).join("");
 
-    // विभाग २: संपूर्ण कर्ज व व्याज हिशोब
     const sec2Rows = [
       kvRow("मूळ मुद्दल (Original)", fmtInr(b.originalPrincipal || b.principal || 0)),
       kvRow("सध्याचे मुद्दल (Current)", fmtInr(b.principal || 0), "var(--gold)"),
@@ -290,7 +277,6 @@
       kvRow("सध्याची एकूण बाकी", fmtInr(pendingAmt), pendingAmt > 0 ? "var(--danger)" : "var(--accent-2)")
     ].filter(Boolean).join("");
 
-    // विभाग ३: जामीनदार माहिती + थेट Call / WA
     const guarList = [];
     if (b.guarantor) guarList.push({ role: "मुख्य जामीनदार", text: String(b.guarantor).trim() });
     if (b.extraGuarantors) {
@@ -320,14 +306,11 @@
         }).join("")
       : `<div class="muted" style="font-size:0.8rem;">जामीनदार माहिती नोंदवलेली नाही.</div>`;
 
-    // विभाग ४: वायदा तारखा व टीप
     const promises = [b.promise1, b.promise2, b.promise3]
       .map((p, idx) => p ? kvRow(`वायदा तारीख ${idx + 1}`, fmtDate(p), "var(--warn)") : "")
       .filter(Boolean)
       .join("");
     const noteText = String(b.note || "").trim();
-
-    // विभाग ५: इतर सेव्ह माहिती (Auto-Catch — Arrays व Nested Objects सहित)
     const extraCatchRows = extraFields.map((f) => kvRow(f.label, f.value)).join("");
 
     const modal = ensureDetailsModal();
@@ -344,7 +327,6 @@
 
         ${retWarn ? `<div class="cd-ret-alert">${esc(retWarn.text)}</div>` : ""}
 
-        <!-- 1-Tap Action Strip -->
         <div class="cd-action-strip">
           ${cleanMob.length >= 10 ? `<button type="button" class="success" id="cdActCall">📞 Call</button>` : ""}
           ${cleanMob.length >= 10 ? `<button type="button" class="primary" id="cdActWa">💬 WhatsApp</button>` : ""}
@@ -413,7 +395,7 @@
         stepFromDetails(() => triggerCardAction(b.id, ["doc", "डॉक्युमेंट", "कागदपत्र", "📎"]));
       });
       document.getElementById("cdActEdit")?.addEventListener("click", () => {
-        stepFromDetails(() => triggerCardAction(b.id, ["edit", "एडिट", "बदला", "✏️"]));
+        stepFromDetails(() => triggerCardAction(b.id, ["edit", "एडिट", "सर्व एडिट", "बदला", "✏️"]));
       });
 
       body.querySelectorAll("[data-cd-call]").forEach((btn) => {
@@ -475,59 +457,30 @@
     return true;
   }
 
-  // प्रत्येक ग्राहक कार्डवर Firebase Sync मधून छोटे स्मार्ट टॅग्स आणि '📋 All Details' बटण लावा
-  function enhanceCardsWithDetails(forceRefreshTags) {
+  // स्वच्छ ग्राहक कार्डवर फक्त '📋 All Details' बटण जोडा (तळाचे अतिरिक्त टॅग्स पूर्ण काढले आहेत)
+  function enhanceCardsWithDetails() {
     const listEl = document.getElementById("borrowersList");
     if (!listEl) return;
 
     listEl.querySelectorAll(".borrower-item").forEach((card) => {
+      // जुने कोणतेही तळाचे अतिरिक्त टॅग्स असल्यास काढून टाका
+      card.querySelector("[data-pro-smart-tags]")?.remove();
+
       const matched = findBorrowerForCard(card);
       if (!matched) return;
+      card.setAttribute("data-pro-bid", matched.id);
 
-      const norm = window.VyajFieldSync ? window.VyajFieldSync.getNormalizedBorrower(matched.id) : { std: matched };
-      const b = norm?.std || matched;
-      card.setAttribute("data-pro-bid", b.id);
-
-      // १. स्मार्ट टॅग्स तयार / अपडेट करा
-      let tagWrap = card.querySelector("[data-pro-smart-tags]");
-      if (!tagWrap || forceRefreshTags) {
-        const tags = [];
-        if (b.mobile) tags.push(`<span class="cd-tag">📱 ${esc(b.mobile)}</span>`);
-        if (b.jobType || b.companyDept) {
-          const jt = b.jobType === "govt" ? "Govt" : b.jobType === "private" ? "Pvt" : (b.jobType || "");
-          tags.push(`<span class="cd-tag">💼 ${esc([jt, b.companyDept].filter(Boolean).join(" • "))}</span>`);
-        }
-        if (b.guarantor) tags.push(`<span class="cd-tag">🤝 ${esc(b.guarantor)}</span>`);
-        const nextPromise = b.promise1 || b.promise2 || b.promise3;
-        if (nextPromise) tags.push(`<span class="cd-tag">📅 वायदा: ${esc(fmtDate(nextPromise))}</span>`);
-        const rw = getRetirementWarning(b.retirementDate);
-        if (rw) tags.push(`<span class="cd-tag cd-tag-warn">⚠️ रिटायरमेंट: ${esc(fmtDate(b.retirementDate))}</span>`);
-
-        if (tags.length) {
-          if (!tagWrap) {
-            tagWrap = document.createElement("div");
-            tagWrap.className = "cd-smart-tags";
-            tagWrap.setAttribute("data-pro-smart-tags", "1");
-            const firstMeta = card.querySelector(".meta-box");
-            if (firstMeta) firstMeta.insertAdjacentElement("beforebegin", tagWrap);
-            else card.appendChild(tagWrap);
-          }
-          tagWrap.innerHTML = tags.join("");
-        }
-      }
-
-      // २. '📋 All Details' बटण जोडा
       if (!card.querySelector("[data-pro-details-btn]")) {
         const strip = card.querySelector(".pro-action-strip") || card.querySelector(".row:last-of-type");
         if (strip) {
           const btn = document.createElement("button");
           btn.type = "button";
           btn.className = "primary sm";
-          btn.setAttribute("data-pro-details-btn", b.id);
+          btn.setAttribute("data-pro-details-btn", matched.id);
           btn.textContent = "📋 All Details";
           btn.addEventListener("click", (ev) => {
             ev.stopPropagation();
-            openProCustomerDetails(b.id);
+            openProCustomerDetails(matched.id);
           });
           strip.appendChild(btn);
         }
@@ -542,7 +495,7 @@
       const card = btn.closest(".borrower-item");
       if (!card) return;
       const txt = (btn.textContent || "").trim().toLowerCase();
-      if (txt.includes("all detail") || txt.includes("संपूर्ण माहिती") || txt === "details" || txt === "तपशील") {
+      if (txt.includes("all detail") || txt.includes("संपूर्ण माहिती") || txt === "details") {
         const b = findBorrowerForCard(card);
         if (b) {
           ev.preventDefault();
@@ -560,21 +513,16 @@
     injectCustomerDetailsCss();
     interceptLegacyAllDetailsClicks();
 
-    // Firebase Raw Cache लोड होताच सर्व कार्ड्सचे स्मार्ट टॅग्स तात्काळ अपडेट करा
-    window.addEventListener("vyaj:rawCacheReady", () => {
-      enhanceCardsWithDetails(true);
-    });
-
     const listEl = document.getElementById("borrowersList");
     if (listEl) {
       const obs = new MutationObserver(() => {
         clearTimeout(cardEnhanceTimer);
-        cardEnhanceTimer = setTimeout(() => enhanceCardsWithDetails(false), 80);
+        cardEnhanceTimer = setTimeout(enhanceCardsWithDetails, 80);
       });
       obs.observe(listEl, { childList: true });
     }
-    setTimeout(() => enhanceCardsWithDetails(true), 1200);
-    setTimeout(() => enhanceCardsWithDetails(true), 2600);
+    setTimeout(enhanceCardsWithDetails, 1200);
+    setTimeout(enhanceCardsWithDetails, 2600);
   }
 
   if (document.readyState === "loading") {
