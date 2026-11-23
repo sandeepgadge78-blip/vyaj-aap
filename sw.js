@@ -1,9 +1,10 @@
-// व्याज हिशोब वही - सुरक्षित आणि ऑटो-अपडेट Service Worker (v14.33)
-const CACHE_NAME = "vyaj-hishob-cache-v14-33";
+// व्याज हिशोब वही - सुरक्षित आणि ऑटो-अपडेट Service Worker (v14.34)
+const CACHE_NAME = "vyaj-hishob-cache-v14-34";
 const CORE_ASSETS = [
   "./",
   "./index.html",
   "./css/pro-theme.css",
+  "./css/pro-card.css",
   "./app.js",
   "./dashboard.js",
   "./backup-safety.js",
@@ -24,6 +25,7 @@ const CORE_ASSETS = [
   "./js/pro/smart-import.js",
   "./js/pro/live-backup.js",
   "./js/pro/smart-radar.js",
+  "./js/pro/card-pro.js",
   "./manifest.json",
   "./icon.png"
 ];
