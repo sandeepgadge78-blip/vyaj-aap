@@ -26,7 +26,52 @@
     const ampm = hr24 >= 12 ? "PM" : "AM";
     const hr12 = hr24 % 12 || 12;
     const min = String(d.getMinutes()).padStart(2, "0");
-    return `${d.getDate()}${months[d.getMonth()]}, ${hr12}:${min} ${ampm}`; }  function getLastBackupMeta() { try { return JSON.parse(localStorage.getItem(LAST_META_KEY) \vert{}\vert{} "null"); } catch (_) { return null; } }  function getSnapshots() { try { const arr = JSON.parse(localStorage.getItem(SNAPSHOTS_KEY) \vert{}\vert{} "[]"); return Array.isArray(arr) ? arr : []; } catch (_) { return []; } }  function getCurrentUdhaariList() { if (typeof window.getProUdhaariList === "function") { const list = window.getProUdhaariList(); return Array.isArray(list) ? list : []; } return []; }  // Firestore 1MB आणि localStorage 5MB मर्यादा कधीही ओलांडू नये म्हणून जड तांत्रिक रकाने वगळा function buildQuotaSafeBorrowers(borrowers) { return borrowers.map((b) => { const copy = { ...b }; delete copy.documents; delete copy.versionHistory; delete copy.versions; return copy; }); }  function computeDataFingerprint() { if (!window.HishobBridge \vert{}\vert{} typeof window.HishobBridge.getBorrowers !== "function") return ""; const list = window.HishobBridge.getBorrowers() \vert{}\vert{} []; const udList = getCurrentUdhaariList(); if (!list.length && !udList.length) return ""; let pSum = 0, payCnt = 0, maxUpd = ""; list.forEach((b) => { pSum += Number(b.principal \vert{}\vert{} 0); payCnt += Array.isArray(b.paymentHistory) ? b.paymentHistory.length : 0; const u = String(b.updatedAt \vert{}\vert{} ""); if (u > maxUpd) maxUpd = u; }); return `${list.length}|${pSum}\vert{}${payCnt}|${maxUpd}\vert{}ud:${udList.length}`;
+    return `${d.getDate()} ${months[d.getMonth()]}, ${hr12}:${min} ${ampm}`;
+  }
+
+  function getLastBackupMeta() {
+    try { return JSON.parse(localStorage.getItem(LAST_META_KEY) || "null"); } catch (_) { return null; }
+  }
+
+  function getSnapshots() {
+    try {
+      const arr = JSON.parse(localStorage.getItem(SNAPSHOTS_KEY) || "[]");
+      return Array.isArray(arr) ? arr : [];
+    } catch (_) { return []; }
+  }
+
+  function getCurrentUdhaariList() {
+    if (typeof window.getProUdhaariList === "function") {
+      const list = window.getProUdhaariList();
+      return Array.isArray(list) ? list : [];
+    }
+    return [];
+  }
+
+  // Firestore 1MB आणि localStorage 5MB मर्यादा कधीही ओलांडू नये म्हणून जड तांत्रिक रकाने वगळा
+  function buildQuotaSafeBorrowers(borrowers) {
+    return borrowers.map((b) => {
+      const copy = { ...b };
+      delete copy.documents;
+      delete copy.versionHistory;
+      delete copy.versions;
+      return copy;
+    });
+  }
+
+  function computeDataFingerprint() {
+    if (!window.HishobBridge || typeof window.HishobBridge.getBorrowers !== "function") return "";
+    const list = window.HishobBridge.getBorrowers() || [];
+    const udList = getCurrentUdhaariList();
+    if (!list.length && !udList.length) return "";
+    let pSum = 0, payCnt = 0, maxUpd = "";
+    list.forEach((b) => {
+      pSum += Number(b.principal || 0);
+      payCnt += Array.isArray(b.paymentHistory) ? b.paymentHistory.length : 0;
+      const u = String(b.updatedAt || "");
+      if (u > maxUpd) maxUpd = u;
+    });
+    return `${list.length}|${pSum}|${payCnt}|${maxUpd}|ud:${udList.length}`;
   }
 
   function injectLiveBackupCss() {
@@ -174,4 +219,256 @@
       <div class="lb-left">
         <span id="lbHealthDot" class="lb-dot warn" title="Backup स्थिती"></span>
         <div class="lb-txt-col">
-          <div class="lb-main-txt" id="
+          <div class="lb-main-txt" id="lbMainText">☁️ शेवटचा बॅकअप: तपासत आहे...</div>
+          <div class="lb-sub-txt" id="lbSubText">Auto-Backup स्थिती</div>
+        </div>
+      </div>
+      <div class="lb-actions">
+        <button type="button" id="lbManualBackupBtn" class="success">⚡ आता बॅकअप घ्या</button>
+        <button type="button" id="lbSnapshotsBtn" class="primary" title="मागील ३ बॅकअप Snapshots">🕒 3</button>
+      </div>
+    `;
+    heroCard.insertAdjacentElement("afterend", bar);
+
+    document.getElementById("lbManualBackupBtn")?.addEventListener("click", () => performLiveBackup("manual"));
+    document.getElementById("lbSnapshotsBtn")?.addEventListener("click", openSnapshotsModal);
+  }
+
+  function updateBackupBarUi(tempNotice) {
+    const dot = document.getElementById("lbHealthDot");
+    const mainTxt = document.getElementById("lbMainText");
+    const subTxt = document.getElementById("lbSubText");
+    if (!dot || !mainTxt || !subTxt) return;
+
+    const meta = getLastBackupMeta();
+    const mode = getScheduledMode();
+    const pendingOffline = localStorage.getItem(OFFLINE_QUEUE_KEY) === "1";
+
+    let dotClass = "err";
+    if (meta && meta.ts) {
+      const ageHrs = (Date.now() - Number(meta.ts)) / (1000 * 60 * 60);
+      if (ageHrs <= 24) dotClass = "ok";
+      else if (ageHrs <= 72) dotClass = "warn";
+    }
+    dot.className = `lb-dot ${dotClass}`;
+
+    mainTxt.textContent = tempNotice || `☁️ बॅकअप: ${meta ? formatBackupTime(meta.ts) : "अजून घेतलेला नाही"}`;
+
+    const modeLabels = {
+      realtime: "⚡ रिअल-टाइम ऑटो-बॅकअप चालू",
+      daily: "📅 दररोज ऑटो-बॅकअप",
+      weekly: "📅 साप्ताहिक ऑटो-बॅकअप",
+      monthly: "📅 मासिक ऑटो-बॅकअप",
+      off: "Manual मोड"
+    };
+    const udTag = meta?.udhaariCount ? ` + ${meta.udhaariCount} उधारी` : "";
+    const queueTag = pendingOffline ? " • ⏳ Offline रांगेत" : (meta?.count ? ` • ${meta.count} खाती${udTag}` : "");
+    subTxt.textContent = `${modeLabels[mode] || "Manual मोड"}${queueTag}`;
+  }
+
+  function ensureSnapshotsModal() {
+    let modal = document.getElementById("proSnapshotsModal");
+    if (modal) return modal;
+
+    modal = document.createElement("div");
+    modal.id = "proSnapshotsModal";
+    modal.className = "modal-backdrop hidden";
+    modal.innerHTML = `
+      <div class="modal-card" style="max-width:540px;">
+        <div class="row" style="justify-content:space-between; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--border);">
+          <h3 style="margin:0; color:var(--accent);">🕒 शेवटचे ३ सेफ्टी बॅकअप (व्याज + उधारी)</h3>
+          <span class="badge paid">Auto-Vault</span>
+        </div>
+        <p class="muted" style="margin-top:0; font-size:0.78rem;">अ‍ॅप लॉक झाले तरी हे ३ सेफ्टी बॅकअप सुरक्षित राहतात. यातून कोणताही एक परत आणा किंवा .JSON डाउनलोड करा.</p>
+        <div id="proSnapshotsList"></div>
+        <div id="proSnapStatus" class="muted" style="text-align:center; margin-top:6px;"></div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) {
+        modal.classList.add("hidden");
+        if (window.VyajNavStack) window.VyajNavStack.popIfTop("proSnapshotsModal");
+      }
+    });
+    return modal;
+  }
+
+  function openSnapshotsModal() {
+    const modal = ensureSnapshotsModal();
+    const listEl = document.getElementById("proSnapshotsList");
+    const statusEl = document.getElementById("proSnapStatus");
+    if (statusEl) statusEl.textContent = "";
+
+    const snaps = getSnapshots();
+    if (!snaps.length) {
+      listEl.innerHTML = `<div class="muted" style="text-align:center; padding:16px;">अजून कोणताही Snapshot सेव्ह नाही. आधी '⚡ आता बॅकअप घ्या' दाबा.</div>`;
+    } else {
+      listEl.innerHTML = snaps.map((s, idx) => `
+        <div class="lb-snap-row">
+          <div>
+            <strong style="font-size:0.86rem;">#${idx + 1} • ${esc(formatBackupTime(s.ts))}</strong>
+            <div class="muted" style="font-size:0.74rem;">खाती: ${esc(s.count)}${s.udhaariCount ? ` • उधारी: ${esc(s.udhaariCount)}` : ""} • ${esc(s.reason || "Backup")}</div>
+          </div>
+          <div class="row" style="gap:5px;">
+            <button type="button" class="primary sm" data-snap-dl="${idx}" title="JSON डाउनलोड">📥</button>
+            <button type="button" class="warn sm" data-snap-restore="${idx}">♻️ Restore</button>
+          </div>
+        </div>
+      `).join("");
+
+      listEl.querySelectorAll("[data-snap-dl]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const snap = snaps[Number(btn.getAttribute("data-snap-dl"))];
+          if (!snap) return;
+          const blob = new Blob([JSON.stringify({
+            exportedAt: new Date(snap.ts).toISOString(),
+            borrowers: snap.borrowers || [],
+            udhaari: snap.udhaari || []
+          }, null, 2)], { type: "application/json" });
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = `Vyaj_Full_Snapshot_${new Date(snap.ts).toISOString().slice(0, 10)}.json`;
+          a.click();
+        });
+      });
+
+      listEl.querySelectorAll("[data-snap-restore]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const snap = snaps[Number(btn.getAttribute("data-snap-restore"))];
+          if (!snap || !Array.isArray(snap.borrowers)) return;
+          const udCnt = Array.isArray(snap.udhaari) ? snap.udhaari.length : 0;
+          if (!confirm(`${formatBackupTime(snap.ts)} चा बॅकअप (${snap.count} खाती${udCnt ? ` + ${udCnt} उधारी` : ""}) अ‍ॅपमध्ये Restore करायचा का?`)) return;
+
+          const user = typeof firebase !== "undefined" && firebase.auth ? firebase.auth().currentUser : null;
+          if (!user) { alert("कृपया आधी लॉगिन करा."); return; }
+
+          if (statusEl) statusEl.textContent = "⏳ Snapshot Restore होत आहे...";
+          try {
+            const db = firebase.firestore();
+            const colRef = db.collection("users").doc(user.uid).collection("borrowers");
+            for (let i = 0; i < snap.borrowers.length; i += 25) {
+              const batch = db.batch();
+              snap.borrowers.slice(i, i + 25).forEach((b) => {
+                const docId = b.id || colRef.doc().id;
+                const payload = { ...b };
+                delete payload.id;
+                batch.set(colRef.doc(docId), payload, { merge: true });
+              });
+              await batch.commit();
+            }
+
+            // उधारी डेटा सुद्धा सुरक्षितपणे Restore करा
+            if (Array.isArray(snap.udhaari) && snap.udhaari.length) {
+              const udRef = db.collection("users").doc(user.uid).collection("udhaari");
+              for (let i = 0; i < snap.udhaari.length; i += 25) {
+                const batch = db.batch();
+                snap.udhaari.slice(i, i + 25).forEach((u) => {
+                  const docId = u.id || udRef.doc().id;
+                  const payload = { ...u };
+                  delete payload.id;
+                  batch.set(udRef.doc(docId), payload, { merge: true });
+                });
+                await batch.commit();
+              }
+            }
+
+            if (statusEl) statusEl.textContent = "✅ व्याज + उधारी Snapshot यशस्वीरित्या Restore झाला!";
+          } catch (err) {
+            if (statusEl) statusEl.textContent = "❌ Restore एरर: " + err.message;
+          }
+        });
+      });
+    }
+    modal.classList.remove("hidden");
+  }
+
+  function upgradeScheduledBackupSelect() {
+    const sel = document.getElementById("scheduledBackupSelect");
+    if (!sel) return;
+    if (!sel.querySelector('option[value="realtime"]')) {
+      const opt = document.createElement("option");
+      opt.value = "realtime";
+      opt.textContent = "⚡ रिअल-टाइम (बदल होताच ऑटो-बॅकअप)";
+      sel.insertBefore(opt, sel.children[1] || null);
+    }
+
+    const saved = localStorage.getItem(SCHED_MODE_KEY);
+    if (saved && sel.querySelector(`option[value="${saved}"]`)) sel.value = saved;
+
+    if (!sel.dataset.lbBound) {
+      sel.dataset.lbBound = "1";
+      sel.addEventListener("change", () => {
+        localStorage.setItem(SCHED_MODE_KEY, sel.value);
+        updateBackupBarUi();
+        if (sel.value === "realtime") setTimeout(() => performLiveBackup("realtime_init"), 800);
+      });
+    }
+  }
+
+  function getScheduledMode() {
+    return localStorage.getItem(SCHED_MODE_KEY) || document.getElementById("scheduledBackupSelect")?.value || "off";
+  }
+
+  function checkScheduledBackupDue() {
+    const mode = getScheduledMode();
+    if (mode === "off" || mode === "realtime") return;
+    const meta = getLastBackupMeta();
+    const ageHrs = meta && meta.ts ? (Date.now() - Number(meta.ts)) / (1000 * 60 * 60) : 9999;
+    const limit = mode === "daily" ? 23 : mode === "weekly" ? 168 : 720;
+    if (ageHrs >= limit) performLiveBackup("scheduled_" + mode);
+  }
+
+  function watchBorrowerDataChanges() {
+    const listEl = document.getElementById("borrowersList");
+    if (!listEl) return;
+
+    const checkChange = () => {
+      const fp = computeDataFingerprint();
+      if (!fp) return;
+      if (!fingerprintInitialized) {
+        lastDataFingerprint = fp;
+        fingerprintInitialized = true;
+        checkScheduledBackupDue();
+        return;
+      }
+      if (fp !== lastDataFingerprint) {
+        lastDataFingerprint = fp;
+        if (getScheduledMode() === "realtime") {
+          clearTimeout(realtimeTimer);
+          realtimeTimer = setTimeout(() => performLiveBackup("realtime"), 6000);
+        }
+      }
+    };
+
+    const obs = new MutationObserver(() => {
+      clearTimeout(observerTimer);
+      observerTimer = setTimeout(checkChange, 1500);
+    });
+    obs.observe(listEl, { childList: true });
+    setTimeout(checkChange, 2500);
+  }
+
+  window.addEventListener("online", () => {
+    if (localStorage.getItem(OFFLINE_QUEUE_KEY) === "1") {
+      setTimeout(() => performLiveBackup("online_sync"), 2000);
+    }
+  });
+
+  function initLiveBackup() {
+    injectLiveBackupCss();
+    ensureBackupStatusBar();
+    upgradeScheduledBackupSelect();
+    updateBackupBarUi();
+    watchBorrowerDataChanges();
+    setTimeout(() => {
+      ensureBackupStatusBar();
+      upgradeScheduledBackupSelect();
+      updateBackupBarUi();
+    }, 1500);
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initLiveBackup);
+  else initLiveBackup();
+})();
