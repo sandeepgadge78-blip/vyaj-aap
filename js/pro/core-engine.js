@@ -1,7 +1,8 @@
-// व्याज हिशोब वही - Master UI Reset Bus + Sidebar Accordion + Double-Tap Guard + Scroll Lock + Crash Guard + Universal Call (js/pro/core-engine.js - V14.42)
+// व्याज हिशोब वही - Master UI Reset Bus + Safe Sidebar Accordion + Double-Tap Guard + Scroll Lock + Crash Guard + Universal Call (js/pro/core-engine.js - V14.46)
 (function () {
   let activeOverlayId = null;
-  let overlayObserverTimer = null;
+  let overlayTimer = null;
+  const observedModals = new WeakSet();
 
   // १. Global Crash Guard (अचानक एरर आल्यास अ‍ॅप हँग होऊ नये म्हणून)
   window.addEventListener("error", (ev) => {
@@ -15,7 +16,6 @@
   function initInstantSecurityGate() {
     const splash = document.getElementById("splashScreen");
     if (!splash) return;
-
     let gateReleased = false;
     const releaseGate = () => {
       if (gateReleased) return;
@@ -26,16 +26,28 @@
     const checkAuthAndPinReady = () => {
       const authScreen = document.getElementById("authScreen");
       const appScreen = document.getElementById("appScreen");
-      const pinOverlay = document.getElementById("proPinLockOverlay") || document.querySelector('[id*="pinLock"], [id*="PinLock"]');
+      const pinOverlay =
+        document.getElementById("vyajPinLockOverlay") ||
+        document.getElementById("proPinLockOverlay") ||
+        document.querySelector('[id*="pinLock"], [id*="PinLock"]');
 
       const authVisible = authScreen && !authScreen.classList.contains("hidden");
       const appVisible = appScreen && !appScreen.classList.contains("hidden");
       const pinVisible = pinOverlay && !pinOverlay.classList.contains("hidden");
 
-      if (authVisible || pinVisible) { releaseGate(); return true; }
+      if (authVisible || pinVisible) {
+        releaseGate();
+        return true;
+      }
       if (appVisible) {
-        const hasSavedPin = Object.keys(localStorage).some((k) => k.startsWith("vyaj_aap_pin_") && localStorage.getItem(k));
-        if (!hasSavedPin) { releaseGate(); return true; }
+        const hasSavedPin =
+          localStorage.getItem("vyaj_aap_pin_enabled_v1") === "true" &&
+          Boolean(localStorage.getItem("vyaj_aap_pin_hash_v1"));
+        const unlockedNow = sessionStorage.getItem("vyaj_aap_pin_unlocked_session") === "true";
+        if (!hasSavedPin || unlockedNow) {
+          releaseGate();
+          return true;
+        }
       }
       return false;
     };
@@ -43,11 +55,13 @@
     const poll = setInterval(() => {
       if (checkAuthAndPinReady()) clearInterval(poll);
     }, 120);
-
-    setTimeout(() => { clearInterval(poll); releaseGate(); }, 2400);
+    setTimeout(() => {
+      clearInterval(poll);
+      releaseGate();
+    }, 2400);
   }
 
-  // ३. Master UI Reset Bus (ग्राहक कार्ड, थकीत वायदे, लाईन चार्ट आणि साइडबार सेक्शन्स आपोआप बंद करा)
+  // ३. Master UI Reset Bus (ग्राहक कार्ड, थकीत वायदे, लाईन चार्ट आणि साईडबार सुरक्षित बंद करा)
   function closeAllExpandedBorrowerCards() {
     document.querySelectorAll('#borrowersList [id^="cardDetails_"]:not(.hidden)').forEach((el) => {
       el.classList.add("hidden");
@@ -61,7 +75,9 @@
 
   // उघडा असलेला 'लाईन चार्ट' बंद करा
   function closeLineChartIfOpen() {
-    const chartCanvas = document.querySelector('#appScreen canvas, #appScreen [id*="chartBox"], #appScreen [id*="ChartWrap"]');
+    const chartCanvas = document.querySelector(
+      '#appScreen canvas, #appScreen [id*="chartBox"], #appScreen [id*="ChartWrap"]'
+    );
     if (chartCanvas && chartCanvas.offsetParent !== null) {
       const chartBtn = Array.from(document.querySelectorAll("#appScreen button")).find((b) =>
         (b.textContent || "").includes("लाईन चार्ट")
@@ -70,32 +86,26 @@
     }
   }
 
-  // साइडबारमधील सर्व कस्टम सेक्शन्स (General, Reports & Tools, Backup & Data, Security & Privacy) बंद करा
-  const SIDEBAR_SEC_KEYWORDS = ["general", "reports & tools", "backup & data", "security & privacy"];
-
-  function collapseAllSidebarSections(exceptBtn) {
-    const drawer = document.getElementById("proSidebarDrawer") || document.getElementById("uiProMenuDrawer") || document.body;
-    drawer.querySelectorAll("details[open]").forEach((det) => {
-      if (!det.closest(".modal-backdrop:not(.hidden)")) det.removeAttribute("open");
-    });
-
-    // कस्टम बटण + त्याच्या पुढचा बॉक्स (sibling container) बंद करा
-    drawer.querySelectorAll("button, .menu-group-header, .sb-acc-head").forEach((hdr) => {
-      if (exceptBtn && hdr === exceptBtn) return;
-      const txt = (hdr.textContent || "").toLowerCase();
-      if (!SIDEBAR_SEC_KEYWORDS.some((k) => txt.includes(k))) return;
-
-      const body = hdr.nextElementSibling;
-      if (body && !body.classList.contains("hidden") && window.getComputedStyle(body).display !== "none") {
-        body.classList.add("hidden");
-        body.style.display = "none";
-        hdr.classList.remove("open", "active", "is-open");
-      }
+  // सुरक्षित Sidebar Accordion: फक्त #proUnifiedDrawer मधील इतर ग्रुप्स बंद करा (कधीही .hidden किंवा display:none लावू नका)
+  function collapseOtherSidebarGroups(exceptGroup) {
+    const drawer = document.getElementById("proUnifiedDrawer");
+    if (!drawer) return;
+    drawer.querySelectorAll(".pro-acc-group.is-open").forEach((grp) => {
+      if (exceptGroup && grp === exceptGroup) return;
+      grp.classList.remove("is-open");
     });
   }
 
   function closeSidebarMenus() {
-    collapseAllSidebarSections(null);
+    const unifiedDrawer = document.getElementById("proUnifiedDrawer");
+    const unifiedBackdrop = document.getElementById("proMenuBackdrop");
+    if (unifiedDrawer && !unifiedDrawer.classList.contains("hidden")) {
+      unifiedDrawer.classList.remove("open");
+      unifiedDrawer.classList.add("hidden");
+    }
+    if (unifiedBackdrop && !unifiedBackdrop.classList.contains("hidden")) {
+      unifiedBackdrop.classList.add("hidden");
+    }
     ["proSidebarOverlay", "proSidebarDrawer", "proThreeDotDropdown", "uiProMenuDrawer"].forEach((id) => {
       const el = document.getElementById(id);
       if (el && !el.classList.contains("hidden")) el.classList.add("hidden");
@@ -122,13 +132,11 @@
     const openModals = Array.from(document.querySelectorAll(".modal-backdrop")).filter(
       (m) => m.id && !m.classList.contains("hidden") && window.getComputedStyle(m).display !== "none"
     );
-
     syncBodyScrollLock(openModals.length > 0);
 
     if (openModals.length > 0) {
       const newest = openModals.find((m) => m.id !== activeOverlayId) || openModals[openModals.length - 1];
       activeOverlayId = newest.id;
-
       if (openModals.length > 1) closeOtherModalsExcept(newest.id);
       closeSidebarMenus();
       closeLineChartIfOpen();
@@ -146,9 +154,43 @@
     }
   }
 
+  function scheduleOverlayCheck() {
+    clearTimeout(overlayTimer);
+    overlayTimer = setTimeout(enforceSingleOverlay, 55);
+  }
+
+  // संपूर्ण document.body ऐवजी फक्त .modal-backdrop वर हलका Observer लावा (९५% कमी लोड)
+  function watchModalElement(el) {
+    if (!el || !el.classList || !el.classList.contains("modal-backdrop") || observedModals.has(el)) return;
+    observedModals.add(el);
+    const mObs = new MutationObserver(scheduleOverlayCheck);
+    mObs.observe(el, { attributes: true, attributeFilter: ["class"] });
+  }
+
+  function bindLightweightOverlayWatcher() {
+    document.querySelectorAll(".modal-backdrop").forEach(watchModalElement);
+
+    // फक्त नवीन Modal body मध्ये जोडल्यास त्यावर Observer लावा (subtree: false -> ०% स्क्रोल लोड)
+    const bodyChildObs = new MutationObserver((mutations) => {
+      let addedModal = false;
+      mutations.forEach((m) => {
+        m.addedNodes.forEach((node) => {
+          if (node.nodeType === 1 && node.classList && node.classList.contains("modal-backdrop")) {
+            watchModalElement(node);
+            addedModal = true;
+          }
+        });
+      });
+      if (addedModal) scheduleOverlayCheck();
+    });
+    bodyChildObs.observe(document.body, { childList: true });
+  }
+
   function bindGlobalNavAndGuards() {
     document.addEventListener("click", (ev) => {
-      const target = ev.target && ev.target.closest ? ev.target.closest("button, a, .nc-clickable-area, .menu-group-header") : null;
+      const target = ev.target && ev.target.closest
+        ? ev.target.closest("button, a, .nc-clickable-area, .pro-acc-head")
+        : null;
       if (!target) return;
 
       // अ) Double-Tap Payment Guard: 'जमा करा' बटनावर स्लो नेटवर डबल क्लिक थांबवा
@@ -169,14 +211,10 @@
         }, 1500);
       }
 
-      // ब) साइडबारमधील General / Reports / Backup / Security वर क्लिक -> इतर सेक्शन्स आपोआप बंद (Accordion)
-      if (SIDEBAR_SEC_KEYWORDS.some((k) => txtLower.includes(k))) {
-        collapseAllSidebarSections(target);
-        // जर आपण आधी display:none लावले असेल तर पुन्हा उघडायला मदत करा
-        const nextBox = target.nextElementSibling;
-        if (nextBox && nextBox.style.display === "none") {
-          nextBox.style.display = "";
-        }
+      // ब) साईडबार Accordion: फक्त एका ग्रुपवर क्लिक केल्यास इतर ग्रुप्स स्वच्छ बंद करा
+      if (target.classList.contains("pro-acc-head") && target.closest("#proUnifiedDrawer")) {
+        const myGroup = target.closest(".pro-acc-group");
+        collapseOtherSidebarGroups(myGroup);
         return;
       }
 
@@ -187,11 +225,12 @@
         return;
       }
 
-      // ड) 'लाईन चार्ट' उघडताना -> 'थकीत वायदे' व ग्राहक कार्ड बंद करा
+      // ड) 'लाईन चार्ट' उघडताना -> 'थकीत वायदे' व ग्राहक कार्ड बंद करा आणि उधारी बटण जपा
       if (txtLower.includes("लाईन चार्ट")) {
         window.dispatchEvent(new CustomEvent("vyaj:closePromiseBar"));
         closeAllExpandedBorrowerCards();
         dispatchResetSignal("line_chart");
+        if (window.VyajHub) setTimeout(() => window.VyajHub.notifyDataUpdated("line_chart"), 80);
         return;
       }
 
@@ -205,8 +244,8 @@
         return;
       }
 
-      // ई) साइडबार किंवा ३-डॉट मेन्यू उघडताना उघडे कार्ड व वायदे बंद करा
-      if (target.closest("#threeDotMenuSlot") || target.id === "uiProHamburgerBtn") {
+      // ई) साईडबार किंवा मुख्य मेन्यू उघडताना उघडे कार्ड व वायदे बंद करा
+      if (target.id === "proMainMenuBtn" || target.closest("#threeDotMenuSlot") || target.id === "uiProHamburgerBtn") {
         closeAllExpandedBorrowerCards();
         dispatchResetSignal("sidebar_open");
         return;
@@ -230,6 +269,7 @@
         closeAllExpandedBorrowerCards();
         dispatchResetSignal("popstate");
       }
+      scheduleOverlayCheck();
     });
   }
 
@@ -261,7 +301,6 @@
     if (!el) return "";
     const href = el.getAttribute("href") || "";
     if (href.startsWith("tel:")) return cleanIndianMobile(href.replace("tel:", ""));
-
     for (const attr of ["data-mobile", "data-sr-call", "data-cd-call", "data-call", "data-phone"]) {
       const val = el.getAttribute(attr);
       if (val) {
@@ -269,7 +308,6 @@
         if (c.length >= 10) return c;
       }
     }
-
     const onClk = el.getAttribute("onclick") || "";
     const telMatch = onClk.match(/tel:([+\d\s\-]{10,15})/);
     if (telMatch) return cleanIndianMobile(telMatch[1]);
@@ -280,7 +318,6 @@
         card.getAttribute("data-pro-bid") ||
         card.querySelector("[data-toggle-card]")?.getAttribute("data-toggle-card") ||
         card.querySelector("[data-id]")?.getAttribute("data-id");
-
       if (bId && window.HishobBridge && typeof window.HishobBridge.getBorrowers === "function") {
         const b = (window.HishobBridge.getBorrowers() || []).find((x) => x.id === bId);
         if (b && b.mobile) {
@@ -298,11 +335,9 @@
     document.addEventListener("click", (ev) => {
       const el = ev.target && ev.target.closest ? ev.target.closest("a, button") : null;
       if (!el) return;
-
       const href = el.getAttribute("href") || "";
       const action = el.getAttribute("data-action") || "";
       const txt = (el.textContent || "").trim().toLowerCase();
-
       const isCallElement =
         href.startsWith("tel:") ||
         action === "call-borrower" ||
@@ -310,7 +345,6 @@
         el.hasAttribute("data-cd-call") ||
         el.classList.contains("pb-call") ||
         (txt.includes("call") && !txt.includes("+नंबर") && !txt.includes("add"));
-
       if (!isCallElement) return;
 
       const mob = extractMobileFromElement(el);
@@ -327,7 +361,6 @@
   function injectCacheCleanerInSettings() {
     const resetBtn = document.getElementById("setResetPassBtn");
     if (!resetBtn || document.getElementById("proSafeCacheCleanBtn")) return;
-
     const btn = document.createElement("button");
     btn.type = "button";
     btn.id = "proSafeCacheCleanBtn";
@@ -368,19 +401,12 @@
     bindGlobalNavAndGuards();
     bindUniversalCallEngine();
     injectCacheCleanerInSettings();
-
-    const obs = new MutationObserver(() => {
-      clearTimeout(overlayObserverTimer);
-      overlayObserverTimer = setTimeout(enforceSingleOverlay, 60);
-    });
-    obs.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ["class"]
-    });
+    bindLightweightOverlayWatcher();
   }
 
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initCoreEngine);
-  else initCoreEngine();
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initCoreEngine);
+  } else {
+    initCoreEngine();
+  }
 })();
