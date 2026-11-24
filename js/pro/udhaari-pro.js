@@ -1,11 +1,11 @@
-// व्याज हिशोब वही - १००% स्वतंत्र उधारी मॅनेजर (Auto-Rollover, Partial Return, Separate Udhaari Notifications, Call/WA/QR/PDF) (js/pro/udhaari-pro.js - V14.39)
+// व्याज हिशोब वही - १००% स्वतंत्र उधारी मॅनेजर + Self-Healing बटण + Backup Bridge (js/pro/udhaari-pro.js - V14.42)
 (function () {
   const MONTHS_MR = ["जानेवारी", "फेब्रुवारी", "मार्च", "एप्रिल", "मे", "जून", "जुलै", "ऑगस्ट", "सप्टेंबर", "ऑक्टोबर", "नोव्हेंबर", "डिसेंबर"];
   const NOTIF_SEEN_KEY = "vyaj_aap_settings_udhaari_notif_date_v1";
 
   let udhaariList = [];
   let unsubUdhaari = null;
-  let activeTab = "pending"; // pending | paid | due
+  let activeTab = "pending";
   let showAddForm = false;
   let searchQuery = "";
 
@@ -17,9 +17,7 @@
 
   function fmtInr(val) {
     const n = Number(val || 0);
-    if (window.HishobBridge && typeof window.HishobBridge.fmtAmt === "function") {
-      return window.HishobBridge.fmtAmt(n);
-    }
+    if (window.HishobBridge && typeof window.HishobBridge.fmtAmt === "function") return window.HishobBridge.fmtAmt(n);
     return "₹" + n.toLocaleString("en-IN");
   }
 
@@ -68,84 +66,47 @@
         border-radius: 999px !important;
         white-space: nowrap;
       }
-
-      /* व्याजापेक्षा पूर्ण वेगळी उधारी वायदा अलर्ट पट्टी */
       .ud-alert-strip {
         margin-bottom: 9px; padding: 8px 11px; border-radius: 14px; cursor: pointer;
         background: linear-gradient(135deg, rgba(76, 29, 149, 0.32), rgba(30, 27, 75, 0.72));
-        border: 1px solid rgba(196, 181, 253, 0.48);
-        border-left: 3px solid #c4b5fd;
+        border: 1px solid rgba(196, 181, 253, 0.48); border-left: 3px solid #c4b5fd;
         display: flex; align-items: center; justify-content: space-between; gap: 8px;
       }
       body.light-mode .ud-alert-strip { background: #f3e8ff; border-color: #a855f7; }
       .ud-alert-strip.hidden { display: none !important; }
-
       .ud-kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-bottom: 10px; }
-      .ud-kpi {
-        padding: 8px 6px; border-radius: 11px; text-align: center;
-        background: var(--meta-bg); border: 1px solid var(--border);
-      }
+      .ud-kpi { padding: 8px 6px; border-radius: 11px; text-align: center; background: var(--meta-bg); border: 1px solid var(--border); }
       .ud-kpi-lbl { font-size: 0.65rem; color: var(--muted); font-weight: 700; }
       .ud-kpi-val { font-size: 0.92rem; font-weight: 900; margin-top: 2px; }
-
       .ud-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 9px; }
-      .ud-tab-btn {
-        padding: 6px 4px !important; font-size: 0.72rem !important; font-weight: 800 !important;
-        border-radius: 10px !important; background: var(--meta-bg) !important; color: var(--text) !important;
-      }
-      .ud-tab-btn.is-active {
-        background: #eceff4 !important; color: #090a0d !important; border-color: #eceff4 !important;
-      }
+      .ud-tab-btn { padding: 6px 4px !important; font-size: 0.72rem !important; font-weight: 800 !important; border-radius: 10px !important; background: var(--meta-bg) !important; color: var(--text) !important; }
+      .ud-tab-btn.is-active { background: #eceff4 !important; color: #090a0d !important; border-color: #eceff4 !important; }
       body.light-mode .ud-tab-btn.is-active { background: #1f242d !important; color: #fbfaf7 !important; }
-
-      .ud-form {
-        padding: 10px; border-radius: 12px; margin-bottom: 10px;
-        background: rgba(109, 40, 217, 0.12); border: 1px dashed rgba(196, 181, 253, 0.45);
-        display: flex; flex-direction: column; gap: 7px;
-      }
+      .ud-form { padding: 10px; border-radius: 12px; margin-bottom: 10px; background: rgba(109, 40, 217, 0.12); border: 1px dashed rgba(196, 181, 253, 0.45); display: flex; flex-direction: column; gap: 7px; }
       .ud-form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; }
       @media (max-width: 420px) { .ud-form-grid { grid-template-columns: 1fr; } }
-
-      .ud-card {
-        padding: 9px 10px; border-radius: 12px; margin-bottom: 8px;
-        background: var(--meta-bg); border: 1px solid var(--border);
-        border-left: 3px solid #c4b5fd;
-      }
+      .ud-card { padding: 9px 10px; border-radius: 12px; margin-bottom: 8px; background: var(--meta-bg); border: 1px solid var(--border); border-left: 3px solid #c4b5fd; }
       .ud-card.is-paid { border-left-color: #4ade80; opacity: 0.88; }
       .ud-card.is-due { border-left-color: #f07178; }
-
       .ud-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
       .ud-name { font-size: 0.88rem; font-weight: 800; color: var(--text); }
       .ud-meta { font-size: 0.71rem; color: var(--muted); margin-top: 2px; line-height: 1.4; }
       .ud-amt { font-size: 0.94rem; font-weight: 900; white-space: nowrap; text-align: right; }
-
-      .ud-acts {
-        display: flex; flex-wrap: nowrap; gap: 5px; margin-top: 7px; overflow-x: auto; scrollbar-width: none;
-      }
+      .ud-acts { display: flex; flex-wrap: nowrap; gap: 5px; margin-top: 7px; overflow-x: auto; scrollbar-width: none; }
       .ud-acts::-webkit-scrollbar { display: none; }
-      .ud-acts button, .ud-acts a {
-        flex: 0 0 auto; display: inline-flex; align-items: center; gap: 3px;
-        padding: 4px 8px !important; border-radius: 999px !important; font-size: 0.69rem !important;
-        font-weight: 800 !important; text-decoration: none !important; color: #fff !important;
-        border: 1px solid rgba(255, 255, 255, 0.16) !important; cursor: pointer;
-      }
+      .ud-acts button, .ud-acts a { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 3px; padding: 4px 8px !important; border-radius: 999px !important; font-size: 0.69rem !important; font-weight: 800 !important; text-decoration: none !important; color: #fff !important; border: 1px solid rgba(255, 255, 255, 0.16) !important; cursor: pointer; }
     `;
     document.head.appendChild(st);
   }
 
-  // निवडलेल्या महिन्यानुसार (activeYm) उधारीची स्थिती मोजा (Auto-Rollover सह)
   function getUdhaariForMonth(activeYm) {
     const todayStr = getLocalIso(0);
-    const pendingItems = [];
-    const paidInMonthItems = [];
-    const dueAlertItems = [];
-
+    const pendingItems = [], paidInMonthItems = [], dueAlertItems = [];
     let totGiven = 0, totReturned = 0, totRemaining = 0;
 
     udhaariList.forEach((u) => {
       if (u.isDeleted) return;
       const givenYm = u.givenYm || String(u.givenDate || "").slice(0, 7) || activeYm;
-      // निवडलेल्या महिन्यापूर्वीच दिलेली उधारी दाखवा
       if (givenYm > activeYm) return;
 
       const amt = Number(u.amount || 0);
@@ -154,7 +115,6 @@
       const isFullyPaid = remAmt <= 0 || u.status === "paid";
       const retYm = u.returnedYm || "";
 
-      // जर आधीच्याच महिन्यात पूर्ण परतफेड झाली असेल तर पुढच्या महिन्यात बाकीत दाखवू नका
       if (isFullyPaid && retYm && retYm < activeYm) return;
 
       totGiven += amt;
@@ -162,12 +122,9 @@
       totRemaining += remAmt;
 
       const enriched = { ...u, givenYm, amt, paidAmt, remAmt, isFullyPaid };
-
       if (!isFullyPaid) {
         pendingItems.push(enriched);
-        if (u.promiseDate && u.promiseDate <= todayStr) {
-          dueAlertItems.push(enriched);
-        }
+        if (u.promiseDate && u.promiseDate <= todayStr) dueAlertItems.push(enriched);
       } else if (retYm === activeYm || !retYm) {
         paidInMonthItems.push(enriched);
       }
@@ -175,11 +132,10 @@
 
     pendingItems.sort((a, b) => String(a.promiseDate || "9999").localeCompare(String(b.promiseDate || "9999")));
     paidInMonthItems.sort((a, b) => String(b.returnedDate || "").localeCompare(String(a.returnedDate || "")));
-
     return { activeYm, pendingItems, paidInMonthItems, dueAlertItems, totGiven, totReturned, totRemaining };
   }
 
-  // डॅशबोर्डवर 'लाईन चार्ट', 'रिपोर्ट्स हब', 'Risk' च्या पुढे '🤝 उधारी' बटण बसवा
+  // Self-Healing: लाईन चार्ट उघडल्यावर किंवा बंद केल्यावरही '🤝 उधारी' बटण नेहमी जागेवरच राहील
   function ensureUdhaariDashboardButton() {
     const appScreen = document.getElementById("appScreen");
     if (!appScreen) return;
@@ -187,33 +143,31 @@
     const data = getUdhaariForMonth(getActiveYm());
     const pendingCnt = data.pendingItems.length;
 
+    const allBtns = Array.from(appScreen.querySelectorAll("button"));
+    const anchorBtn = allBtns.find((b) => {
+      const t = (b.textContent || "").trim();
+      return t.includes("रिपोर्ट्स हब") || t.includes("Risk") || t.includes("लाईन चार्ट");
+    });
+
     let btn = document.getElementById("proOpenUdhaariBtn");
     if (!btn) {
-      // 'रिपोर्ट्स हब' किंवा 'लाईन चार्ट' बटणाचा parent container शोधा
-      const allBtns = Array.from(appScreen.querySelectorAll("button"));
-      const anchorBtn = allBtns.find((b) => {
-        const t = (b.textContent || "").trim();
-        return t.includes("रिपोर्ट्स हब") || t.includes("Risk") || t.includes("लाईन चार्ट");
-      });
-
       btn = document.createElement("button");
       btn.type = "button";
       btn.id = "proOpenUdhaariBtn";
       btn.className = "ud-entry-btn";
       btn.addEventListener("click", () => openUdhaariModal("pending"));
+    }
 
-      if (anchorBtn && anchorBtn.parentElement) {
-        anchorBtn.parentElement.appendChild(btn);
-      } else {
-        const radarStrip = document.getElementById("vyajSmartProStrip");
-        if (radarStrip) radarStrip.appendChild(btn);
-      }
+    if (anchorBtn && anchorBtn.parentElement && btn.parentElement !== anchorBtn.parentElement) {
+      anchorBtn.parentElement.appendChild(btn);
+    } else if (!btn.parentElement) {
+      const radarStrip = document.getElementById("vyajSmartProStrip");
+      if (radarStrip) radarStrip.appendChild(btn);
     }
 
     btn.textContent = `🤝 उधारी${pendingCnt > 0 ? ` (${pendingCnt})` : ""}`;
   }
 
-  // व्याजापेक्षा १००% वेगळी उधारी वायदा अलर्ट पट्टी व ब्राउझर नोटिफिकेशन
   function updateUdhaariAlertBanner() {
     const appScreen = document.getElementById("appScreen");
     const heroCard = appScreen?.querySelector(".month-hero-card");
@@ -231,10 +185,7 @@
       heroCard.insertAdjacentElement("beforebegin", strip);
     }
 
-    if (!dueList.length) {
-      strip.classList.add("hidden");
-      return;
-    }
+    if (!dueList.length) { strip.classList.add("hidden"); return; }
 
     const dueSum = dueList.reduce((s, x) => s + x.remAmt, 0);
     strip.innerHTML = `
@@ -248,7 +199,6 @@
     `;
     strip.classList.remove("hidden");
 
-    // दिवसातून एकदाच स्वतंत्र Browser Notification दाखवा
     const todayStr = getLocalIso(0);
     if ("Notification" in window && Notification.permission === "granted" && localStorage.getItem(NOTIF_SEEN_KEY) !== todayStr) {
       try {
@@ -324,17 +274,12 @@
     const activeYm = getActiveYm();
     const nowIso = new Date().toISOString();
 
-    const nextPayments = [
-      ...(Array.isArray(u.payments) ? u.payments : []),
-      { amount: payAmt, date: todayStr, ym: activeYm, ts: nowIso }
-    ];
-
     await col.doc(u.id).update({
       paidAmount: nextPaid,
       status: isNowFull ? "paid" : "partial",
       returnedDate: isNowFull ? todayStr : (u.returnedDate || ""),
       returnedYm: isNowFull ? activeYm : (u.returnedYm || ""),
-      payments: nextPayments,
+      payments: [...(Array.isArray(u.payments) ? u.payments : []), { amount: payAmt, date: todayStr, ym: activeYm, ts: nowIso }],
       updatedAt: nowIso
     });
   }
@@ -380,7 +325,6 @@
                   <div style="font-size:0.64rem; color:var(--muted);">${u.isFullyPaid ? "परत मिळाले" : "येणे बाकी"}</div>
                 </div>
               </div>
-
               <div class="ud-acts">
                 ${!u.isFullyPaid ? `<button type="button" class="success" data-ud-pay="${esc(u.id)}">💰 जमा करा</button>` : ""}
                 ${hasMob ? `<a href="tel:${esc(mob)}" style="background:#15803d;">📞 Call</a>` : ""}
@@ -432,30 +376,24 @@
       </div>
 
       <input type="text" id="udSearchInp" class="search-pill-box" value="${esc(searchQuery)}" placeholder="🔍 उधारी व्यक्तीचे नाव शोधा..." style="margin-bottom:8px;" />
-
       <div style="max-height:50vh; overflow-y:auto;">${cardsHtml}</div>
     `;
 
     document.getElementById("udToggleAddBtn")?.addEventListener("click", () => { showAddForm = !showAddForm; renderUdhaariModal(); });
-
     document.getElementById("udFSaveBtn")?.addEventListener("click", async () => {
       const name = (document.getElementById("udFName")?.value || "").trim();
       const amount = Number(document.getElementById("udFAmt")?.value || 0);
       if (!name || amount <= 0) { alert("कृपया व्यक्तीचे नाव आणि उधारीची रक्कम (₹) टाका."); return; }
       const ok = await addNewUdhaari({
-        name,
-        mobile: document.getElementById("udFMob")?.value || "",
-        amount,
+        name, mobile: document.getElementById("udFMob")?.value || "", amount,
         givenDate: document.getElementById("udFDate")?.value || getLocalIso(0),
         promiseDate: document.getElementById("udFPromise")?.value || "",
         note: document.getElementById("udFNote")?.value || ""
       });
-      if (ok) { showAddForm = false; }
+      if (ok) showAddForm = false;
     });
 
-    body.querySelectorAll("[data-udtab]").forEach((btn) => {
-      btn.addEventListener("click", () => { activeTab = btn.getAttribute("data-udtab"); renderUdhaariModal(); });
-    });
+    body.querySelectorAll("[data-udtab]").forEach((btn) => btn.addEventListener("click", () => { activeTab = btn.getAttribute("data-udtab"); renderUdhaariModal(); }));
 
     const sInp = document.getElementById("udSearchInp");
     sInp?.addEventListener("input", () => {
@@ -467,60 +405,33 @@
     });
 
     const findById = (id) => list.find((x) => x.id === id);
-
-    body.querySelectorAll("[data-ud-pay]").forEach((btn) => {
-      btn.addEventListener("click", () => { const u = findById(btn.getAttribute("data-ud-pay")); if (u) collectUdhaariReturn(u); });
-    });
-
-    body.querySelectorAll("[data-ud-del]").forEach((btn) => {
-      btn.addEventListener("click", () => { const u = findById(btn.getAttribute("data-ud-del")); if (u) deleteUdhaari(u); });
-    });
-
-    body.querySelectorAll("[data-ud-wa]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const u = findById(btn.getAttribute("data-ud-wa"));
-        if (!u) return;
-        const mob = cleanMob(u.mobile);
-        const target = mob.length === 10 ? "91" + mob : mob;
-        const biz = document.getElementById("tBrandTitle")?.textContent?.trim() || "व्याज हिशोब वही";
-        const msg = u.isFullyPaid
-          ? `नमस्कार *${u.name}*,\nतुमची उधारी *₹${u.amt.toLocaleString("en-IN")}* पूर्ण परत मिळाली आहे. धन्यवाद!\n— *${biz}*`
-          : `नमस्कार *${u.name}*,\nआपणास *${fmtDateShort(u.givenDate)}* रोजी दिलेली उधारी रक्कम *₹${u.remAmt.toLocaleString("en-IN")}* येणे बाकी आहे.${u.promiseDate ? `\nपरतफेडीचा वायदा: *${fmtDateShort(u.promiseDate)}*` : ""}\nकृपया वेळेवर परत करावी. धन्यवाद!\n— *${biz}*`;
-        window.open(`https://wa.me/${target}?text=${encodeURIComponent(msg)}`, "_blank", "noopener,noreferrer");
-      });
-    });
-
-    body.querySelectorAll("[data-ud-qr]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const u = findById(btn.getAttribute("data-ud-qr"));
-        if (!u) return;
-        const upi = (document.getElementById("profUpiId")?.value || localStorage.getItem("hishob_self_upi") || "").trim();
-        if (!upi || !upi.includes("@")) { alert("कृपया आधी बिझनेस प्रोफाईलमध्ये UPI ID सेव्ह करा."); return; }
-        const amt = u.isFullyPaid ? u.amt : u.remAmt;
-        const biz = document.getElementById("tBrandTitle")?.textContent?.trim() || "व्याज हिशोब वही";
-        const upiStr = `upi://pay?pa=${encodeURIComponent(upi)}&pn=${encodeURIComponent(biz)}&am=${amt}&cu=INR&tn=${encodeURIComponent("Udhaari " + u.name)}`;
-        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiStr)}`;
-        document.getElementById("smartInfoTitle").textContent = `📱 उधारी UPI QR — ${u.name}`;
-        document.getElementById("smartInfoBody").innerHTML = `<div style="text-align:center; padding:10px;"><div>UPI ID: <strong>${esc(upi)}</strong></div><div style="font-size:1.2rem; font-weight:800; margin:8px 0;" class="ok">उधारी रक्कम: ₹${amt.toLocaleString("en-IN")}</div><img src="${qrUrl}" alt="UPI QR" style="border-radius:10px; border:4px solid #fff; background:#fff;" /></div>`;
-        document.getElementById("smartInfoModal")?.classList.remove("hidden");
-      });
-    });
-
-    document.getElementById("udPrintPdfBtn")?.addEventListener("click", () => {
-      const printArea = document.getElementById("printArea");
-      if (!printArea) return;
+    body.querySelectorAll("[data-ud-pay]").forEach((btn) => btn.addEventListener("click", () => { const u = findById(btn.getAttribute("data-ud-pay")); if (u) collectUdhaariReturn(u); }));
+    body.querySelectorAll("[data-ud-del]").forEach((btn) => btn.addEventListener("click", () => { const u = findById(btn.getAttribute("data-ud-del")); if (u) deleteUdhaari(u); }));
+    body.querySelectorAll("[data-ud-wa]").forEach((btn) => btn.addEventListener("click", () => {
+      const u = findById(btn.getAttribute("data-ud-wa")); if (!u) return;
+      const mob = cleanMob(u.mobile), target = mob.length === 10 ? "91" + mob : mob;
       const biz = document.getElementById("tBrandTitle")?.textContent?.trim() || "व्याज हिशोब वही";
-      const rows = list.map((u, i) => `
-        <tr>
-          <td>${i + 1}</td>
-          <td>${esc(u.name)}</td>
-          <td>${esc(fmtDateShort(u.givenDate))}</td>
-          <td>${esc(fmtDateShort(u.promiseDate))}</td>
-          <td>₹${u.amt.toLocaleString("en-IN")}</td>
-          <td>₹${u.remAmt.toLocaleString("en-IN")}</td>
-          <td>${u.isFullyPaid ? `परत (${fmtYmMr(u.returnedYm)})` : "बाकी"}</td>
-        </tr>
-      `).join("");
+      const msg = u.isFullyPaid
+        ? `नमस्कार *${u.name}*,\nतुमची उधारी *₹${u.amt.toLocaleString("en-IN")}* पूर्ण परत मिळाली आहे. धन्यवाद!\n— *${biz}*`
+        : `नमस्कार *${u.name}*,\nआपणास *${fmtDateShort(u.givenDate)}* रोजी दिलेली उधारी रक्कम *₹${u.remAmt.toLocaleString("en-IN")}* येणे बाकी आहे.${u.promiseDate ? `\nपरतफेडीचा वायदा: *${fmtDateShort(u.promiseDate)}*` : ""}\nकृपया वेळेवर परत करावी. धन्यवाद!\n— *${biz}*`;
+      window.open(`https://wa.me/${target}?text=${encodeURIComponent(msg)}`, "_blank", "noopener,noreferrer");
+    }));
+    body.querySelectorAll("[data-ud-qr]").forEach((btn) => btn.addEventListener("click", () => {
+      const u = findById(btn.getAttribute("data-ud-qr")); if (!u) return;
+      const upi = (document.getElementById("profUpiId")?.value || localStorage.getItem("hishob_self_upi") || "").trim();
+      if (!upi || !upi.includes("@")) { alert("कृपया आधी बिझनेस प्रोफाईलमध्ये UPI ID सेव्ह करा."); return; }
+      const amt = u.isFullyPaid ? u.amt : u.remAmt;
+      const biz = document.getElementById("tBrandTitle")?.textContent?.trim() || "व्याज हिशोब वही";
+      const upiStr = `upi://pay?pa=${encodeURIComponent(upi)}&pn=${encodeURIComponent(biz)}&am=${amt}&cu=INR&tn=${encodeURIComponent("Udhaari " + u.name)}`;
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiStr)}`;
+      document.getElementById("smartInfoTitle").textContent = `📱 उधारी UPI QR — ${u.name}`;
+      document.getElementById("smartInfoBody").innerHTML = `<div style="text-align:center; padding:10px;"><div>UPI ID: <strong>${esc(upi)}</strong></div><div style="font-size:1.2rem; font-weight:800; margin:8px 0;" class="ok">उधारी रक्कम: ₹${amt.toLocaleString("en-IN")}</div><img src="${qrUrl}" alt="UPI QR" style="border-radius:10px; border:4px solid #fff; background:#fff;" /></div>`;
+      document.getElementById("smartInfoModal")?.classList.remove("hidden");
+    }));
+    document.getElementById("udPrintPdfBtn")?.addEventListener("click", () => {
+      const printArea = document.getElementById("printArea"); if (!printArea) return;
+      const biz = document.getElementById("tBrandTitle")?.textContent?.trim() || "व्याज हिशोब वही";
+      const rows = list.map((u, i) => `<tr><td>${i + 1}</td><td>${esc(u.name)}</td><td>${esc(fmtDateShort(u.givenDate))}</td><td>${esc(fmtDateShort(u.promiseDate))}</td><td>₹${u.amt.toLocaleString("en-IN")}</td><td>₹${u.remAmt.toLocaleString("en-IN")}</td><td>${u.isFullyPaid ? `परत (${fmtYmMr(u.returnedYm)})` : "बाकी"}</td></tr>`).join("");
       printArea.innerHTML = `<div style="font-family:system-ui,sans-serif;"><h2>${esc(biz)} — उधारी अहवाल (${esc(fmtYmMr(d.activeYm))})</h2><p>एकूण उधारी: ₹${d.totGiven.toLocaleString("en-IN")} | परत मिळाली: ₹${d.totReturned.toLocaleString("en-IN")} | येणे बाकी: <strong>₹${d.totRemaining.toLocaleString("en-IN")}</strong></p><table><thead><tr><th>क्र.</th><th>नाव</th><th>दिलेली तारीख</th><th>वायदा</th><th>एकूण</th><th>बाकी</th><th>स्थिती</th></tr></thead><tbody>${rows}</tbody></table></div>`;
       window.print();
     });
@@ -534,37 +445,43 @@
   }
 
   function bindAuthUdhaariSync() {
-    if (typeof firebase === "undefined" || !firebase.auth) {
-      setTimeout(bindAuthUdhaariSync, 800);
-      return;
-    }
+    if (typeof firebase === "undefined" || !firebase.auth) { setTimeout(bindAuthUdhaariSync, 800); return; }
     firebase.auth().onAuthStateChanged((user) => {
       if (typeof unsubUdhaari === "function") { unsubUdhaari(); unsubUdhaari = null; }
       if (!user) { udhaariList = []; return; }
 
-      unsubUdhaari = firebase
-        .firestore()
-        .collection("users")
-        .doc(user.uid)
-        .collection("udhaari")
-        .onSnapshot((snap) => {
-          udhaariList = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-          ensureUdhaariDashboardButton();
-          updateUdhaariAlertBanner();
-          const modal = document.getElementById("proUdhaariModal");
-          if (modal && !modal.classList.contains("hidden")) renderUdhaariModal();
-        }, (err) => {
-          console.warn("Udhaari Sync Warning:", err);
-        });
+      unsubUdhaari = firebase.firestore().collection("users").doc(user.uid).collection("udhaari").onSnapshot((snap) => {
+        udhaariList = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        ensureUdhaariDashboardButton();
+        updateUdhaariAlertBanner();
+        const modal = document.getElementById("proUdhaariModal");
+        if (modal && !modal.classList.contains("hidden")) renderUdhaariModal();
+      }, (err) => console.warn("Udhaari Sync Warning:", err));
     });
   }
 
+  // Self-Healing: लाईन चार्ट किंवा कोणत्याही डॅशबोर्ड बटनावर क्लिक होताच उधारी बटण तपासा (०% अतिरिक्त लोड)
+  function bindSelfHealingTrigger() {
+    document.addEventListener("click", (ev) => {
+      const btn = ev.target && ev.target.closest ? ev.target.closest("#appScreen button") : null;
+      if (!btn) return;
+      const t = (btn.textContent || "").trim();
+      if (t.includes("लाईन चार्ट") || t.includes("रिपोर्ट्स हब") || t.includes("Risk")) {
+        setTimeout(ensureUdhaariDashboardButton, 50);
+        setTimeout(ensureUdhaariDashboardButton, 250);
+      }
+    }, true);
+  }
+
+  // Backup Bridge (live-backup.js साठी)
+  window.getProUdhaariList = () => udhaariList;
   window.openProUdhaari = openUdhaariModal;
 
   function initUdhaariPro() {
     injectUdhaariCss();
     ensureUdhaariModal();
     bindAuthUdhaariSync();
+    bindSelfHealingTrigger();
     document.getElementById("activeYm")?.addEventListener("change", () => {
       ensureUdhaariDashboardButton();
       updateUdhaariAlertBanner();
