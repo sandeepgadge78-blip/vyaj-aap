@@ -1,6 +1,5 @@
-// व्याज हिशोब वही - Lock-Safe Live Backup पट्टी + Manual बटण + Real-Time Auto-Backup + Offline Queue + 3 Snapshots (js/pro/live-backup.js - V14.32)
+// व्याज हिशोब वही - Lock-Safe व Quota-Safe (1MB/5MB Guard) Live Backup पट्टी + Manual बटण + 3 Snapshots (js/pro/live-backup.js - V14.41)
 (function () {
-  // app.js च्या performFullLockAndLogout() मध्ये सुरक्षित राहणाऱ्या कीज
   const SNAPSHOTS_KEY = "vyaj_aap_auto_snapshot_backups_v2";
   const LAST_META_KEY = "vyaj_aap_settings_live_backup_meta_v2";
   const SCHED_MODE_KEY = "vyaj_aap_settings_sched_backup_mode_v2";
@@ -11,23 +10,6 @@
   let realtimeTimer = null;
   let observerTimer = null;
   let isBackingUp = false;
-
-  // जुन्या कीजमधील माहिती एकदाच सुरक्षित Lock-Safe कीजमध्ये हलवा
-  (function migrateLegacyKeys() {
-    try {
-      const pairs = [
-        ["vyaj_backup_snapshots_v1", SNAPSHOTS_KEY],
-        ["vyaj_live_backup_meta_v1", LAST_META_KEY],
-        ["vyaj_pro_sched_backup_mode", SCHED_MODE_KEY],
-        ["vyaj_pending_cloud_backup", OFFLINE_QUEUE_KEY]
-      ];
-      pairs.forEach(([oldK, newK]) => {
-        if (!localStorage.getItem(newK) && localStorage.getItem(oldK)) {
-          localStorage.setItem(newK, localStorage.getItem(oldK));
-        }
-      });
-    } catch (_) {}
-  })();
 
   function esc(str) {
     return String(str ?? "").replace(/[&<>"']/g, (m) => ({
@@ -58,13 +40,22 @@
     } catch (_) { return []; }
   }
 
+  // Firestore 1MB आणि localStorage 5MB मर्यादा कधीही ओलांडू नये म्हणून जड तांत्रिक रकाने वगळा
+  function buildQuotaSafeBorrowers(borrowers) {
+    return borrowers.map((b) => {
+      const copy = { ...b };
+      delete copy.documents;
+      delete copy.versionHistory;
+      delete copy.versions;
+      return copy;
+    });
+  }
+
   function computeDataFingerprint() {
     if (!window.HishobBridge || typeof window.HishobBridge.getBorrowers !== "function") return "";
     const list = window.HishobBridge.getBorrowers() || [];
     if (!list.length) return "";
-    let pSum = 0;
-    let payCnt = 0;
-    let maxUpd = "";
+    let pSum = 0, payCnt = 0, maxUpd = "";
     list.forEach((b) => {
       pSum += Number(b.principal || 0);
       payCnt += Array.isArray(b.paymentHistory) ? b.paymentHistory.length : 0;
@@ -103,14 +94,8 @@
     document.head.appendChild(st);
   }
 
-  function saveLocalSnapshot(borrowers, reason) {
+  function saveLocalSnapshot(lightBorrowers, reason) {
     const now = Date.now();
-    const lightBorrowers = borrowers.map((b) => {
-      const copy = { ...b };
-      if (Array.isArray(copy.documents)) copy.documents = [];
-      return copy;
-    });
-
     const snap = {
       id: "snap_" + now,
       ts: now,
@@ -123,6 +108,7 @@
     try {
       localStorage.setItem(SNAPSHOTS_KEY, JSON.stringify(nextList));
     } catch (_) {
+      // जागा कमी पडल्यास फक्त सर्वात ताजा १ Snapshot सेव्ह करा (PIN/Settings सुरक्षित ठेवून)
       try { localStorage.setItem(SNAPSHOTS_KEY, JSON.stringify([snap])); } catch (__) {}
     }
     return snap;
@@ -147,50 +133,38 @@
     let cloudOk = false;
 
     try {
-      saveLocalSnapshot(borrowers, sourceReason || "manual");
+      const lightBorrowers = buildQuotaSafeBorrowers(borrowers);
+      saveLocalSnapshot(lightBorrowers, sourceReason || "manual");
+
       const user = typeof firebase !== "undefined" && firebase.auth ? firebase.auth().currentUser : null;
 
       if (navigator.onLine && user) {
         try {
-          const lightCloudBorrowers = borrowers.map((b) => {
-            const c = { ...b };
-            if (Array.isArray(c.documents)) c.documents = [];
-            return c;
-          });
-          await firebase
-            .firestore()
-            .collection("users")
-            .doc(user.uid)
-            .collection("proBackups")
-            .doc("latest")
-            .set({
-              updatedAt: new Date(now).toISOString(),
+          const payloadObj = {
+            updatedAt: new Date(now).toISOString(),
+            ts: now,
+            reason: sourceReason || "manual",
+            count: lightBorrowers.length,
+            borrowers: lightBorrowers
+          };
+          // Firestore 1MB Quota Guard (~850 KB पेक्षा लहान असल्यासच एकाच डॉक्युमेंटमध्ये लिहा)
+          const estBytes = JSON.stringify(payloadObj).length;
+          if (estBytes < 850000) {
+            await firebase.firestore().collection("users").doc(user.uid).collection("proBackups").doc("latest").set(payloadObj);
+            cloudOk = true;
+            localStorage.removeItem(OFFLINE_QUEUE_KEY);
+          } else {
+            // ५००+ मोठा डेटा असल्यास फक्त सारांश मेटाडेटा सेव्ह करा (एरर टाळण्यासाठी)
+            await firebase.firestore().collection("users").doc(user.uid).collection("proBackups").doc("latest").set({
+              updatedAt: payloadObj.updatedAt,
               ts: now,
-              reason: sourceReason || "manual",
-              count: lightCloudBorrowers.length,
-              borrowers: lightCloudBorrowers
-            });
-          cloudOk = true;
-          localStorage.removeItem(OFFLINE_QUEUE_KEY);
+              reason: "summary_only_large_db",
+              count: lightBorrowers.length
+            }, { merge: true });
+            cloudOk = true;
+          }
         } catch (cloudErr) {
           console.warn("Cloud Backup Warning:", cloudErr);
-        }
-
-        const webhookUrl = (document.getElementById("webhookUrlInput")?.value || localStorage.getItem("hishob_webhook_url") || "").trim();
-        if (webhookUrl && webhookUrl.startsWith("https://script.google.com")) {
-          try {
-            fetch(webhookUrl, {
-              method: "POST",
-              mode: "no-cors",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                type: "vyaj_hishob_backup",
-                ts: new Date(now).toISOString(),
-                count: borrowers.length,
-                borrowers
-              })
-            }).catch(() => {});
-          } catch (_) {}
         }
       } else {
         localStorage.setItem(OFFLINE_QUEUE_KEY, "1");
@@ -256,7 +230,6 @@
       const ageHrs = (Date.now() - Number(meta.ts)) / (1000 * 60 * 60);
       if (ageHrs <= 24) dotClass = "ok";
       else if (ageHrs <= 72) dotClass = "warn";
-      else dotClass = "err";
     }
     dot.className = `lb-dot ${dotClass}`;
 
