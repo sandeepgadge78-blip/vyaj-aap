@@ -1,5 +1,5 @@
-// व्याज हिशोब वही - सुरक्षित आणि ऑटो-अपडेट Service Worker (v14.42)
-const CACHE_NAME = "vyaj-hishob-cache-v14-42";
+// व्याज हिशोब वही - सुरक्षित आणि ऑटो-अपडेट Service Worker (v14.44)
+const CACHE_NAME = "vyaj-hishob-cache-v14-44";
 const CORE_ASSETS = [
   "./",
   "./index.html",
@@ -33,10 +33,12 @@ const CORE_ASSETS = [
   "./js/pro/cleanup-pro.js",
   "./js/pro/dashboard-pro.js",
   "./js/pro/udhaari-pro.js",
+  "./js/pro/general-pro.js",
   "./manifest.json",
   "./icon.png"
 ];
 
+// इन्स्टॉल होताना नवीन फाईल्स Cache मध्ये सेव्ह करणे
 self.addEventListener("install", (event) => {
   self.skipWaiting();
   event.waitUntil(
@@ -46,6 +48,7 @@ self.addEventListener("install", (event) => {
   );
 });
 
+// अ‍ॅक्टिव्ह होताना जुना Cache पूर्णपणे डिलीट करणे
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
@@ -58,13 +61,23 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+// नेटवर्कवरून ताज्या फाईल्स आणणे (आयकॉन आणि Manifest साठी नेहमी ताजी तपासणी)
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
+  // icon.png किंवा manifest.json साठी नेहमी सर्व्हरवरून ताजी फाईल तपासा
+  const isIconOrManifest =
+    url.pathname.endsWith("/icon.png") ||
+    url.pathname.endsWith("/manifest.json");
+
+  const fetchReq = isIconOrManifest
+    ? new Request(event.request, { cache: "no-cache" })
+    : event.request;
+
   event.respondWith(
-    fetch(event.request)
+    fetch(fetchReq)
       .then((networkResponse) => {
         if (networkResponse && networkResponse.status === 200) {
           const responseClone = networkResponse.clone();
