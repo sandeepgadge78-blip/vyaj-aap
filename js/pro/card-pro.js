@@ -1,4 +1,4 @@
-// व्याज हिशोब वही - कॉम्पॅक्ट Fintech ग्राहक कार्ड + वर जामीनदार + थेट कार्ड-टॅप + सुटसुटीत ४-टॅब अपग्रेडर (js/pro/card-pro.js - V14.36)
+// व्याज हिशोब वही - कॉम्पॅक्ट Fintech ग्राहक कार्ड + वर जामीनदार + थेट कार्ड-टॅप + Auto-Close Sync (js/pro/card-pro.js - V14.41)
 (function () {
   let openCardId = null;
   const activeTabByCard = new Map();
@@ -26,9 +26,6 @@
     }
   }
 
-  // =========================================================================
-  // भाग १: कॉम्पॅक्ट मुख्य कार्ड (वर जामीनदार + नाजूक स्टेटस पिल + Quick Pay + ▾ खूण)
-  // =========================================================================
   function polishCollapsedFront(card, bId) {
     if (card.dataset.pcFrontReady === "1") return;
     card.dataset.pcFrontReady = "1";
@@ -39,7 +36,6 @@
       ? window.HishobBridge.computeLedgerUpToMonth(b, activeYm)
       : null;
 
-    // १. नावासमोर छोटा स्टेटस बॅज जोडा
     const titleEl = card.querySelector(".nc-title");
     if (titleEl && !titleEl.querySelector(".pc-status-pill")) {
       let cls = "pc-st-pending", txt = "बाकी";
@@ -53,7 +49,6 @@
       titleEl.appendChild(pill);
     }
 
-    // २. उजवीकडे '▼ तपशील' ऐवजी नाजूक '▾' आयकॉन जोडा
     const topBtns = card.querySelector(".nc-top-btns");
     if (topBtns && !topBtns.querySelector(".pc-chev-ind")) {
       const chev = document.createElement("span");
@@ -62,7 +57,6 @@
       topBtns.appendChild(chev);
     }
 
-    // ३. नोकरी पिलशेजारीच जामीनदाराचे नाव (किंवा '+ जामीनदार' चिप) स्वच्छ एका ओळीत बसवा
     const jobBtn = card.querySelector(".nc-job-pill");
     if (jobBtn && jobBtn.parentElement && !jobBtn.parentElement.classList.contains("pc-meta-chips-row")) {
       jobBtn.parentElement.classList.add("pc-meta-chips-row");
@@ -80,7 +74,6 @@
       jobBtn.parentElement.appendChild(gChip);
     }
 
-    // ४. तळाच्या ओळीत 'मागील बाकी' सोबत किती महिने बाकी आहेत ते दाखवा + चालू बाकी असल्यास '⚡ जमा' शॉर्टकट
     if (calc) {
       if (calc.pastDue > 0) {
         const pendingMonthsCount = (calc.pastPendingMonths || []).filter((pm) => Number(pm.remaining || 0) > 0).length;
@@ -116,9 +109,6 @@
     }
   }
 
-  // =========================================================================
-  // भाग २: उघडलेल्या कार्डला सुटसुटीत ४ टॅब्समध्ये बदला (डुप्लिकेट हेडिंग्स काढून)
-  // =========================================================================
   function upgradeExpandedCard(card, bId) {
     if (!card || !bId || card.dataset.pcTabsReady === "1") return;
     if (card.classList.contains("status-closed")) return;
@@ -197,7 +187,6 @@
       return blk;
     };
 
-    // टॅब १: हिशोब व मागील बाकी (डुप्लिकेट क्रमांक शीर्षके लपवा)
     if (secCurMonth) {
       const h = secCurMonth.querySelector(":scope > div:first-child");
       if (h && (h.textContent || "").includes("4) निवडलेला महिना")) h.style.display = "none";
@@ -213,7 +202,6 @@
       paneLedger.appendChild(wrapInBlock("मागील बाकी महिने व रक्कम", "", secPastDues));
     }
 
-    // टॅब २: मुद्दल, व्याज दर व व्याज तारीख
     if (secPrincipal) paneLoan.appendChild(wrapInBlock("मुद्दल व इतिहास", "", secPrincipal));
     if (secInterest) {
       paneLoan.appendChild(wrapInBlock(
@@ -234,7 +222,6 @@
       paneLoan.appendChild(wrapInBlock("दरमहा व्याजाची तारीख", "", secIntDay));
     }
 
-    // टॅब ३: वायदे, संपर्क, जामीनदार व टीप (डुप्लिकेट शीर्षके काढून स्वच्छ एक ओळ)
     if (secGuarHeader) {
       ["full-edit", "docs", "soft-delete"].forEach((act) => {
         const btn = secGuarHeader.querySelector(`button[data-action="${act}"]`);
@@ -283,7 +270,6 @@
       paneContact.appendChild(noteBoxNode);
     }
 
-    // टॅब ४: साधने (स्वच्छ २-कॉलम ग्रिड)
     const toolsGrid = document.createElement("div");
     toolsGrid.className = "pc-tools-grid";
 
@@ -383,6 +369,11 @@
   function bindCardToggleWatcher() {
     const listEl = document.getElementById("borrowersList");
     if (!listEl) return;
+
+    // Master UI Reset Bus: दुसरे कोणतेही फीचर उघडताच openCardId स्वच्छ करा (कार्ड पुन्हा उघडणार नाही)
+    window.addEventListener("vyaj:resetInlineUI", () => {
+      openCardId = null;
+    });
 
     listEl.addEventListener("click", (ev) => {
       const clickArea = ev.target && ev.target.closest ? ev.target.closest(".nc-clickable-area[data-toggle-card]") : null;
