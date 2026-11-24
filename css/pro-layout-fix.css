@@ -1,0 +1,95 @@
+/* व्याज हिशोब वही - Zero-Scroll १–२ ओळींचे सर्व बटणे + Smooth 60fps Speed Booster (css/pro-layout-fix.css - V14.40) */
+
+/* =========================================================================
+   १. लाईन चार्ट | रिपोर्ट्स हब | Risk | उधारी — एका स्वच्छ ओळीत (Zero Scroll)
+   ========================================================================= */
+#appScreen .row:has(#proOpenUdhaariBtn),
+#appScreen div:has(> #proOpenUdhaariBtn) {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 5px !important;
+  overflow: visible !important;
+}
+
+#appScreen div:has(> #proOpenUdhaariBtn) > button {
+  width: 100% !important;
+  min-width: 0 !important;
+  padding: 6px 3px !important;
+  font-size: 0.67rem !important;
+  font-weight: 800 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  justify-content: center !important;
+  text-align: center !important;
+  border-radius: 10px !important;
+}
+
+@media (max-width: 340px) {
+  #appScreen div:has(> #proOpenUdhaariBtn) {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+/* =========================================================================
+   २. व्याज रडार | विभाग/जामीनदार | कॅशफ्लो — एका स्वच्छ ओळीत (Zero Scroll)
+   ========================================================================= */
+#vyajSmartProStrip.sr-strip {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 5px !important;
+  overflow: visible !important;
+  padding: 0 !important;
+}
+
+#vyajSmartProStrip .sr-strip-btn {
+  width: 100% !important;
+  min-width: 0 !important;
+  padding: 7px 4px !important;
+  font-size: 0.68rem !important;
+  font-weight: 800 !important;
+  border-radius: 11px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* =========================================================================
+   ३. सर्व खाती | Govt | Pvt | पूर्ण जमा | अर्धवट | बाकी | Closed — २ स्वच्छ ओळींत (Zero Scroll)
+   ========================================================================= */
+.pill-strip {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  overflow-x: visible !important;
+  gap: 5px !important;
+  padding-bottom: 0 !important;
+}
+
+.pill-strip .pill-btn {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  padding: 5px 8px !important;
+  font-size: 0.71rem !important;
+  font-weight: 800 !important;
+  border-radius: 999px !important;
+  text-align: center !important;
+}
+
+/* =========================================================================
+   ४. Speed & Smoothness Booster (अ‍ॅप फास्ट व ६०fps स्मूथ चालण्यासाठी)
+   ========================================================================= */
+#borrowersList .borrower-item {
+  content-visibility: auto;
+  contain-intrinsic-size: 135px;
+  will-change: auto;
+}
+
+/* मोबाईल GPU वरचा जड Blur ताण कमी करून स्मूथ स्क्रोलिंग */
+.card,
+.month-hero-card,
+.stat-tile,
+.psb-bar-wrap,
+.lb-bar {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
