@@ -1,16 +1,25 @@
-// व्याज हिशोब वही - Instant Security Gate + Central Single-Overlay Manager + Universal 100% Working Call Engine (js/pro/core-engine.js - V14.40)
+// व्याज हिशोब वही - Master UI Reset Bus + Global Crash Guard + Smart Back + Instant Security Gate + Universal Call Engine (js/pro/core-engine.js - V14.41)
 (function () {
   let activeOverlayId = null;
   let overlayObserverTimer = null;
 
   // =========================================================================
-  // १. Instant Security & Auth Gate (लॉगिन / PIN तपासणी पूर्ण होईपर्यंत डॅशबोर्ड लपवून ठेवा)
+  // १. Global Crash Guard (अचानक एरर आल्यास अ‍ॅप हँग किंवा बंद पडू नये म्हणून)
+  // =========================================================================
+  window.addEventListener("error", (ev) => {
+    console.warn("Vyaj Crash Guard Caught:", ev.message);
+  });
+  window.addEventListener("unhandledrejection", (ev) => {
+    console.warn("Vyaj Promise Guard Caught:", ev.reason);
+  });
+
+  // =========================================================================
+  // २. Instant Security & Auth Gate (लॉगिन / PIN तपासणी पूर्ण होईपर्यंत डॅशबोर्ड लपवा)
   // =========================================================================
   function initInstantSecurityGate() {
     const splash = document.getElementById("splashScreen");
     if (!splash) return;
 
-    // अ‍ॅप उघडताच १.८ सेकंद किंवा Auth/PIN रेडी होईपर्यंत Splash सुरक्षित ठेवा
     let gateReleased = false;
     const releaseGate = () => {
       if (gateReleased) return;
@@ -32,7 +41,6 @@
         return true;
       }
       if (appVisible) {
-        // जर PIN सेट केलेला असेल तर security.js ला उघडण्यासाठी थोडा वेळ द्या
         const hasSavedPin = Object.keys(localStorage).some((k) => k.startsWith("vyaj_aap_pin_") && localStorage.getItem(k));
         if (!hasSavedPin) {
           releaseGate();
@@ -46,7 +54,6 @@
       if (checkAuthAndPinReady()) clearInterval(poll);
     }, 120);
 
-    // कमाल २.४ सेकंदांनंतर कधीही अडकू नये म्हणून सुरक्षित रिलीझ
     setTimeout(() => {
       clearInterval(poll);
       releaseGate();
@@ -54,39 +61,41 @@
   }
 
   // =========================================================================
-  // २. Central Single-Overlay Manager (एका वेळी फक्त १ मेन्यू / ड्रॉवर / पॉपअप उघडा राहील)
+  // ३. Master UI Reset Bus (ग्राहक कार्ड, वायदा ड्रॉवर आणि साइडबार सेक्शन्स आपोआप बंद करा)
   // =========================================================================
+  function closeAllExpandedBorrowerCards() {
+    document.querySelectorAll('#borrowersList [id^="cardDetails_"]:not(.hidden)').forEach((el) => {
+      el.classList.add("hidden");
+      const card = el.closest(".borrower-item.nc-card");
+      if (card) card.classList.remove("pc-is-open");
+      const id = el.id.replace("cardDetails_", "");
+      const tBtn = document.getElementById(`toggleDetailBtn_${id}`);
+      if (tBtn) tBtn.textContent = "▼ तपशील";
+    });
+    window.dispatchEvent(new CustomEvent("vyaj:resetInlineUI"));
+  }
+
   function closePromiseActivityDrawer() {
     const drawer = document.getElementById("pbDrawerBody");
     const toggleBar = document.getElementById("pbToggleBar");
-    if (drawer && toggleBar) {
-      toggleBar.click();
-    }
+    if (drawer && toggleBar) toggleBar.click();
   }
 
   function closeSidebarMenus() {
-    // ☰ साइडबार किंवा 3-dot मेन्यू उघडा असल्यास बंद करा
     const sidebarIds = ["proSidebarOverlay", "proSidebarDrawer", "proThreeDotDropdown", "uiProMenuDrawer"];
     sidebarIds.forEach((id) => {
       const el = document.getElementById(id);
-      if (el && !el.classList.contains("hidden")) {
-        el.classList.add("hidden");
-      }
+      if (el && !el.classList.contains("hidden")) el.classList.add("hidden");
     });
-    // कोणतेही उघडे <details> मेन्यू सेक्शन्स (General, Reports, Backup, Security) स्वच्छ बंद करा
     document.querySelectorAll("details[open]").forEach((det) => {
-      if (!det.closest(".modal-backdrop:not(.hidden)")) {
-        det.removeAttribute("open");
-      }
+      if (!det.closest(".modal-backdrop:not(.hidden)")) det.removeAttribute("open");
     });
   }
 
   function closeOtherModalsExcept(keepId) {
     document.querySelectorAll(".modal-backdrop").forEach((m) => {
       if (!m.id || m.id === keepId) return;
-      if (!m.classList.contains("hidden")) {
-        m.classList.add("hidden");
-      }
+      if (!m.classList.contains("hidden")) m.classList.add("hidden");
     });
   }
 
@@ -96,47 +105,65 @@
     );
 
     if (openModals.length > 0) {
-      // सर्वात शेवटी उघडलेला पॉपअप ओळखा
       const newest = openModals.find((m) => m.id !== activeOverlayId) || openModals[openModals.length - 1];
       activeOverlayId = newest.id;
 
-      // इतर सर्व जुने उघडे पॉपअप, वायदा ड्रॉवर आणि साइडबार मेन्यू बंद करा
-      if (openModals.length > 1) {
-        closeOtherModalsExcept(newest.id);
-      }
+      if (openModals.length > 1) closeOtherModalsExcept(newest.id);
       closePromiseActivityDrawer();
       closeSidebarMenus();
+
+      // Edit, Docs किंवा Passbook सोडून इतर कोणतेही मुख्य फीचर उघडल्यास उघडे ग्राहक कार्ड स्वच्छ बंद करा
+      const keepCardFor = new Set(["editModal", "docsModal", "passbookModal", "proPastDuesModal", "smartInfoModal"]);
+      if (!keepCardFor.has(newest.id)) {
+        closeAllExpandedBorrowerCards();
+      }
     } else {
       activeOverlayId = null;
     }
   }
 
-  // तळाच्या नेव्हिगेशन बारवर (Home, Months, आजची वसुली, Pay) क्लिक करताच आधीचे सर्व पॉपअप/ड्रॉवर बंद करा
   function bindGlobalNavCleanup() {
     document.addEventListener("click", (ev) => {
       const target = ev.target && ev.target.closest ? ev.target.closest("button, a") : null;
       if (!target) return;
 
-      // तळाच्या बारवरील बटण किंवा Home क्लिक
+      // तळाच्या नेव्हिगेशन बारवर क्लिक केल्यास सर्व उघडे कार्ड्स व मेन्यू बंद करा
       if (target.closest("#uiProBottomNav, .bottom-nav, nav")) {
         closePromiseActivityDrawer();
         closeSidebarMenus();
+        closeAllExpandedBorrowerCards();
         const txt = (target.textContent || "").trim().toLowerCase();
-        if (txt.includes("home")) {
-          closeOtherModalsExcept("");
-        }
+        if (txt.includes("home")) closeOtherModalsExcept("");
       }
 
-      // वायदा Activity पट्टी उघडताना इतर पॉपअप व मेन्यू बंद ठेवा
+      // साइडबार / ३-डॉट मेन्यू उघडताना उघडे ग्राहक कार्ड व वायदा ड्रॉवर बंद करा
+      if (target.closest("#threeDotMenuSlot") || target.id === "uiProHamburgerBtn") {
+        closePromiseActivityDrawer();
+        closeAllExpandedBorrowerCards();
+      }
+
+      // वायदा Activity पट्टी उघडताना इतर सर्व बंद करा
       if (target.id === "pbToggleBar" || target.closest("#pbToggleBar")) {
         closeOtherModalsExcept("");
         closeSidebarMenus();
+        closeAllExpandedBorrowerCards();
       }
     }, true);
+
+    // Smart Back बटण: पॉपअप नसताना ग्राहक कार्ड उघडे असेल तर आधी कार्ड बंद करा
+    window.addEventListener("popstate", () => {
+      const hasOpenModal = Array.from(document.querySelectorAll(".modal-backdrop")).some(
+        (m) => m.id && !m.classList.contains("hidden")
+      );
+      if (!hasOpenModal) {
+        const hasOpenCard = Boolean(document.querySelector('#borrowersList [id^="cardDetails_"]:not(.hidden)'));
+        if (hasOpenCard) closeAllExpandedBorrowerCards();
+      }
+    });
   }
 
   // =========================================================================
-  // ३. Universal 100% Working Call Engine (संपूर्ण अ‍ॅपमधील सर्व Call बटणांसाठी)
+  // ४. Universal 100% Working Call Engine (संपूर्ण अ‍ॅपमधील सर्व Call बटणांसाठी)
   // =========================================================================
   function cleanIndianMobile(raw) {
     const digits = String(raw || "").replace(/\D/g, "");
@@ -163,12 +190,10 @@
 
   function extractMobileFromElement(el) {
     if (!el) return "";
-    // १. थेट href="tel:..." किंवा data-* अ‍ॅट्रीब्यूट तपासा
     const href = el.getAttribute("href") || "";
     if (href.startsWith("tel:")) return cleanIndianMobile(href.replace("tel:", ""));
 
-    const directAttrs = ["data-mobile", "data-sr-call", "data-cd-call", "data-call", "data-phone"];
-    for (const attr of directAttrs) {
+    for (const attr of ["data-mobile", "data-sr-call", "data-cd-call", "data-call", "data-phone"]) {
       const val = el.getAttribute(attr);
       if (val) {
         const c = cleanIndianMobile(val);
@@ -176,12 +201,10 @@
       }
     }
 
-    // २. onclick मधील tel: नंबर शोधा
     const onClk = el.getAttribute("onclick") || "";
     const telMatch = onClk.match(/tel:([+\d\s\-]{10,15})/);
     if (telMatch) return cleanIndianMobile(telMatch[1]);
 
-    // ३. जवळच्या ग्राहक कार्डवरून HishobBridge मधून नंबर काढा
     const card = el.closest(".borrower-item, .pb-card, .psb-item, .sr-item-card, .ud-card");
     if (card) {
       const bId =
@@ -196,7 +219,6 @@
           if (c.length >= 10) return c;
         }
       }
-      // ४. कार्डमधील टेक्स्टवरून १० अंकी नंबर शोधा
       const txtMatch = (card.textContent || "").match(/[6-9]\d{9}/);
       if (txtMatch) return txtMatch[0];
     }
@@ -232,12 +254,44 @@
     }, true);
   }
 
+  // =========================================================================
+  // ५. Settings मध्ये १-क्लिक सुरक्षित Cache Cleaner (PIN व डेटा १००% सुरक्षित)
+  // =========================================================================
+  function injectCacheCleanerInSettings() {
+    const resetBtn = document.getElementById("setResetPassBtn");
+    if (!resetBtn || document.getElementById("proSafeCacheCleanBtn")) return;
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.id = "proSafeCacheCleanBtn";
+    btn.className = "primary sm";
+    btn.style.width = "100%";
+    btn.textContent = "🧹 अ‍ॅप स्पीड व कॅश साफ करा (Safe Clean)";
+    btn.addEventListener("click", async () => {
+      if (!confirm("तात्पुरता कॅश साफ करून अ‍ॅप ताजे करायचे का? (तुमचा Firebase डेटा, PIN व प्रोफाईल १००% सुरक्षित राहील.)")) return;
+      try {
+        if ("caches" in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map((k) => caches.delete(k)));
+        }
+        sessionStorage.clear();
+        alert("✅ कॅश साफ झाला! अ‍ॅप आता नवीन वेगाने रीलोड होत आहे.");
+        window.location.reload();
+      } catch (err) {
+        alert("कॅश साफ करताना एरर: " + err.message);
+      }
+    });
+    resetBtn.insertAdjacentElement("beforebegin", btn);
+  }
+
   window.VyajCore = {
     triggerNativeDialer,
+    closeAllExpandedBorrowerCards,
     closeAllOverlays: () => {
       closeOtherModalsExcept("");
       closePromiseActivityDrawer();
       closeSidebarMenus();
+      closeAllExpandedBorrowerCards();
     }
   };
 
@@ -245,6 +299,7 @@
     initInstantSecurityGate();
     bindGlobalNavCleanup();
     bindUniversalCallEngine();
+    injectCacheCleanerInSettings();
 
     const obs = new MutationObserver(() => {
       clearTimeout(overlayObserverTimer);
