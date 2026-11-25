@@ -1,4 +1,4 @@
-/* व्याज हिशोब वही - Zero-Scroll १–२ ओळींचे सर्व बटणे + Smooth 60fps Speed Booster (css/pro-layout-fix.css - V14.40) */
+/* व्याज हिशोब वही - Zero-Scroll १–२ ओळींचे सर्व बटणे + Anti-Blink 60fps Smoothness (css/pro-layout-fix.css - V14.43) */
 
 /* =========================================================================
    १. लाईन चार्ट | रिपोर्ट्स हब | Risk | उधारी — एका स्वच्छ ओळीत (Zero Scroll)
@@ -55,7 +55,7 @@
 }
 
 /* =========================================================================
-   ३. सर्व खाती | Govt | Pvt | पूर्ण जमा | अर्धवट | बाकी | Closed — २ स्वच्छ ओळींत (Zero Scroll)
+   ३. सर्व खाती | Govt | Pvt | पूर्ण जमा | अर्धवट | बाकी | Closed — २ स्वच्छ ओळींत
    ========================================================================= */
 .pill-strip {
   display: flex !important;
@@ -76,20 +76,20 @@
 }
 
 /* =========================================================================
-   ४. Speed & Smoothness Booster (अ‍ॅप फास्ट व ६०fps स्मूथ चालण्यासाठी)
+   ४. Anti-Blink 60fps Smoothness (ब्लिंकिंग देणारे content-visibility काढले)
    ========================================================================= */
 #borrowersList .borrower-item {
-  content-visibility: auto;
-  contain-intrinsic-size: 135px;
-  will-change: auto;
+  contain: layout style;
+  transition: none !important;
 }
 
-/* मोबाईल GPU वरचा जड Blur ताण कमी करून स्मूथ स्क्रोलिंग */
 .card,
 .month-hero-card,
 .stat-tile,
 .psb-bar-wrap,
-.lb-bar {
+.lb-bar,
+.pb-wrap {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+  contain: layout style;
 }
