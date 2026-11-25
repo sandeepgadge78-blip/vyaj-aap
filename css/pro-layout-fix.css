@@ -1,7 +1,38 @@
-/* व्याज हिशोब वही - Zero-Scroll १–२ ओळींचे सर्व बटणे + Anti-Blink 60fps Smoothness (css/pro-layout-fix.css - V14.43) */
+/* व्याज हिशोब वही - Header Solid Fix + Floating Chip Guard + Zero-Scroll बटणे + Anti-Blink 60fps (css/pro-layout-fix.css - V15.0) */
 
 /* =========================================================================
-   १. लाईन चार्ट | रिपोर्ट्स हब | Risk | उधारी — एका स्वच्छ ओळीत (Zero Scroll)
+   १. वरच्या हेडरमध्ये मागची बटणे कधीही मिसळू नयेत (100% Solid Header & Z-Index)
+   ========================================================================= */
+header {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 45 !important;
+  background: #0c0d12 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.55) !important;
+}
+
+body.light-mode header {
+  background: #fbfaf7 !important;
+  border-bottom: 1px solid #d5cfc2 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+}
+
+.modal-backdrop {
+  z-index: 70 !important;
+}
+
+/* ग्राहक कार्ड किंवा पॉपअप उघडे असताना फ्लोटिंग 'मागील स्क्रीन' चिप आकड्यांवर चढू नये */
+body:has(#borrowersList .pc-is-open) #proSmartSwitcherChip,
+body:has(#borrowersList [id^="cardDetails_"]:not(.hidden)) #proSmartSwitcherChip,
+body:has(.modal-backdrop:not(.hidden)) #proSmartSwitcherChip,
+body:has(#pbDrawerBody) #proSmartSwitcherChip {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+/* =========================================================================
+   २. लाईन चार्ट | रिपोर्ट्स हब | Risk | उधारी — एका स्वच्छ ओळीत (Zero Scroll)
    ========================================================================= */
 #appScreen .row:has(#proOpenUdhaariBtn),
 #appScreen div:has(> #proOpenUdhaariBtn) {
@@ -32,7 +63,7 @@
 }
 
 /* =========================================================================
-   २. व्याज रडार | विभाग/जामीनदार | कॅशफ्लो — एका स्वच्छ ओळीत (Zero Scroll)
+   ३. व्याज रडार | विभाग/जामीनदार | कॅशफ्लो — एका स्वच्छ ओळीत (Zero Scroll)
    ========================================================================= */
 #vyajSmartProStrip.sr-strip {
   display: grid !important;
@@ -55,7 +86,7 @@
 }
 
 /* =========================================================================
-   ३. सर्व खाती | Govt | Pvt | पूर्ण जमा | अर्धवट | बाकी | Closed — २ स्वच्छ ओळींत
+   ४. सर्व खाती | Govt | Pvt | पूर्ण जमा | अर्धवट | बाकी | Closed — २ स्वच्छ ओळींत
    ========================================================================= */
 .pill-strip {
   display: flex !important;
@@ -76,7 +107,7 @@
 }
 
 /* =========================================================================
-   ४. Anti-Blink 60fps Smoothness (ब्लिंकिंग देणारे content-visibility काढले)
+   ५. Anti-Blink 60fps Smoothness (ब्लिंकिंग देणारे नियम काढले)
    ========================================================================= */
 #borrowersList .borrower-item {
   contain: layout style;
