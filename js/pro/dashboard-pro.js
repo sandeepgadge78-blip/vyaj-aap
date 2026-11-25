@@ -1,94 +1,7 @@
-// व्याज हिशोब वही - Anti-Blink Smart Diff Dashboard + Single Ledger Cache Engine (js/pro/dashboard-pro.js - V14.43)
+// व्याज हिशोब वही - VyajKernel Powered Anti-Blink Dashboard Bar (स्वतःचा Observer काढला) (js/pro/dashboard-pro.js - V15.1)
 (function () {
-  const MONTHS_MR = ["जानेवारी", "फेब्रुवारी", "मार्च", "एप्रिल", "मे", "जून", "जुलै", "ऑगस्ट", "सप्टेंबर", "ऑक्टोबर", "नोव्हेंबर", "डिसेंबर"];
   const RING_CIRC = 113.1;
-
-  let renderTimer = null;
   let lastRenderSig = "";
-  let lastPendingBadgeText = "";
-  let cachedLedgerKey = "";
-  let cachedLedgerTs = 0;
-  let cachedLedgerData = null;
-
-  function esc(str) {
-    return String(str ?? "").replace(/[&<>"']/g, (m) => ({
-      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
-    }[m]));
-  }
-
-  function fmtInr(val) {
-    const n = Number(val || 0);
-    if (window.HishobBridge && typeof window.HishobBridge.fmtAmt === "function") {
-      return window.HishobBridge.fmtAmt(n);
-    }
-    return "₹" + n.toLocaleString("en-IN");
-  }
-
-  function fmtYmMr(ym) {
-    if (!ym || !String(ym).includes("-")) return String(ym || "");
-    const [y, m] = String(ym).split("-");
-    return `${MONTHS_MR[parseInt(m, 10) - 1] || m} ${y}`;
-  }
-
-  function getActiveYm() {
-    return document.getElementById("activeYm")?.value || new Date().toISOString().slice(0, 7);
-  }
-
-  // =========================================================================
-  // Single Ledger Cache (संपूर्ण अ‍ॅपसाठी ६ वेळा होणारी गणिते फक्त १ वेळा मोजा)
-  // =========================================================================
-  function getLedgerSnapshot(forceYm) {
-    const activeYm = forceYm || getActiveYm();
-    const empty = {
-      activeYm, activeCount: 0, expected: 0, collected: 0, paidAccounts: 0,
-      currentPending: 0, currentPendingCount: 0, pastPending: 0, pastPendingCount: 0,
-      totalPending: 0, pct: 0, rows: []
-    };
-    if (!window.HishobBridge || typeof window.HishobBridge.getBorrowers !== "function") return empty;
-
-    const all = window.HishobBridge.getBorrowers() || [];
-    let pSum = 0, payCnt = 0, updMax = "";
-    for (let i = 0; i < all.length; i++) {
-      const b = all[i];
-      pSum += Number(b.principal || 0);
-      payCnt += Array.isArray(b.paymentHistory) ? b.paymentHistory.length : 0;
-      const u = String(b.updatedAt || "");
-      if (u > updMax) updMax = u;
-    }
-
-    const key = `${activeYm}|${all.length}|${pSum}|${payCnt}|${updMax}`;
-    const now = Date.now();
-    if (cachedLedgerData && cachedLedgerKey === key && now - cachedLedgerTs < 500) {
-      return cachedLedgerData;
-    }
-
-    const out = { ...empty, rows: [] };
-    for (let i = 0; i < all.length; i++) {
-      const b = all[i];
-      if (b.isDeleted || b.accountStatus === "closed") continue;
-      const calc = window.HishobBridge.computeLedgerUpToMonth(b, activeYm);
-      out.activeCount += 1;
-      out.expected += Number(calc.monthlyInterest || 0);
-      const col = Number(calc.collectedInMonth || 0);
-      out.collected += col;
-      if (col > 0 || calc.status === "paid") out.paidAccounts += 1;
-
-      const curRem = Math.max(0, Number(calc.remainingThisMonth || 0));
-      const pastDue = Math.max(0, Number(calc.pastDue || 0));
-      if (curRem > 0) { out.currentPending += curRem; out.currentPendingCount += 1; }
-      if (pastDue > 0) { out.pastPending += pastDue; out.pastPendingCount += 1; }
-      out.totalPending += Math.max(0, Number(calc.totalPayable || 0));
-      out.rows.push({ b, calc });
-    }
-
-    out.pct = out.expected > 0 ? Math.min(100, Math.round((out.collected / out.expected) * 100)) : 0;
-    cachedLedgerKey = key;
-    cachedLedgerTs = now;
-    cachedLedgerData = out;
-    return out;
-  }
-
-  window.VyajLedgerCache = { getSnapshot: getLedgerSnapshot };
 
   function buildRingSvg(pct, colorHex) {
     const clamped = Math.max(0, Math.min(100, Number(pct || 0)));
@@ -161,27 +74,31 @@
     return wrap;
   }
 
-  function renderDashboardPro() {
+  function renderDashboardPro(kernelReport) {
+    const K = window.VyajKernel;
+    if (!K) return;
+
     const wrap = ensureInterestSplitBar();
     if (!wrap) return;
 
-    const s = getLedgerSnapshot();
+    const report = kernelReport || K.getMonthReport();
+    const s = report.summary;
     const isHiddenAmt = document.body.classList.contains("hide-amounts");
-    const sig = `${s.activeYm}|${s.activeCount}|${s.expected}|${s.collected}|${s.paidAccounts}|${s.pct}|${isHiddenAmt}`;
+    const sig = `${report.activeYm}|${s.activeCount}|${s.expectedInterest}|${s.collectedInterest}|${s.paidAccountsCount}|${s.collectionPct}|${isHiddenAmt}`;
 
-    // Smart Diff: आकडे बदलले नसतील तर बॉक्स पुन्हा पुसून लिहू नका (०% ब्लिंकिंग)
+    // Smart Diff: आकडे बदलले नसतील तर DOM पुन्हा पुसून लिहू नका (०% ब्लिंकिंग)
     if (sig !== lastRenderSig || !wrap.children.length) {
       lastRenderSig = sig;
       wrap.innerHTML = `
         <div class="psb-bar-head">
-          <span>💰 मासिक व्याज व जमा (${esc(fmtYmMr(s.activeYm))})</span>
+          <span>💰 मासिक व्याज व जमा (${K.esc(K.fmtYmMr(report.activeYm))})</span>
           <span>टॅप करून यादी पहा ▸</span>
         </div>
         <div class="psb-grid">
           <div class="psb-tile dp-tile dp-exp" id="dpOpenExpectedTile">
             <div class="psb-tile-info">
               <span class="psb-tile-lbl">🔵 मासिक व्याज</span>
-              <span class="psb-tile-amt" style="color:var(--accent);">${fmtInr(s.expected)}</span>
+              <span class="psb-tile-amt" style="color:var(--accent);">${K.fmtInr(s.expectedInterest)}</span>
               <span class="psb-tile-sub">${s.activeCount} सक्रिय खाती ▸</span>
             </div>
             ${buildRingSvg(100, "#7dd3fc")}
@@ -189,10 +106,10 @@
           <div class="psb-tile dp-tile dp-col" id="dpOpenCollectedTile">
             <div class="psb-tile-info">
               <span class="psb-tile-lbl">🟢 जमा व्याज</span>
-              <span class="psb-tile-amt" style="color:var(--accent-2);">${fmtInr(s.collected)}</span>
-              <span class="psb-tile-sub">${s.paidAccounts} खाती जमा ▸</span>
+              <span class="psb-tile-amt" style="color:var(--accent-2);">${K.fmtInr(s.collectedInterest)}</span>
+              <span class="psb-tile-sub">${s.paidAccountsCount} खाती जमा ▸</span>
             </div>
-            ${buildRingSvg(s.pct, "#4ade80")}
+            ${buildRingSvg(s.collectionPct, "#4ade80")}
           </div>
         </div>
       `;
@@ -206,34 +123,26 @@
       });
     }
 
-    // बाकी व्याज विभागणीच्या हेडरमध्ये 'एकूण बाकी' फक्त बदल झाला तरच अपडेट करा
-    const pendingBar = document.getElementById("proPendingSplitBar");
-    if (pendingBar) {
-      const headSpan = pendingBar.querySelector(".psb-bar-head span:first-child");
-      const badgeVal = fmtInr(s.totalPending);
-      if (headSpan && (badgeVal !== lastPendingBadgeText || !headSpan.querySelector(".dp-tot-badge"))) {
-        lastPendingBadgeText = badgeVal;
-        headSpan.innerHTML = `📊 बाकी व्याज विभागणी <span class="dp-tot-badge">एकूण ${badgeVal}</span>`;
-      }
-    }
-
     hideLegacyCollectedSummary();
   }
 
   function initDashboardPro() {
     injectDashboardProCss();
-    renderDashboardPro();
 
-    const listEl = document.getElementById("borrowersList");
-    if (listEl) {
-      const obs = new MutationObserver(() => {
-        clearTimeout(renderTimer);
-        renderTimer = setTimeout(renderDashboardPro, 240);
-      });
-      obs.observe(listEl, { childList: true });
+    // स्वतंत्र MutationObserver ऐवजी फक्त VyajKernel च्या एकाच सिग्नलवर subscribe करा
+    if (window.VyajKernel && typeof window.VyajKernel.subscribe === "function") {
+      window.VyajKernel.subscribe(renderDashboardPro);
     }
-    document.getElementById("activeYm")?.addEventListener("change", () => setTimeout(renderDashboardPro, 120));
-    setTimeout(renderDashboardPro, 1200);
+
+    // Hide/Show रक्कम बदलल्यावर लगेच अपडेट करा
+    document.addEventListener("click", (ev) => {
+      if (ev.target && ev.target.closest("#toggleHideAmtBtn, #setToggleHideBtn")) {
+        setTimeout(() => renderDashboardPro(), 80);
+      }
+    });
+
+    renderDashboardPro();
+    setTimeout(() => renderDashboardPro(), 1100);
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initDashboardPro);
