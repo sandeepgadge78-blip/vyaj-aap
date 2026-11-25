@@ -1,5 +1,5 @@
-// व्याज हिशोब वही - VyajOS Central Kernel Service Worker (v15.0)
-const CACHE_NAME = "vyaj-hishob-cache-v15-0";
+// व्याज हिशोब वही - VyajOS Central Kernel Service Worker (v15.1)
+const CACHE_NAME = "vyaj-hishob-cache-v15-1";
 const CORE_ASSETS = [
   "./",
   "./index.html",
