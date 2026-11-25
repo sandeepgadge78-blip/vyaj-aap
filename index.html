@@ -5,12 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#090a0d" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://sandeepgadge78-blip.github.io; script-src 'self' https://www.gstatic.com https://apis.google.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; worker-src 'self' blob: https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://*.googleusercontent.com https://api.qrserver.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://docs.google.com https://*.googleusercontent.com https://script.google.com https://script.googleusercontent.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com;" />
-  <title>व्याज हिशोब वही (V14.46)</title>
+  <title>व्याज हिशोब वही (V14.43)</title>
 
-  <!-- PWA Manifest आणि कायमस्वरूपी Icon सेटिंग्ज -->
   <link rel="manifest" href="./manifest.json" />
-  <link rel="icon" type="image/png" href="./icon.png?v=14.46" />
-  <link rel="apple-touch-icon" href="./icon.png?v=14.46" />
 
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js" crossorigin="anonymous"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js" crossorigin="anonymous"></script>
@@ -18,7 +15,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js" crossorigin="anonymous"></script>
 
   <style>
-    /* Base Theme Layout (V14.46 - Smoked Black Glass) */
+    /* Base Theme Layout (V14.43 - Smoked Black Glass) */
     :root {
       --bg: #090a0d;
       --card: rgba(20, 22, 28, 0.94);
@@ -53,9 +50,6 @@
       transition: background 0.25s, color 0.25s;
     }
 
-    /* रिकाम्या Fixed Slots मुळे अतिरिक्त जागा तयार होऊ नये म्हणून */
-    .vyaj-fixed-slot:empty { display: none; }
-
     #splashScreen {
       position: fixed; inset: 0; z-index: 9999;
       background: radial-gradient(circle at 50% 35%, #1a1d24 0%, #090a0d 75%);
@@ -64,15 +58,12 @@
     }
     #splashScreen.splash-hide { opacity: 0; visibility: hidden; pointer-events: none; }
     .splash-logo {
-      width: 78px; height: 78px; border-radius: 22px; overflow: hidden;
+      width: 78px; height: 78px; border-radius: 22px;
       background: linear-gradient(135deg, #272b36, #14161d);
       border: 1px solid rgba(255, 255, 255, 0.22);
       display: flex; align-items: center; justify-content: center;
       font-size: 2.2rem; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7);
       animation: splashPulse 1.4s infinite ease-in-out;
-    }
-    .splash-logo img {
-      width: 100%; height: 100%; object-fit: cover; display: block;
     }
     .splash-title { font-size: 1.55rem; font-weight: 900; letter-spacing: 0.4px; color: #f8fafc; }
     .splash-sub { font-size: 0.8rem; color: #98a1b0; }
@@ -166,20 +157,18 @@
     }
   </style>
 
-  <!-- Smoked Black Glass + Fintech 4-Tab Card + Zero-Scroll Layout Fix CSS -->
+  <!-- Smoked Black Glass + Fintech 4-Tab Card + Anti-Blink Zero-Scroll Layout CSS -->
   <link rel="stylesheet" href="./css/pro-theme.css?v=14.25" />
   <link rel="stylesheet" href="./css/pro-card.css?v=14.36" />
-  <link rel="stylesheet" href="./css/pro-layout-fix.css?v=14.40" />
+  <link rel="stylesheet" href="./css/pro-layout-fix.css?v=14.43" />
 </head>
 <body>
 
-  <!-- Splash Screen (icon.png आपोआप दिसेल, लोड न झाल्यास 💎 दिसेल) -->
+  <!-- Splash Screen -->
   <div id="splashScreen">
-    <div class="splash-logo">
-      <img src="./icon.png?v=14.46" alt="💎" />
-    </div>
+    <div class="splash-logo">💎</div>
     <div class="splash-title">व्याज हिशोब वही</div>
-    <div class="splash-sub">Business Pro V14.46 • सुरक्षित लोडिंग...</div>
+    <div class="splash-sub">Business Pro V14.43 • सुरक्षित लोडिंग...</div>
   </div>
 
   <!-- स्वच्छ एक-ओळीचा हेडर -->
@@ -231,10 +220,6 @@
     <div id="monthEndBanner" class="info-banner hidden"></div>
     <div id="todayPromiseAlert" class="alert-banner hidden"></div>
 
-    <!-- कायमस्वरूपी Fixed Slots: उधारी अलर्ट व वायदा पट्टी -->
-    <div id="slot-udhaari-alert" class="vyaj-fixed-slot"></div>
-    <div id="slot-promise-bar" class="vyaj-fixed-slot"></div>
-
     <!-- Smoked Black Glass महिना कार्ड -->
     <section class="month-hero-card">
       <div class="month-hero-sub">चालू खातेवही महिना</div>
@@ -256,9 +241,6 @@
       </div>
     </section>
 
-    <!-- कायमस्वरूपी Fixed Slot: Live Backup पट्टी -->
-    <div id="slot-live-backup" class="vyaj-fixed-slot"></div>
-
     <!-- २x२ डॅशबोर्ड कार्ड्स -->
     <section class="grid-2x2">
       <div class="stat-tile">
@@ -278,14 +260,6 @@
         <div id="dashTotalPending" class="stat-tile-val" style="color:var(--danger);">₹0</div>
       </div>
     </section>
-
-    <!-- कायमस्वरूपी Fixed Slots: मासिक व्याज व जमा + बाकी व्याज विभागणी -->
-    <div id="slot-interest-bar" class="vyaj-fixed-slot"></div>
-    <div id="slot-pending-bar" class="vyaj-fixed-slot"></div>
-
-    <!-- कायमस्वरूपी Fixed Slots: रडार पट्टी व भविष्यातील नवीन फीचर्ससाठी सुरक्षित जागा -->
-    <div id="slot-radar-strip" class="vyaj-fixed-slot"></div>
-    <div id="slot-custom-future" class="vyaj-fixed-slot"></div>
 
     <!-- सर्च बार व पिल फिल्टर्स -->
     <input type="text" id="searchInput" class="search-pill-box" placeholder="🔍 नाव किंवा मोबाईल नंबर शोधा..." />
@@ -375,12 +349,12 @@
       </div>
       <div style="display:flex; flex-direction:column; gap:10px; font-size:0.86rem; line-height:1.6;">
         <div class="meta-box">
-          <strong>१. स्वतंत्र उधारी हिशोब (Udhaari Pro) कसा वापराल?</strong><br/>
-          डॅशबोर्डवरील <strong>🤝 उधारी</strong> बटनावर क्लिक करा — यात दिलेली उधारी, परतफेडीचा वायदा आणि जमा नोंदी व्याजाच्या हिशोबापेक्षा १००% स्वतंत्र राहतील.
+          <strong>१. ऑटो 10 / 4 / 6 Push अलर्ट कसा चालतो?</strong><br/>
+          फक्त एकदा Notification ला <strong>Allow</strong> दाबा — त्यानंतर रोज सकाळी १०, दुपारी ४ आणि संध्याकाळी ६ वाजता व्याज व उधारी वायद्यांचे अलर्ट आपोआप येतील.
         </div>
         <div class="meta-box">
-          <strong>२. Smart Resume Switcher कसे वापराल?</strong><br/>
-          एखादे फीचर उघडून बॅक आल्यावर तळाशी डावीकडे <strong>↩️ परत जा</strong> चिप दिसेल — त्यावर १ टॅप करताच तुम्ही जिथे सोडले होते तिथेच पुन्हा जाल.
+          <strong>२. स्वतंत्र उधारी हिशोब (Udhaari Pro) कसा वापराल?</strong><br/>
+          डॅशबोर्डवरील <strong>🤝 उधारी</strong> बटनावर क्लिक करा — यात दिलेली उधारी, परतफेडीचा वायदा आणि जमा नोंदी व्याजाच्या हिशोबापेक्षा १००% स्वतंत्र राहतील.
         </div>
         <div class="meta-box">
           <strong>३. चालू महिना बाकी आणि मागील महिने बाकी वेगवेगळे कसे पहावे?</strong><br/>
@@ -460,9 +434,9 @@
         <div style="margin-top:12px;"><button id="addBorrowerBtn" class="primary" style="width:100%;">+ ग्राहक / कर्ज जोडा</button></div>
       </section>
 
-      <!-- २. WhatsApp, UPI QR व सकाळचे Notification रिमाइंडर -->
+      <!-- २. WhatsApp, UPI QR व ऑटो 10/4/6 Notification रिमाइंडर -->
       <section class="tool-sec-pane hidden" id="remSection">
-        <h3 id="tRemTitle" class="hidden">📲 WhatsApp, UPI QR व सकाळचे Notification रिमाइंडर</h3>
+        <h3 id="tRemTitle" class="hidden">📲 WhatsApp, UPI QR व ऑटो 10/4/6 Notification रिमाइंडर</h3>
         <div class="row" style="margin-bottom:10px;">
           <input type="tel" id="selfWaNumber" placeholder="स्वतःचा WhatsApp नंबर (9198XXXXXXXX)" style="flex:1; min-width:200px;" />
           <button id="saveWaNumberBtn" class="primary sm">नंबर सेव्ह करा</button>
@@ -474,7 +448,7 @@
         <div class="row" style="margin-bottom:10px;">
           <button id="waTodayPromiseBtn" class="success sm">💬 आजचे वायदे (WA)</button>
           <button id="waPendingListBtn" class="warn sm">💬 बाकी/अर्धवट (WA)</button>
-          <button id="enableNotifBtn" class="primary sm">🔔 सकाळचे Notification</button>
+          <button id="enableNotifBtn" class="primary sm">🔔 10/4/6 Push चालू करा</button>
           <button id="testNotifBtn" class="sm">🧪 Test</button>
         </div>
         <div id="notifStatusMsg" class="muted"></div>
@@ -599,10 +573,7 @@
 
   <div id="passbookModal" class="modal-backdrop hidden"><div class="modal-card"><div class="row" style="justify-content:space-between;"><h3 id="pbTitle" style="margin:0;">Passbook</h3></div><div class="tab-bar"><button class="tab-btn active sm" data-pbtab="passbook">📖 Passbook</button><button class="tab-btn sm" data-pbtab="timeline">🕒 Timeline</button><button class="tab-btn sm" data-pbtab="payments">💰 Payments</button><button class="tab-btn sm" data-pbtab="principals">📊 मुद्दल</button></div><div id="pbContent"></div></div></div>
 
-  <!-- १. मध्यवर्ती App Hub (सर्वात आधी लोड होईल — झिरो-लोड कंट्रोलर) -->
-  <script src="./js/core/app-hub.js?v=14.46"></script>
-
-  <!-- २. मूळ अ‍ॅप व प्रो स्क्रिप्ट्स (V14.46) -->
+  <!-- ब्राउझर कॅश रिफ्रेशसाठी V14.43 व्हर्जनसह सुरक्षित स्क्रिप्ट्स (app.js वर ०% लोड) -->
   <script src="./app.js?v=14.9"></script>
   <script src="./dashboard.js?v=14.3"></script>
   <script src="./backup-safety.js?v=14.5"></script>
@@ -613,7 +584,7 @@
   <script src="./js/receipt-card.js?v=14.22"></script>
   <script src="./js/quick-collect.js?v=14.14"></script>
   <script src="./js/ui-pro.js?v=14.26"></script>
-  <script src="./js/pro/core-engine.js?v=14.46"></script>
+  <script src="./js/pro/core-engine.js?v=14.42"></script>
   <script src="./js/pro/schema-engine.js?v=14.32"></script>
   <script src="./js/pro/past-dues-pro.js?v=14.33"></script>
   <script src="./js/pro/promise-bar.js?v=14.42"></script>
@@ -624,12 +595,12 @@
   <script src="./js/pro/live-backup.js?v=14.42"></script>
   <script src="./js/pro/smart-radar.js?v=14.32"></script>
   <script src="./js/pro/card-pro.js?v=14.41"></script>
-  <script src="./js/pro/pending-split-bar.js?v=14.46"></script>
+  <script src="./js/pro/dashboard-pro.js?v=14.43"></script>
+  <script src="./js/pro/pending-split-bar.js?v=14.43"></script>
   <script src="./js/pro/unlimited-promises.js?v=14.35"></script>
   <script src="./js/pro/smart-switcher.js?v=14.36"></script>
   <script src="./js/pro/cleanup-pro.js?v=14.37"></script>
-  <script src="./js/pro/dashboard-pro.js?v=14.46"></script>
-  <script src="./js/pro/udhaari-pro.js?v=14.46"></script>
-  <script src="./js/pro/general-pro.js?v=14.43"></script>
+  <script src="./js/pro/udhaari-pro.js?v=14.42"></script>
+  <script src="./js/pro/auto-push.js?v=14.43"></script>
 </body>
 </html>
