@@ -1,5 +1,5 @@
-// व्याज हिशोब वही - सुरक्षित, ऑटो-अपडेट आणि Notification क्लिक सपोर्ट Service Worker (v14.44)
-const CACHE_NAME = "vyaj-hishob-cache-v14-44";
+// व्याज हिशोब वही - VyajOS Central Kernel Service Worker (v15.0)
+const CACHE_NAME = "vyaj-hishob-cache-v15-0";
 const CORE_ASSETS = [
   "./",
   "./index.html",
@@ -7,6 +7,7 @@ const CORE_ASSETS = [
   "./css/pro-card.css",
   "./css/pro-layout-fix.css",
   "./app.js",
+  "./js/core/vyaj-kernel.js",
   "./dashboard.js",
   "./backup-safety.js",
   "./js/security.js",
