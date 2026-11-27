@@ -549,4 +549,10 @@ export async function saveUnifiedPromises(uid, borrowerId, promiseList) {
 registerOfflineHandler("COLLECT_PAYMENT", async (payload) => {
   const { borrowerId, ym, amount, mode, sendExtraToWallet, txId, userEmail } = payload;
   const uid = window.firebase?.auth?.()?.currentUser?.uid;
-  if (!uid || !borrowerId) throw new Error("ऑफलाइन सिंकसाठी युजर किंवा ग्राहक
+  if (!uid || !borrowerId) throw new Error("ऑफलाइन सिंकसाठी युजर किंवा ग्राहक सापडला नाही.");
+  const snap = await getUserPaths(uid).borrowerDoc(borrowerId).get();
+  if (!snap.exists) return;
+  await collectMonthlyPayment(uid, { id: snap.id, ...snap.data() }, {
+    ym, amount, mode, sendExtraToWallet, txId, userEmail, _fromOfflineQueue: true
+  });
+});
