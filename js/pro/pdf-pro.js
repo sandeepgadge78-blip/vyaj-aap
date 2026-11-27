@@ -1,4 +1,4 @@
-// व्याज हिशोब वही - Master Business A4 Portrait PDF (VyajKernel Powered • ० काळे पट्टे • ० कोरी पेजेस) (js/pro/pdf-pro.js - V15.0)
+// व्याज हिशोब वही - Master Business A4 Portrait PDF (VyajOS V16.0 • BigInt अचूक • चक्रवाढ व वॉलेट वेगळे • ० काळे पट्टे • ० कोरी पेजेस) (js/pro/pdf-pro.js - V16.0)
 (function () {
   function generateMasterMonthlyPdf() {
     if (!window.VyajKernel || typeof window.VyajKernel.getMonthReport !== "function") {
@@ -7,6 +7,7 @@
     }
 
     const K = window.VyajKernel;
+    const L = window.VyajLedgerV16;
     const report = K.getMonthReport();
     const s = report.summary;
     const ud = report.udhaari;
@@ -15,32 +16,41 @@
     const ownerName = (document.getElementById("profOwnerName")?.value || "").trim();
     const ownerMob = (document.getElementById("profMobile")?.value || "").trim();
     const ownerLine = [ownerName, ownerMob].filter(Boolean).join(" • ");
-    const todayStr = K.fmtDateShort(new Date().toISOString().slice(0, 10));
+    const todayStr = K.fmtDateShort(L ? L.getIstTodayIso() : new Date().toISOString().slice(0, 10));
 
     const mainRowsHtml = report.rows.map((r, i) => {
       const extraPrinParts = [];
       if (r.extraPrincipalAdded > 0) extraPrinParts.push(`+${K.fmtInrPlain(r.extraPrincipalAdded)}`);
       if (r.extraPrincipalReduced > 0) extraPrinParts.push(`-${K.fmtInrPlain(r.extraPrincipalReduced)}`);
+      if (r.compoundedPrincipalAdded > 0) extraPrinParts.push(`चक्रवाढ +${K.fmtInrPlain(r.compoundedPrincipalAdded)}`);
       const extraPrinTxt = extraPrinParts.length ? extraPrinParts.join(" / ") : "-";
 
-      const statusAndExtra = r.extraPaid > 0
-        ? `<strong>${K.esc(r.statusLabel)}</strong><br/><span style="font-size:7.6px;">${K.esc(r.extraNote)}</span>`
-        : `<strong>${K.esc(r.statusLabel)}</strong>`;
+      const remarks = [`<strong>${K.esc(r.statusLabel)}</strong>`];
+      if (r.extraPaid > 0 && r.extraNote && r.extraNote !== "-") {
+        remarks.push(`<span style="font-size:7.5px;">${K.esc(r.extraNote)}</span>`);
+      }
+      if (r.walletBalance > 0) {
+        remarks.push(`<span style="font-size:7.5px;">वॉलेट: ${K.fmtInrPlain(r.walletBalance)}</span>`);
+      }
+
+      const periodBadge = r.v16?.ratePeriod && r.v16.ratePeriod !== "monthly"
+        ? `<span class="pw-tag">${r.v16.ratePeriod === "daily" ? "दैनिक" : "वार्षिक"}</span>`
+        : "";
 
       return `
         <tr>
           <td style="text-align:center;">${i + 1}</td>
           <td>
-            <strong>${K.esc(r.name)}</strong>${r.isNew ? `<span class="pw-tag">नवीन</span>` : ""}
+            <strong>${K.esc(r.name)}</strong>${r.isNew ? `<span class="pw-tag">नवीन</span>` : ""}${periodBadge}
             ${r.mobile && r.mobile !== "-" ? `<span class="pw-mob">${K.esc(r.mobile)}</span>` : ""}
           </td>
           <td class="pw-num">${K.fmtInrPlain(r.principal)}</td>
-          <td class="pw-num">${K.esc(extraPrinTxt)}</td>
+          <td class="pw-num" style="font-size:7.8px;">${K.esc(extraPrinTxt)}</td>
           <td class="pw-num">${K.fmtInrPlain(r.monthlyInterest)}</td>
           <td class="pw-num">${K.fmtInrPlain(r.collected)}</td>
           <td style="font-size:7.8px;">${K.esc(r.pastBreakdownText)}</td>
           <td class="pw-num"><strong>${K.fmtInrPlain(r.totalPending)}</strong></td>
-          <td style="font-size:8px;">${statusAndExtra}</td>
+          <td style="font-size:8px;">${remarks.join("<br/>")}</td>
         </tr>
       `;
     }).join("");
@@ -75,16 +85,18 @@
           <h2 class="pw-title">${K.esc(bizName)} — मासिक व्याज अहवाल (${K.esc(K.fmtYmMr(report.activeYm))})</h2>
           ${ownerLine ? `<div class="pw-sub">${K.esc(ownerLine)}</div>` : ""}
         </div>
-        <div class="pw-sub">दिनांक: ${K.esc(todayStr)} • एकूण खाती: ${report.rows.length}</div>
+        <div class="pw-sub">दिनांक (IST): ${K.esc(todayStr)} • एकूण खाती: ${report.rows.length}</div>
       </div>
 
       <div class="pw-kpi">
         <span>एकूण मुद्दल: ${K.fmtInrPlain(s.totalPrincipal)}</span>
         <span>नवीन खाती: ${s.newCount}</span>
-        <span>अति. मुद्दल दिले: ${K.fmtInrPlain(s.extraPrincipalAddedSum)}${s.extraPrincipalReducedSum > 0 ? ` | परत: ${K.fmtInrPlain(s.extraPrincipalReducedSum)}` : ""}</span>
+        <span>अति. मुद्दल (रोख): +${K.fmtInrPlain(s.extraPrincipalAddedSum)}${s.extraPrincipalReducedSum > 0 ? ` | परत: -${K.fmtInrPlain(s.extraPrincipalReducedSum)}` : ""}</span>
+        ${s.compoundedPrincipalSum > 0 ? `<span>चक्रवाढ मुद्दल (रोख नाही): +${K.fmtInrPlain(s.compoundedPrincipalSum)}</span>` : ""}
         <span>अपेक्षित व्याज: ${K.fmtInrPlain(s.expectedInterest)}</span>
-        <span>जमा: ${K.fmtInrPlain(s.collectedInterest)}</span>
+        <span>रोख जमा: ${K.fmtInrPlain(s.collectedInterest)}</span>
         <span>एकूण थकबाकी: ${K.fmtInrPlain(s.totalPendingSum)}</span>
+        ${s.advanceWalletTotalSum > 0 ? `<span>अ‍ॅडव्हान्स वॉलेट: ${K.fmtInrPlain(s.advanceWalletTotalSum)}</span>` : ""}
       </div>
 
       <table class="pw-tbl">
@@ -98,7 +110,7 @@
             <th class="pw-num">जमा</th>
             <th>मागील बाकी (३ म. + जुनी)</th>
             <th class="pw-num">एकूण बाकी</th>
-            <th>स्थिती / एक्स्ट्रा शेरा</th>
+            <th>स्थिती / शेरा / वॉलेट</th>
           </tr>
         </thead>
         <tbody>${mainRowsHtml}</tbody>
