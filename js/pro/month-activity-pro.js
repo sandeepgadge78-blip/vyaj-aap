@@ -1,4 +1,4 @@
-// व्याज हिशोब वही - '📋 महिना नोंदी' (VyajKernel Single Source of Truth वर आधारित • १००% अचूक हिशोब) (js/pro/month-activity-pro.js - V15.0)
+// व्याज हिशोब वही - '📋 महिना नोंदी' (VyajOS V16.0 BigInt • चक्रवाढ नोंदी रोख व्यवहारापासून वेगळ्या) (js/pro/month-activity-pro.js - V16.0)
 (function () {
   let activeTab = "newAcc"; // newAcc | principal | interest | udhaari
   let searchQuery = "";
@@ -37,6 +37,7 @@
       .ma-item.is-out { border-left-color: var(--gold); }
       .ma-item.is-in { border-left-color: var(--accent-2); }
       .ma-item.is-ud { border-left-color: #c4b5fd; }
+      .ma-item.is-comp { border-left-color: #fbbf24; }
       .ma-name { font-size: 0.85rem; font-weight: 800; color: var(--text); }
       .ma-meta { font-size: 0.7rem; color: var(--muted); margin-top: 2px; line-height: 1.4; }
       .ma-amt { font-size: 0.92rem; font-weight: 900; white-space: nowrap; text-align: right; }
@@ -90,16 +91,24 @@
     } else if (activeTab === "principal") {
       const list = r.principalMoves.filter((x) => !q || `${x.name} ${x.note}`.toLowerCase().includes(q));
       rowsHtml = list.length
-        ? list.map((x) => `
-          <div class="ma-item ${x.kind === "add" ? "is-out" : "is-in"}">
-            <div>
-              <div class="ma-name">${x.kind === "add" ? "➕" : "➖"} ${K.esc(x.name)}</div>
-              <div class="ma-meta">📅 ${K.esc(K.fmtDateShort(x.date))} • ${x.kind === "add" ? "अतिरिक्त मुद्दल दिले" : "मुद्दल परत आले"}${x.note ? ` • ${K.esc(x.note)}` : ""}</div>
+        ? list.map((x) => {
+          const isComp = x.kind === "compound";
+          const isAdd = x.kind === "add";
+          const cls = isComp ? "is-comp" : (isAdd ? "is-out" : "is-in");
+          const icon = isComp ? "🔁" : (isAdd ? "➕" : "➖");
+          const lbl = isComp ? "चक्रवाढ व्याज मुद्दलात जोडले (रोख नाही)" : (isAdd ? "अतिरिक्त मुद्दल दिले" : "मुद्दल परत आले");
+          const color = isComp ? "#fbbf24" : (isAdd ? "var(--gold)" : "var(--accent-2)");
+          return `
+            <div class="ma-item ${cls}">
+              <div>
+                <div class="ma-name">${icon} ${K.esc(x.name)}</div>
+                <div class="ma-meta">📅 ${K.esc(K.fmtDateShort(x.date))} • ${lbl}${x.note ? ` • ${K.esc(x.note)}` : ""}</div>
+              </div>
+              <div class="ma-amt" style="color:${color};">${isAdd || isComp ? "+" : "-"}${K.fmtInrPlain(x.amount)}</div>
             </div>
-            <div class="ma-amt" style="color:${x.kind === "add" ? "var(--gold)" : "var(--accent-2)"};">${x.kind === "add" ? "+" : "-"}${K.fmtInrPlain(x.amount)}</div>
-          </div>
-        `).join("")
-        : `<div class="muted" style="text-align:center; padding:18px; font-size:0.8rem;">या महिन्यात अतिरिक्त किंवा परत मुद्दलाची नोंद नाही.</div>`;
+          `;
+        }).join("")
+        : `<div class="muted" style="text-align:center; padding:18px; font-size:0.8rem;">या महिन्यात अतिरिक्त, परत किंवा चक्रवाढ मुद्दलाची नोंद नाही.</div>`;
     } else if (activeTab === "interest") {
       const list = r.interestMoves.filter((x) => !q || `${x.name} ${x.extraNote}`.toLowerCase().includes(q));
       rowsHtml = list.length
@@ -112,7 +121,7 @@
                 ${x.extraNote ? `<br/><strong style="color:var(--accent);">💡 एक्स्ट्रा ${K.esc(x.extraNote)}</strong>` : ""}
               </div>
             </div>
-            <div class="ma-amt" style="color:var(--accent-2);">+${K.fmtInrPlain(x.collected)}<div style="font-size:0.63rem; color:var(--muted);">एकूण जमा</div></div>
+            <div class="ma-amt" style="color:var(--accent-2);">+${K.fmtInrPlain(x.collected)}<div style="font-size:0.63rem; color:var(--muted);">रोख जमा</div></div>
           </div>
         `).join("")
         : `<div class="muted" style="text-align:center; padding:18px; font-size:0.8rem;">या महिन्यात अजून व्याज जमा नोंद नाही.</div>`;
@@ -131,37 +140,43 @@
         : `<div class="muted" style="text-align:center; padding:18px; font-size:0.8rem;">या महिन्यात कोणतीही उधारी हालचाल नाही.</div>`;
     }
 
+    const extraBadges = [];
+    if (s.compoundedPrincipalSum > 0) extraBadges.push(`🔁 चक्रवाढ मुद्दल (रोख नाही): ${K.fmtInrPlain(s.compoundedPrincipalSum)}`);
+    if (s.advanceWalletTotalSum > 0) extraBadges.push(`💼 अ‍ॅडव्हान्स वॉलेट शिल्लक: ${K.fmtInrPlain(s.advanceWalletTotalSum)}`);
+
     body.innerHTML = `
       <div class="row" style="justify-content:space-between; margin-bottom:9px; padding-bottom:8px; border-bottom:1px solid var(--border);">
         <div>
           <h3 style="margin:0; color:var(--accent);">📋 महिना नोंदी (${K.esc(K.fmtYmMr(r.activeYm))})</h3>
-          <div class="muted" style="font-size:0.71rem;">नवीन खाती, अति. मुद्दल, व्याज व उधारी (१००% अचूक)</div>
+          <div class="muted" style="font-size:0.71rem;">BigInt V16 • नवीन खाती, अति. मुद्दल, व्याज व उधारी</div>
         </div>
         <button type="button" id="maPrintPdfBtn" class="primary sm">🖨️ नोंदी PDF</button>
       </div>
 
       <div class="ma-kpi-grid">
         <div class="ma-kpi">
-          <div class="ma-kpi-lbl">📤 या महिन्यात दिलेले पैसे</div>
+          <div class="ma-kpi-lbl">📤 या महिन्यात दिलेले रोख पैसे</div>
           <div class="ma-kpi-val" style="color:var(--gold);">${K.fmtInrPlain(r.cashflow.totalOut)}</div>
           <div class="ma-kpi-sub">नवीन: ${K.fmtInrPlain(s.newPrincipalSum)} • अति.: ${K.fmtInrPlain(s.extraPrincipalAddedSum)} • उधारी: ${K.fmtInrPlain(ud.givenInMonthSum)}</div>
         </div>
         <div class="ma-kpi">
-          <div class="ma-kpi-lbl">📥 या महिन्यात आलेले पैसे</div>
+          <div class="ma-kpi-lbl">📥 या महिन्यात आलेले रोख पैसे</div>
           <div class="ma-kpi-val" style="color:var(--accent-2);">${K.fmtInrPlain(r.cashflow.totalIn)}</div>
           <div class="ma-kpi-sub">व्याज: ${K.fmtInrPlain(s.collectedInterest)} • मुद्दल: ${K.fmtInrPlain(s.extraPrincipalReducedSum)} • उधारी: ${K.fmtInrPlain(ud.returnedInMonthSum)}</div>
         </div>
       </div>
 
+      ${extraBadges.length ? `<div class="meta-box" style="margin-top:0; margin-bottom:8px; font-size:0.73rem;">${extraBadges.join(" &nbsp;|&nbsp; ")}</div>` : ""}
+
       <div class="ma-tabs">
         <button type="button" class="ma-tab-btn ${activeTab === "newAcc" ? "is-active" : ""}" data-matab="newAcc">🆕 नवीन खाती (${r.newAccounts.length})</button>
-        <button type="button" class="ma-tab-btn ${activeTab === "principal" ? "is-active" : ""}" data-matab="principal">➕ अति. मुद्दल (${r.principalMoves.length})</button>
+        <button type="button" class="ma-tab-btn ${activeTab === "principal" ? "is-active" : ""}" data-matab="principal">➕ अति./चक्रवाढ (${r.principalMoves.length})</button>
         <button type="button" class="ma-tab-btn ${activeTab === "interest" ? "is-active" : ""}" data-matab="interest">💰 व्याज/एक्स्ट्रा (${r.interestMoves.length})</button>
         <button type="button" class="ma-tab-btn ${activeTab === "udhaari" ? "is-active" : ""}" data-matab="udhaari">🤝 उधारी (${ud.moves.length})</button>
       </div>
 
       <input type="text" id="maSearchInp" class="search-pill-box" value="${K.esc(searchQuery)}" placeholder="🔍 या महिन्याच्या नोंदीत नाव शोधा..." style="margin-bottom:8px;" />
-      <div style="max-height:48vh; overflow-y:auto;">${rowsHtml}</div>
+      <div style="max-height:46vh; overflow-y:auto;">${rowsHtml}</div>
     `;
 
     body.querySelectorAll("[data-matab]").forEach((btn) => {
@@ -180,21 +195,24 @@
     document.getElementById("maPrintPdfBtn")?.addEventListener("click", () => {
       const biz = (document.getElementById("profBizName")?.value || document.getElementById("tBrandTitle")?.textContent || "व्याज हिशोब वही").trim();
       const newRows = r.newAccounts.map((x, i) => `<tr><td>${i + 1}</td><td>${K.esc(x.name)}</td><td>${K.esc(K.fmtDateShort(x.date))}</td><td class="pw-num">${K.fmtInrPlain(x.amount)}</td><td class="pw-num">${K.esc(x.rate)}%</td></tr>`).join("") || `<tr><td colspan="5" style="text-align:center;">नोंद नाही</td></tr>`;
-      const prinRows = r.principalMoves.map((x, i) => `<tr><td>${i + 1}</td><td>${K.esc(x.name)}</td><td>${K.esc(K.fmtDateShort(x.date))}</td><td>${x.kind === "add" ? "अतिरिक्त दिले" : "परत आले"}</td><td class="pw-num">${K.fmtInrPlain(x.amount)}</td></tr>`).join("") || `<tr><td colspan="5" style="text-align:center;">नोंद नाही</td></tr>`;
+      const prinRows = r.principalMoves.map((x, i) => {
+        const lbl = x.kind === "compound" ? "चक्रवाढ (रोख नाही)" : (x.kind === "add" ? "अतिरिक्त दिले" : "परत आले");
+        return `<tr><td>${i + 1}</td><td>${K.esc(x.name)}</td><td>${K.esc(K.fmtDateShort(x.date))}</td><td>${lbl}</td><td class="pw-num">${K.fmtInrPlain(x.amount)}</td></tr>`;
+      }).join("") || `<tr><td colspan="5" style="text-align:center;">नोंद नाही</td></tr>`;
       const intRows = r.interestMoves.map((x, i) => `<tr><td>${i + 1}</td><td>${K.esc(x.name)}</td><td class="pw-num">${K.fmtInrPlain(x.monthlyInterest)}</td><td class="pw-num">${K.fmtInrPlain(x.collected)}</td><td>${K.esc(x.extraNote || "-")}</td></tr>`).join("") || `<tr><td colspan="5" style="text-align:center;">नोंद नाही</td></tr>`;
       const udRows = ud.moves.map((x, i) => `<tr><td>${i + 1}</td><td>${K.esc(x.name)}</td><td>${K.esc(K.fmtDateShort(x.date))}</td><td>${x.kind === "given" ? "उधारी दिली" : "परत मिळाली"}</td><td class="pw-num">${K.fmtInrPlain(x.amount)}</td></tr>`).join("") || `<tr><td colspan="5" style="text-align:center;">नोंद नाही</td></tr>`;
 
       const html = `
         <div class="pw-head">
           <div><h2 class="pw-title">${K.esc(biz)} — महिना नोंदी तपशील (${K.esc(K.fmtYmMr(r.activeYm))})</h2></div>
-          <div class="pw-sub">दिले: ${K.fmtInrPlain(r.cashflow.totalOut)} | आले: ${K.fmtInrPlain(r.cashflow.totalIn)}</div>
+          <div class="pw-sub">रोख दिले: ${K.fmtInrPlain(r.cashflow.totalOut)} | रोख आले: ${K.fmtInrPlain(r.cashflow.totalIn)}</div>
         </div>
         <div class="pw-sec-title" style="border-top:none; margin-top:4px;">१. नवीन खाती (${r.newAccounts.length}) — एकूण ${K.fmtInrPlain(s.newPrincipalSum)}</div>
         <table class="pw-tbl"><thead><tr><th>क्र.</th><th>नाव</th><th>तारीख</th><th class="pw-num">मुद्दल</th><th class="pw-num">दर</th></tr></thead><tbody>${newRows}</tbody></table>
-        <div class="pw-sec-title">२. अतिरिक्त / परत मुद्दल (${r.principalMoves.length})</div>
+        <div class="pw-sec-title">२. अतिरिक्त / परत / चक्रवाढ मुद्दल (${r.principalMoves.length})</div>
         <table class="pw-tbl"><thead><tr><th>क्र.</th><th>नाव</th><th>तारीख</th><th>प्रकार</th><th class="pw-num">रक्कम</th></tr></thead><tbody>${prinRows}</tbody></table>
-        <div class="pw-sec-title">३. जमा व्याज व एक्स्ट्रा (${r.interestMoves.length}) — एकूण ${K.fmtInrPlain(s.collectedInterest)}</div>
-        <table class="pw-tbl"><thead><tr><th>क्र.</th><th>नाव</th><th class="pw-num">मासिक व्याज</th><th class="pw-num">एकूण जमा</th><th>एक्स्ट्रा शेरा</th></tr></thead><tbody>${intRows}</tbody></table>
+        <div class="pw-sec-title">३. रोख जमा व्याज व एक्स्ट्रा (${r.interestMoves.length}) — एकूण ${K.fmtInrPlain(s.collectedInterest)}</div>
+        <table class="pw-tbl"><thead><tr><th>क्र.</th><th>नाव</th><th class="pw-num">मासिक व्याज</th><th class="pw-num">रोख जमा</th><th>एक्स्ट्रा शेरा</th></tr></thead><tbody>${intRows}</tbody></table>
         <div class="pw-sec-title">४. स्वतंत्र उधारी हालचाल (${ud.moves.length})</div>
         <table class="pw-tbl"><thead><tr><th>क्र.</th><th>नाव</th><th>तारीख</th><th>प्रकार</th><th class="pw-num">रक्कम</th></tr></thead><tbody>${udRows}</tbody></table>
       `;
