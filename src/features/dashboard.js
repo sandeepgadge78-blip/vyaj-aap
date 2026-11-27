@@ -413,7 +413,7 @@ export function openTodaySummaryModal(actions = {}, initialDateIso = "") {
       <div class="meta-box" style="margin-bottom:8px; padding:7px 8px;">
         <div class="row" style="gap:6px; align-items:center;">
           <button type="button" class="xs" id="tsPrevDayBtn" title="आधीचा दिवस">◀</button>
-          <input type="date" id="tsDateInp" value="${esc(data.targetIso)}" max="${esc(todayIso)}" style="flex:1; min-width:0; padding:6px 8px; border-radius:8px; border:1px solid rgba(148,163,184,0.35); background:rgba(15,23,42,0.25); color:inherit; font-weight:700; font-size:0.82rem;" />
+          <input type="date" id="tsDateInp" value="${esc(data.targetIso)}" max="${esc(todayIso)}" style="flex:1; min-width:0; padding:6px 8px; border-radius:8px; border:1px solid rgba(148,163,184,0.35); background:rgba(15,23,42,0.25); color:inherit; color-scheme:dark; font-weight:700; font-size:0.82rem;" />
           <button type="button" class="xs" id="tsNextDayBtn" title="पुढचा दिवस" ${data.targetIso >= todayIso ? "disabled style='opacity:0.45;'" : ""}>▶</button>
           ${!isToday ? `<button type="button" class="primary xs" id="tsTodayBtn">आज</button>` : ""}
         </div>
