@@ -1,68 +1,56 @@
-// व्याज हिशोब वही - VyajOS Banking-Grade V16.0 Service Worker (v16.0)
-const CACHE_NAME = "vyaj-hishob-cache-v16-0";
+// व्याज Infinity X - Modular Service Worker (v2.0 • One-Click Update + Offline First)
+const CACHE_NAME = "vyaj-infinity-cache-v2-0";
 const CORE_ASSETS = [
   "./",
   "./index.html",
-  "./css/pro-theme.css",
-  "./css/pro-card.css",
-  "./css/pro-layout-fix.css",
-  "./app.js",
-  "./js/core/ledger-v16.js",
-  "./js/core/vyaj-kernel.js",
-  "./dashboard.js",
-  "./backup-safety.js",
-  "./js/security.js",
-  "./js/settings-sync.js",
-  "./js/cashbook.js",
-  "./js/analytics.js",
-  "./js/receipt-card.js",
-  "./js/quick-collect.js",
-  "./js/ui-pro.js",
-  "./js/pro/core-engine.js",
-  "./js/pro/schema-engine.js",
-  "./js/pro/past-dues-pro.js",
-  "./js/pro/promise-bar.js",
-  "./js/pro/firebase-field-sync.js",
-  "./js/customer-details.js",
-  "./js/state-restore.js",
-  "./js/pro/smart-import.js",
-  "./js/pro/live-backup.js",
-  "./js/pro/smart-radar.js",
-  "./js/pro/card-pro.js",
-  "./js/pro/pending-split-bar.js",
-  "./js/pro/unlimited-promises.js",
-  "./js/pro/smart-switcher.js",
-  "./js/pro/cleanup-pro.js",
-  "./js/pro/dashboard-pro.js",
-  "./js/pro/udhaari-pro.js",
-  "./js/pro/auto-push.js",
-  "./js/pro/pdf-pro.js",
-  "./js/pro/month-activity-pro.js",
-  "./js/pro/interest-preview.js",
-  "./js/pro/banking-controls.js",
   "./manifest.json",
-  "./icon.png"
+  "./icon.png",
+  "./css/design-system.css",
+  "./css/print-a4.css",
+  "./src/main.js",
+  "./src/core/firebase.js",
+  "./src/core/feature-flags.js",
+  "./src/core/ledger-v16.js",
+  "./src/core/store.js",
+  "./src/data/offline-queue.js",
+  "./src/data/borrowers-repo.js",
+  "./src/data/udhaari-repo.js",
+  "./src/data/cashbook-repo.js",
+  "./src/data/backup-vault.js",
+  "./src/guardian/error-detector.js",
+  "./src/guardian/time-machine.js",
+  "./src/guardian/version-compare.js",
+  "./src/guardian/self-tests.js",
+  "./src/ui/dom-utils.js",
+  "./src/features/dashboard.js",
+  "./src/features/borrowers.js",
+  "./src/features/udhaari.js",
+  "./src/features/month-activity.js",
+  "./src/features/pdf-reports.js",
+  "./src/features/tools-suite.js",
+  "./src/features/security-pin.js",
+  "./src/features/reminders-fcm.js"
 ];
 
 self.addEventListener("install", (event) => {
-  self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(CORE_ASSETS).catch(() => {});
-    })
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(CORE_ASSETS).catch(() => {}))
   );
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) return caches.delete(key);
-        })
-      );
-    }).then(() => self.clients.claim())
+    caches.keys()
+      .then((keys) => Promise.all(keys.map((k) => (k !== CACHE_NAME ? caches.delete(k) : null))))
+      .then(() => self.clients.claim())
   );
+});
+
+// १-क्लिक अपडेट बटनासाठी त्वरित activate करा
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener("fetch", (event) => {
@@ -72,25 +60,22 @@ self.addEventListener("fetch", (event) => {
 
   event.respondWith(
     fetch(event.request)
-      .then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200) {
-          const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
-          });
+      .then((netRes) => {
+        if (netRes && netRes.status === 200) {
+          const clone = netRes.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
         }
-        return networkResponse;
+        return netRes;
       })
       .catch(() => caches.match(event.request))
   );
 });
 
-// Notification वर क्लिक करताच अ‍ॅप उघडा किंवा समोर आणा
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+      for (const client of list) {
         if ("focus" in client) return client.focus();
       }
       if (self.clients.openWindow) return self.clients.openWindow("./");
