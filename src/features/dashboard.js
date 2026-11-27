@@ -1,4 +1,4 @@
-// व्याज Infinity X - Reactive Single-Signal Dashboard (Zero Blinking + 3 Operating Modes + Dual-Ring Split + Promises + Today Summary) (src/features/dashboard.js)
+// व्याज Infinity X - Reactive Single-Signal Dashboard (Zero Blinking + 3 Operating Modes + Dual-Ring Split + Promises + Date-Wise Day Summary) (src/features/dashboard.js)
 
 import { getState, setState, getUnifiedMonthReport } from "../core/store.js";
 import { getOperatingMode, setOperatingMode, isFeatureEnabled } from "../core/feature-flags.js";
@@ -16,8 +16,9 @@ let promiseTab = "today"; // today | tomorrow | overdue
 let lastDashSig = "";
 let pendingModalTab = "current"; // current | past
 let pendingSearch = "";
-let todayModalTab = "all"; // all | in | out
-let todaySearch = "";
+let daySummaryDateIso = ""; // निवडलेली तारीख (YYYY-MM-DD)
+let dayModalTab = "all"; // all | in | out
+let daySearch = "";
 
 // कोणतीही तारीख किंवा UTC Timestamp अचूक IST तारखेत (YYYY-MM-DD) रूपांतरित करा
 function toIstDateIso(val) {
@@ -44,6 +45,17 @@ function toIstDateIso(val) {
   return "";
 }
 
+// दिलेल्या तारखेत दिवस मागे किंवा पुढे करा (Timezone शिवाय अचूक गणना)
+function shiftIsoDate(iso, deltaDays) {
+  const p = parseStrictDate(iso);
+  if (!p.valid) return getIstTodayIso(0);
+  const d = new Date(p.utcMs + deltaDays * 86400000);
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 // Timestamp मधून IST वेळ काढा (उदा. 01:24 pm)
 function formatIstTimeShort(val) {
   if (!val) return "";
@@ -61,9 +73,10 @@ function formatIstTimeShort(val) {
   }
 }
 
-// आजच्या सर्व नोंदी एकाच ठिकाणी गोळा करा (फक्त Read-Only, BigInt अचूकता)
-function collectTodaySummary(st) {
-  const todayIso = getIstTodayIso(0);
+// निवडलेल्या तारखेच्या सर्व नोंदी गोळा करा (फक्त Read-Only, BigInt अचूकता)
+function collectDaySummary(st, requestedIso) {
+  const chk = parseStrictDate(requestedIso);
+  const targetIso = chk.valid ? chk.iso : getIstTodayIso(0);
   const items = [];
 
   let inCashP = 0n;
@@ -80,7 +93,7 @@ function collectTodaySummary(st) {
   try {
     const borrowers = (st.borrowers || []).filter((b) => b && !b.isDeleted);
 
-    // बल्क-इम्पोर्ट केलेली जुनी खाती चुकून आजच्या नवीन खात्यांत येऊ नयेत म्हणून तपासणी
+    // बल्क-इम्पोर्ट केलेली जुनी खाती चुकून नवीन खात्यांत येऊ नयेत म्हणून तपासणी
     const bulkBuckets = new Map();
     borrowers.forEach((b) => {
       const slot = String(b.createdAt || "").slice(0, 15);
@@ -91,14 +104,16 @@ function collectTodaySummary(st) {
       const bName = b.name || "ग्राहक";
       const bId = b.id || "";
 
-      // १. आज जोडलेले नवीन खाते
+      // १. निवडलेल्या तारखेचे नवीन खाते (loanDate ला प्राधान्य; नसल्यास createdAt)
       const loanIso = toIstDateIso(b.loanDate);
       const createdIso = toIstDateIso(b.createdAt);
       const slot = String(b.createdAt || "").slice(0, 15);
       const isBulk = Boolean(slot && (bulkBuckets.get(slot) || 0) >= 6);
-      const isNewToday = loanIso === todayIso || (Boolean(b.isManualNew) && createdIso === todayIso && !isBulk);
+      const isNewOnDate = loanIso
+        ? (loanIso === targetIso && (!isBulk || b.isManualNew || loanIso !== createdIso))
+        : (createdIso === targetIso && !isBulk);
 
-      if (isNewToday && (!isBulk || b.isManualNew)) {
+      if (isNewOnDate) {
         const initP = toPaise(b.v17OpeningPrincipal ?? b.originalPrincipal ?? b.principal ?? 0);
         if (initP > 0n) {
           outCashP += initP;
@@ -109,16 +124,16 @@ function collectTodaySummary(st) {
             borrowerId: bId,
             name: bName,
             amount: paiseToRupees(initP),
-            time: formatIstTimeShort(b.createdAt),
-            sortKey: String(b.createdAt || b.loanDate || ""),
-            note: `दर: ${b.rate || 0}%${loanIso && loanIso !== todayIso ? ` • कर्ज तारीख: ${fmtDateShort(loanIso)}` : ""}${b.guarantor ? ` • ${b.guarantor}` : ""}`
+            time: createdIso === targetIso ? formatIstTimeShort(b.createdAt) : "",
+            sortKey: String(createdIso === targetIso ? (b.createdAt || b.loanDate || "") : (b.loanDate || "")),
+            note: `दर: ${b.rate || 0}%${b.guarantor ? ` • ${b.guarantor}` : ""}`
           });
         }
       }
 
-      // २. आज जमा झालेले व्याज (paymentHistory मधून)
+      // २. निवडलेल्या तारखेला जमा झालेले व्याज (paymentHistory मधून)
       (Array.isArray(b.paymentHistory) ? b.paymentHistory : []).forEach((p) => {
-        if (!p || toIstDateIso(p.date) !== todayIso) return;
+        if (!p || toIstDateIso(p.date) !== targetIso) return;
         const amtP = toPaise(p.amount || 0);
         if (amtP <= 0n) return;
         const isWalletApply = String(p.mode || "").toLowerCase() === "advance wallet";
@@ -151,9 +166,9 @@ function collectTodaySummary(st) {
         }
       });
 
-      // ३. आज दिलेले अतिरिक्त मुद्दल किंवा चक्रवाढ (extraPrincipals मधून)
+      // ३. निवडलेल्या तारखेला दिलेले अतिरिक्त मुद्दल किंवा चक्रवाढ (extraPrincipals मधून)
       (Array.isArray(b.extraPrincipals) ? b.extraPrincipals : []).forEach((ev) => {
-        if (!ev || toIstDateIso(ev.date) !== todayIso) return;
+        if (!ev || toIstDateIso(ev.date) !== targetIso) return;
         const amtP = toPaise(ev.amount || 0);
         if (amtP <= 0n) return;
         const isComp = Boolean(ev.isCompound || String(ev.note || "").includes("चक्रवाढ"));
@@ -186,9 +201,9 @@ function collectTodaySummary(st) {
         }
       });
 
-      // ४. आज परत आलेले मुद्दल (principalReductions मधून)
+      // ४. निवडलेल्या तारखेला परत आलेले मुद्दल (principalReductions मधून)
       (Array.isArray(b.principalReductions) ? b.principalReductions : []).forEach((ev) => {
-        if (!ev || toIstDateIso(ev.date) !== todayIso) return;
+        if (!ev || toIstDateIso(ev.date) !== targetIso) return;
         const amtP = toPaise(ev.amount || 0);
         if (amtP <= 0n) return;
         inCashP += amtP;
@@ -205,11 +220,11 @@ function collectTodaySummary(st) {
         });
       });
 
-      // ५. आज खाते बंद सेटलमेंट (settlement मधून)
+      // ५. निवडलेल्या तारखेला खाते बंद सेटलमेंट (settlement मधून)
       if (b.accountStatus === "closed" && b.settlement) {
         const setIso = toIstDateIso(b.settlement.closedAt || b.settlement.date);
         const amtP = toPaise(b.settlement.amount || 0);
-        if (setIso === todayIso && amtP > 0n) {
+        if (setIso === targetIso && amtP > 0n) {
           inCashP += amtP;
           otherInP += amtP;
           items.push({
@@ -230,7 +245,7 @@ function collectTodaySummary(st) {
       wTxs.forEach((tx) => {
         if (!tx || tx.type !== "credit") return;
         if (String(tx.note || "").includes("मधून एक्स्ट्रा अ‍ॅडव्हान्स वॉलेटमध्ये जमा")) return;
-        if (toIstDateIso(tx.ts || tx.date) !== todayIso) return;
+        if (toIstDateIso(tx.ts || tx.date) !== targetIso) return;
         const amtP = toPaise(tx.amount || 0);
         if (amtP <= 0n) return;
         inCashP += amtP;
@@ -253,7 +268,7 @@ function collectTodaySummary(st) {
       if (!u || u.isDeleted) return;
       const uName = u.name || "व्यक्ती";
 
-      if (toIstDateIso(u.givenDate) === todayIso) {
+      if (toIstDateIso(u.givenDate) === targetIso) {
         const amtP = toPaise(u.amount || 0);
         if (amtP > 0n) {
           outCashP += amtP;
@@ -274,7 +289,7 @@ function collectTodaySummary(st) {
       const pays = Array.isArray(u.payments) ? u.payments : [];
       if (pays.length) {
         pays.forEach((p) => {
-          if (!p || toIstDateIso(p.date || p.ts) !== todayIso) return;
+          if (!p || toIstDateIso(p.date || p.ts) !== targetIso) return;
           const pP = toPaise(p.amount || 0);
           if (pP <= 0n) return;
           inCashP += pP;
@@ -290,7 +305,7 @@ function collectTodaySummary(st) {
             note: p.note || "उधारी परत जमा"
           });
         });
-      } else if (toIstDateIso(u.returnedDate) === todayIso) {
+      } else if (toIstDateIso(u.returnedDate) === targetIso) {
         const pP = toPaise(u.paidAmount || 0);
         if (pP > 0n) {
           inCashP += pP;
@@ -312,11 +327,11 @@ function collectTodaySummary(st) {
     // सर्वात नवीन नोंद वर दिसावी म्हणून क्रम लावा
     items.sort((a, b) => String(b.sortKey).localeCompare(String(a.sortKey)));
   } catch (err) {
-    console.warn("Today Summary Error:", err);
+    console.warn("Day Summary Error:", err);
   }
 
   return {
-    todayIso,
+    targetIso,
     items,
     totals: {
       inCash: paiseToRupees(inCashP),
@@ -333,18 +348,24 @@ function collectTodaySummary(st) {
   };
 }
 
-// आजच्या नोंदींचा सारांश मोडल उघडा
-export function openTodaySummaryModal(actions = {}) {
+// कोणत्याही एका दिवसाचा सारांश मोडल उघडा (आजची तारीख किंवा निवडलेली तारीख)
+export function openTodaySummaryModal(actions = {}, initialDateIso = "") {
+  daySummaryDateIso = parseStrictDate(initialDateIso).valid ? parseStrictDate(initialDateIso).iso : getIstTodayIso(0);
+  dayModalTab = "all";
+  daySearch = "";
+
   const renderInner = () => {
     const st = getState();
     const hide = st.ui.hideAmounts;
-    const data = collectTodaySummary(st);
+    const todayIso = getIstTodayIso(0);
+    const data = collectDaySummary(st, daySummaryDateIso);
     const t = data.totals;
-    const q = todaySearch.trim().toLowerCase();
+    const isToday = data.targetIso === todayIso;
+    const q = daySearch.trim().toLowerCase();
 
     const inList = data.items.filter((x) => x.dir === "in");
     const outList = data.items.filter((x) => x.dir === "out");
-    const base = todayModalTab === "in" ? inList : todayModalTab === "out" ? outList : data.items;
+    const base = dayModalTab === "in" ? inList : dayModalTab === "out" ? outList : data.items;
     const filtered = base.filter((x) => !q || `${x.name} ${x.tag} ${x.note}`.toLowerCase().includes(q));
 
     const rowsHtml = filtered.length
@@ -374,12 +395,12 @@ export function openTodaySummaryModal(actions = {}) {
             </div>
           `;
         }).join("")
-      : `<div class="muted" style="text-align:center; padding:18px;">आज (${esc(fmtDateShort(data.todayIso))}) या विभागात कोणतीही नोंद नाही.</div>`;
+      : `<div class="muted" style="text-align:center; padding:18px;">${esc(fmtDateShort(data.targetIso))} रोजी या विभागात कोणतीही नोंद नाही.</div>`;
 
     const html = `
       <div class="modal-head">
         <div>
-          <h3>📅 आजचा सारांश (${esc(fmtDateShort(data.todayIso))})</h3>
+          <h3>📅 दिवसाचा सारांश (${esc(fmtDateShort(data.targetIso))})${isToday ? ` <span class="badge paid">आज</span>` : ""}</h3>
           <div class="muted" style="font-size:0.7rem;">एकूण नोंदी: <strong>${data.items.length}</strong> • अचूक IST हिशोब</div>
         </div>
         <div class="row" style="gap:5px;">
@@ -388,14 +409,24 @@ export function openTodaySummaryModal(actions = {}) {
         </div>
       </div>
 
+      <!-- तारीख निवड पट्टी (आधीचा दिवस / कॅलेंडर / पुढचा दिवस / आज) -->
+      <div class="meta-box" style="margin-bottom:8px; padding:7px 8px;">
+        <div class="row" style="gap:6px; align-items:center;">
+          <button type="button" class="xs" id="tsPrevDayBtn" title="आधीचा दिवस">◀</button>
+          <input type="date" id="tsDateInp" value="${esc(data.targetIso)}" max="${esc(todayIso)}" style="flex:1; min-width:0; padding:6px 8px; border-radius:8px; border:1px solid rgba(148,163,184,0.35); background:rgba(15,23,42,0.25); color:inherit; font-weight:700; font-size:0.82rem;" />
+          <button type="button" class="xs" id="tsNextDayBtn" title="पुढचा दिवस" ${data.targetIso >= todayIso ? "disabled style='opacity:0.45;'" : ""}>▶</button>
+          ${!isToday ? `<button type="button" class="primary xs" id="tsTodayBtn">आज</button>` : ""}
+        </div>
+      </div>
+
       <div class="grid-2" style="margin-bottom:8px;">
         <div class="meta-box">
-          <div class="muted" style="font-size:0.68rem;">📥 आज आलेले रोख पैसे</div>
+          <div class="muted" style="font-size:0.68rem;">📥 आलेले रोख पैसे</div>
           <div class="ok" style="font-size:1rem; font-weight:900;">${formatRupeesInr(t.inCash, hide)}</div>
           <div class="muted" style="font-size:0.64rem;">व्याज: ${formatRupeesInr(t.interestIn, hide)} • मुद्दल: ${formatRupeesInr(t.prinRedIn, hide)} • उधारी: ${formatRupeesInr(t.udRetIn, hide)}</div>
         </div>
         <div class="meta-box">
-          <div class="muted" style="font-size:0.68rem;">📤 आज दिलेले रोख पैसे</div>
+          <div class="muted" style="font-size:0.68rem;">📤 दिलेले रोख पैसे</div>
           <div class="gold-text" style="font-size:1rem; font-weight:900;">${formatRupeesInr(t.outCash, hide)}</div>
           <div class="muted" style="font-size:0.64rem;">नवीन: ${formatRupeesInr(t.newAccOut, hide)} • अति.: ${formatRupeesInr(t.extraPrinOut, hide)} • उधारी: ${formatRupeesInr(t.udGivenOut, hide)}</div>
         </div>
@@ -404,32 +435,61 @@ export function openTodaySummaryModal(actions = {}) {
       ${t.nonCash > 0 ? `<div class="meta-box" style="margin-bottom:8px; font-size:0.72rem;">🔁 चक्रवाढ / वॉलेट लागू (रोख नाही): <strong class="warn-text">${formatRupeesInr(t.nonCash, hide)}</strong></div>` : ""}
 
       <div class="tab-row-3">
-        <button type="button" class="seg-btn ${todayModalTab === "all" ? "is-active" : ""}" data-tstab="all">📋 सर्व (${data.items.length})</button>
-        <button type="button" class="seg-btn ${todayModalTab === "in" ? "is-active" : ""}" data-tstab="in">📥 आलेले (${inList.length})</button>
-        <button type="button" class="seg-btn ${todayModalTab === "out" ? "is-active" : ""}" data-tstab="out">📤 दिलेले (${outList.length})</button>
+        <button type="button" class="seg-btn ${dayModalTab === "all" ? "is-active" : ""}" data-tstab="all">📋 सर्व (${data.items.length})</button>
+        <button type="button" class="seg-btn ${dayModalTab === "in" ? "is-active" : ""}" data-tstab="in">📥 आलेले (${inList.length})</button>
+        <button type="button" class="seg-btn ${dayModalTab === "out" ? "is-active" : ""}" data-tstab="out">📤 दिलेले (${outList.length})</button>
       </div>
 
-      <input type="text" id="tsSearchInp" class="search-input" value="${esc(todaySearch)}" placeholder="🔍 नाव किंवा प्रकार शोधा..." />
-      <div style="max-height:46vh; overflow-y:auto;">${rowsHtml}</div>
+      <input type="text" id="tsSearchInp" class="search-input" value="${esc(daySearch)}" placeholder="🔍 नाव किंवा प्रकार शोधा..." />
+      <div style="max-height:42vh; overflow-y:auto;">${rowsHtml}</div>
     `;
 
     openModal("todaySummaryModal", html, {
       onAfterRender: (card) => {
         card.querySelector("#tsCloseBtn")?.addEventListener("click", () => closeModal("todaySummaryModal"));
+
+        card.querySelector("#tsPrevDayBtn")?.addEventListener("click", () => {
+          daySummaryDateIso = shiftIsoDate(data.targetIso, -1);
+          renderInner();
+        });
+
+        card.querySelector("#tsNextDayBtn")?.addEventListener("click", () => {
+          const nextIso = shiftIsoDate(data.targetIso, 1);
+          if (nextIso <= todayIso) {
+            daySummaryDateIso = nextIso;
+            renderInner();
+          }
+        });
+
+        card.querySelector("#tsTodayBtn")?.addEventListener("click", () => {
+          daySummaryDateIso = todayIso;
+          renderInner();
+        });
+
+        card.querySelector("#tsDateInp")?.addEventListener("change", (ev) => {
+          const picked = parseStrictDate(ev.target.value);
+          if (picked.valid) {
+            daySummaryDateIso = picked.iso;
+            renderInner();
+          }
+        });
+
         card.querySelectorAll("[data-tstab]").forEach((btn) => {
           btn.addEventListener("click", () => {
-            todayModalTab = btn.getAttribute("data-tstab");
+            dayModalTab = btn.getAttribute("data-tstab");
             renderInner();
           });
         });
+
         const inp = card.querySelector("#tsSearchInp");
         inp?.addEventListener("input", () => {
-          todaySearch = inp.value;
-          const pos = inp.selectionStart || todaySearch.length;
+          daySearch = inp.value;
+          const pos = inp.selectionStart || daySearch.length;
           renderInner();
           const next = document.getElementById("tsSearchInp");
           if (next) { next.focus(); next.setSelectionRange(pos, pos); }
         });
+
         card.querySelectorAll("[data-ts-jump]").forEach((btn) => {
           btn.addEventListener("click", () => {
             const id = btn.getAttribute("data-ts-jump");
@@ -437,6 +497,7 @@ export function openTodaySummaryModal(actions = {}) {
             actions.onJumpBorrower?.(id);
           });
         });
+
         card.querySelector("#tsPdfBtn")?.addEventListener("click", () => {
           const biz = st.profile?.bizName || "व्याज हिशोब वही";
           const tblRows = data.items.map((x, i) => `
@@ -447,11 +508,11 @@ export function openTodaySummaryModal(actions = {}) {
               <td>${esc(x.note || "-")}</td>
               <td class="pw-num">${x.dir === "out" ? "-" : x.dir === "in" ? "+" : ""}${formatRupeesInr(x.amount)}</td>
             </tr>
-          `).join("") || `<tr><td colspan="5" style="text-align:center;">आज कोणतीही नोंद नाही</td></tr>`;
+          `).join("") || `<tr><td colspan="5" style="text-align:center;">या तारखेला कोणतीही नोंद नाही</td></tr>`;
 
           printPureWhiteA4(`
             <div class="pw-head">
-              <div><h2 class="pw-title">${esc(biz)} — आजचा सारांश (${esc(fmtDateShort(data.todayIso))})</h2></div>
+              <div><h2 class="pw-title">${esc(biz)} — दिवसाचा सारांश (${esc(fmtDateShort(data.targetIso))})</h2></div>
               <div class="pw-sub">रोख आले: ${formatRupeesInr(t.inCash)} | रोख दिले: ${formatRupeesInr(t.outCash)}</div>
             </div>
             <table class="pw-tbl">
@@ -753,7 +814,7 @@ export function renderDashboard(containerEl, actions = {}, forceRender = false) 
         <button type="button" class="teal" id="dashPreviewBtn">🧮 अंदाज</button>
       </div>
       <div style="margin-top:6px;">
-        <button type="button" class="primary sm" style="width:100%;" id="dashTodaySummaryBtn">📅 आजचा सारांश (आजच्या नोंदी)</button>
+        <button type="button" class="primary sm" style="width:100%;" id="dashTodaySummaryBtn">📅 दिवसाचा सारांश (आज / तारीख निवडा)</button>
       </div>
       <div class="hero-prog-wrap">
         <div class="hero-prog-head">
