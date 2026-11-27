@@ -1,19 +1,471 @@
-// व्याज Infinity X - Reactive Single-Signal Dashboard (Zero Blinking + 3 Operating Modes + Dual-Ring Split + Promises) (src/features/dashboard.js)
+// व्याज Infinity X - Reactive Single-Signal Dashboard (Zero Blinking + 3 Operating Modes + Dual-Ring Split + Promises + Today Summary) (src/features/dashboard.js)
 
 import { getState, setState, getUnifiedMonthReport } from "../core/store.js";
 import { getOperatingMode, setOperatingMode, isFeatureEnabled } from "../core/feature-flags.js";
 import {
-  formatRupeesInr, fmtYmMr, getIstTodayIso, parseStrictDate
+  formatRupeesInr, fmtYmMr, getIstTodayIso, getIstParts, parseStrictDate, toPaise, paiseToRupees
 } from "../core/ledger-v16.js";
 import { getLastBackupMeta } from "../data/backup-vault.js";
 import { updateBorrower } from "../data/borrowers-repo.js";
-import { esc, fmtDateShort, cleanMobile, triggerCall, openWhatsApp, openModal, closeModal, buildRingSvg, showToast } from "../ui/dom-utils.js";
+import {
+  esc, fmtDateShort, cleanMobile, triggerCall, openWhatsApp, openModal, closeModal, buildRingSvg, showToast, printPureWhiteA4
+} from "../ui/dom-utils.js";
 
 let promiseExpanded = false;
 let promiseTab = "today"; // today | tomorrow | overdue
 let lastDashSig = "";
 let pendingModalTab = "current"; // current | past
 let pendingSearch = "";
+let todayModalTab = "all"; // all | in | out
+let todaySearch = "";
+
+// कोणतीही तारीख किंवा UTC Timestamp अचूक IST तारखेत (YYYY-MM-DD) रूपांतरित करा
+function toIstDateIso(val) {
+  if (!val) return "";
+  try {
+    if (typeof val === "object") {
+      if (typeof val.toDate === "function") return getIstParts(val.toDate()).isoDate;
+      if (typeof val.seconds === "number") return getIstParts(new Date(val.seconds * 1000)).isoDate;
+    }
+    if (typeof val === "number" && val > 100000000000) {
+      return getIstParts(new Date(val)).isoDate;
+    }
+    const s = String(val).trim();
+    if (!s) return "";
+    // साधी तारीख (YYYY-MM-DD किंवा DD/MM/YYYY) असल्यास थेट घ्या
+    const strict = parseStrictDate(s);
+    if (strict.valid) return strict.iso;
+    // UTC ISO Timestamp असल्यास अचूक IST मध्ये रूपांतरित करा
+    if (s.includes("T") || s.endsWith("Z")) {
+      const d = new Date(s);
+      if (!Number.isNaN(d.getTime())) return getIstParts(d).isoDate;
+    }
+  } catch (_) {}
+  return "";
+}
+
+// Timestamp मधून IST वेळ काढा (उदा. 01:24 pm)
+function formatIstTimeShort(val) {
+  if (!val) return "";
+  try {
+    const isObj = typeof val === "object";
+    const s = isObj ? "" : String(val).trim();
+    if (!isObj && typeof val !== "number" && !s.includes("T") && !s.endsWith("Z")) return "";
+    const d = isObj && typeof val.toDate === "function"
+      ? val.toDate()
+      : (isObj && typeof val.seconds === "number" ? new Date(val.seconds * 1000) : new Date(val));
+    if (Number.isNaN(d.getTime())) return "";
+    return d.toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: true });
+  } catch (_) {
+    return "";
+  }
+}
+
+// आजच्या सर्व नोंदी एकाच ठिकाणी गोळा करा (फक्त Read-Only, BigInt अचूकता)
+function collectTodaySummary(st) {
+  const todayIso = getIstTodayIso(0);
+  const items = [];
+
+  let inCashP = 0n;
+  let outCashP = 0n;
+  let interestInP = 0n;
+  let prinRedInP = 0n;
+  let udRetInP = 0n;
+  let otherInP = 0n;
+  let newAccOutP = 0n;
+  let extraPrinOutP = 0n;
+  let udGivenOutP = 0n;
+  let nonCashP = 0n;
+
+  try {
+    const borrowers = (st.borrowers || []).filter((b) => b && !b.isDeleted);
+
+    // बल्क-इम्पोर्ट केलेली जुनी खाती चुकून आजच्या नवीन खात्यांत येऊ नयेत म्हणून तपासणी
+    const bulkBuckets = new Map();
+    borrowers.forEach((b) => {
+      const slot = String(b.createdAt || "").slice(0, 15);
+      if (slot) bulkBuckets.set(slot, (bulkBuckets.get(slot) || 0) + 1);
+    });
+
+    borrowers.forEach((b) => {
+      const bName = b.name || "ग्राहक";
+      const bId = b.id || "";
+
+      // १. आज जोडलेले नवीन खाते
+      const loanIso = toIstDateIso(b.loanDate);
+      const createdIso = toIstDateIso(b.createdAt);
+      const slot = String(b.createdAt || "").slice(0, 15);
+      const isBulk = Boolean(slot && (bulkBuckets.get(slot) || 0) >= 6);
+      const isNewToday = loanIso === todayIso || (Boolean(b.isManualNew) && createdIso === todayIso && !isBulk);
+
+      if (isNewToday && (!isBulk || b.isManualNew)) {
+        const initP = toPaise(b.v17OpeningPrincipal ?? b.originalPrincipal ?? b.principal ?? 0);
+        if (initP > 0n) {
+          outCashP += initP;
+          newAccOutP += initP;
+          items.push({
+            dir: "out",
+            tag: "🆕 नवीन खाते",
+            borrowerId: bId,
+            name: bName,
+            amount: paiseToRupees(initP),
+            time: formatIstTimeShort(b.createdAt),
+            sortKey: String(b.createdAt || b.loanDate || ""),
+            note: `दर: ${b.rate || 0}%${loanIso && loanIso !== todayIso ? ` • कर्ज तारीख: ${fmtDateShort(loanIso)}` : ""}${b.guarantor ? ` • ${b.guarantor}` : ""}`
+          });
+        }
+      }
+
+      // २. आज जमा झालेले व्याज (paymentHistory मधून)
+      (Array.isArray(b.paymentHistory) ? b.paymentHistory : []).forEach((p) => {
+        if (!p || toIstDateIso(p.date) !== todayIso) return;
+        const amtP = toPaise(p.amount || 0);
+        if (amtP <= 0n) return;
+        const isWalletApply = String(p.mode || "").toLowerCase() === "advance wallet";
+
+        if (isWalletApply) {
+          nonCashP += amtP;
+          items.push({
+            dir: "noncash",
+            tag: "👛 वॉलेट लागू (रोख नाही)",
+            borrowerId: bId,
+            name: bName,
+            amount: paiseToRupees(amtP),
+            time: formatIstTimeShort(p.date),
+            sortKey: String(p.date || ""),
+            note: p.note || `${p.ym || ""} वॉलेटमधून व्याज जमा`
+          });
+        } else {
+          inCashP += amtP;
+          interestInP += amtP;
+          items.push({
+            dir: "in",
+            tag: "💰 व्याज जमा",
+            borrowerId: bId,
+            name: bName,
+            amount: paiseToRupees(amtP),
+            time: formatIstTimeShort(p.date),
+            sortKey: String(p.date || ""),
+            note: `${p.mode ? `[${p.mode}] ` : ""}${p.note || ""}`.trim()
+          });
+        }
+      });
+
+      // ३. आज दिलेले अतिरिक्त मुद्दल किंवा चक्रवाढ (extraPrincipals मधून)
+      (Array.isArray(b.extraPrincipals) ? b.extraPrincipals : []).forEach((ev) => {
+        if (!ev || toIstDateIso(ev.date) !== todayIso) return;
+        const amtP = toPaise(ev.amount || 0);
+        if (amtP <= 0n) return;
+        const isComp = Boolean(ev.isCompound || String(ev.note || "").includes("चक्रवाढ"));
+
+        if (isComp) {
+          nonCashP += amtP;
+          items.push({
+            dir: "noncash",
+            tag: "🔁 चक्रवाढ (रोख नाही)",
+            borrowerId: bId,
+            name: bName,
+            amount: paiseToRupees(amtP),
+            time: formatIstTimeShort(ev.date),
+            sortKey: String(ev.date || ""),
+            note: ev.note || "थकीत व्याज मुद्दलात जोडले"
+          });
+        } else {
+          outCashP += amtP;
+          extraPrinOutP += amtP;
+          items.push({
+            dir: "out",
+            tag: "➕ अतिरिक्त मुद्दल",
+            borrowerId: bId,
+            name: bName,
+            amount: paiseToRupees(amtP),
+            time: formatIstTimeShort(ev.date),
+            sortKey: String(ev.date || ""),
+            note: ev.note || "अतिरिक्त मुद्दल दिले"
+          });
+        }
+      });
+
+      // ४. आज परत आलेले मुद्दल (principalReductions मधून)
+      (Array.isArray(b.principalReductions) ? b.principalReductions : []).forEach((ev) => {
+        if (!ev || toIstDateIso(ev.date) !== todayIso) return;
+        const amtP = toPaise(ev.amount || 0);
+        if (amtP <= 0n) return;
+        inCashP += amtP;
+        prinRedInP += amtP;
+        items.push({
+          dir: "in",
+          tag: "➖ मुद्दल परत",
+          borrowerId: bId,
+          name: bName,
+          amount: paiseToRupees(amtP),
+          time: formatIstTimeShort(ev.date),
+          sortKey: String(ev.date || ""),
+          note: ev.note || "मुद्दल परत जमा"
+        });
+      });
+
+      // ५. आज खाते बंद सेटलमेंट (settlement मधून)
+      if (b.accountStatus === "closed" && b.settlement) {
+        const setIso = toIstDateIso(b.settlement.closedAt || b.settlement.date);
+        const amtP = toPaise(b.settlement.amount || 0);
+        if (setIso === todayIso && amtP > 0n) {
+          inCashP += amtP;
+          otherInP += amtP;
+          items.push({
+            dir: "in",
+            tag: "🔒 खाते बंद सेटलमेंट",
+            borrowerId: bId,
+            name: bName,
+            amount: paiseToRupees(amtP),
+            time: formatIstTimeShort(b.settlement.closedAt),
+            sortKey: String(b.settlement.closedAt || b.settlement.date || ""),
+            note: b.settlement.note || "खाते बंद रक्कम जमा"
+          });
+        }
+      }
+
+      // ६. थेट अ‍ॅडव्हान्स वॉलेट जमा (व्याज एक्स्ट्रा मधून आलेली रक्कम दुहेरी मोजू नका)
+      const wTxs = Array.isArray(b.v16AdvanceWallet?.transactions) ? b.v16AdvanceWallet.transactions : [];
+      wTxs.forEach((tx) => {
+        if (!tx || tx.type !== "credit") return;
+        if (String(tx.note || "").includes("मधून एक्स्ट्रा अ‍ॅडव्हान्स वॉलेटमध्ये जमा")) return;
+        if (toIstDateIso(tx.ts || tx.date) !== todayIso) return;
+        const amtP = toPaise(tx.amount || 0);
+        if (amtP <= 0n) return;
+        inCashP += amtP;
+        otherInP += amtP;
+        items.push({
+          dir: "in",
+          tag: "👛 अ‍ॅडव्हान्स वॉलेट जमा",
+          borrowerId: bId,
+          name: bName,
+          amount: paiseToRupees(amtP),
+          time: formatIstTimeShort(tx.ts),
+          sortKey: String(tx.ts || tx.date || ""),
+          note: tx.note || "वॉलेट जमा"
+        });
+      });
+    });
+
+    // ७. स्वतंत्र उधारी नोंदी (दिलेली + परत मिळालेली)
+    (st.udhaari || []).forEach((u) => {
+      if (!u || u.isDeleted) return;
+      const uName = u.name || "व्यक्ती";
+
+      if (toIstDateIso(u.givenDate) === todayIso) {
+        const amtP = toPaise(u.amount || 0);
+        if (amtP > 0n) {
+          outCashP += amtP;
+          udGivenOutP += amtP;
+          items.push({
+            dir: "out",
+            tag: "🤝 उधारी दिली",
+            borrowerId: "",
+            name: uName,
+            amount: paiseToRupees(amtP),
+            time: formatIstTimeShort(u.createdAt),
+            sortKey: String(u.createdAt || u.givenDate || ""),
+            note: u.promiseDate ? `वायदा: ${fmtDateShort(u.promiseDate)}` : (u.note || "")
+          });
+        }
+      }
+
+      const pays = Array.isArray(u.payments) ? u.payments : [];
+      if (pays.length) {
+        pays.forEach((p) => {
+          if (!p || toIstDateIso(p.date || p.ts) !== todayIso) return;
+          const pP = toPaise(p.amount || 0);
+          if (pP <= 0n) return;
+          inCashP += pP;
+          udRetInP += pP;
+          items.push({
+            dir: "in",
+            tag: "🤝 उधारी परत",
+            borrowerId: "",
+            name: uName,
+            amount: paiseToRupees(pP),
+            time: formatIstTimeShort(p.ts || p.date),
+            sortKey: String(p.ts || p.date || ""),
+            note: p.note || "उधारी परत जमा"
+          });
+        });
+      } else if (toIstDateIso(u.returnedDate) === todayIso) {
+        const pP = toPaise(u.paidAmount || 0);
+        if (pP > 0n) {
+          inCashP += pP;
+          udRetInP += pP;
+          items.push({
+            dir: "in",
+            tag: "🤝 उधारी परत",
+            borrowerId: "",
+            name: uName,
+            amount: paiseToRupees(pP),
+            time: formatIstTimeShort(u.updatedAt),
+            sortKey: String(u.updatedAt || u.returnedDate || ""),
+            note: u.note || "उधारी परत जमा"
+          });
+        }
+      }
+    });
+
+    // सर्वात नवीन नोंद वर दिसावी म्हणून क्रम लावा
+    items.sort((a, b) => String(b.sortKey).localeCompare(String(a.sortKey)));
+  } catch (err) {
+    console.warn("Today Summary Error:", err);
+  }
+
+  return {
+    todayIso,
+    items,
+    totals: {
+      inCash: paiseToRupees(inCashP),
+      outCash: paiseToRupees(outCashP),
+      interestIn: paiseToRupees(interestInP),
+      prinRedIn: paiseToRupees(prinRedInP),
+      udRetIn: paiseToRupees(udRetInP),
+      otherIn: paiseToRupees(otherInP),
+      newAccOut: paiseToRupees(newAccOutP),
+      extraPrinOut: paiseToRupees(extraPrinOutP),
+      udGivenOut: paiseToRupees(udGivenOutP),
+      nonCash: paiseToRupees(nonCashP)
+    }
+  };
+}
+
+// आजच्या नोंदींचा सारांश मोडल उघडा
+export function openTodaySummaryModal(actions = {}) {
+  const renderInner = () => {
+    const st = getState();
+    const hide = st.ui.hideAmounts;
+    const data = collectTodaySummary(st);
+    const t = data.totals;
+    const q = todaySearch.trim().toLowerCase();
+
+    const inList = data.items.filter((x) => x.dir === "in");
+    const outList = data.items.filter((x) => x.dir === "out");
+    const base = todayModalTab === "in" ? inList : todayModalTab === "out" ? outList : data.items;
+    const filtered = base.filter((x) => !q || `${x.name} ${x.tag} ${x.note}`.toLowerCase().includes(q));
+
+    const rowsHtml = filtered.length
+      ? filtered.map((x) => {
+          const isOut = x.dir === "out";
+          const isNonCash = x.dir === "noncash";
+          const borderCol = isNonCash ? "var(--warn)" : isOut ? "var(--gold)" : "var(--accent-2)";
+          const amtCol = isNonCash ? "var(--warn)" : isOut ? "var(--gold)" : "var(--accent-2)";
+          const sign = isNonCash ? "" : isOut ? "-" : "+";
+          return `
+            <div class="meta-box" style="margin-bottom:6px; border-left:3px solid ${borderCol};">
+              <div class="row-between">
+                <div style="min-width:0;">
+                  <div style="font-weight:800; font-size:0.85rem;">${esc(x.name)}</div>
+                  <div class="muted" style="font-size:0.7rem; margin-top:2px;">
+                    ${esc(x.tag)}${x.time ? ` • 🕒 ${esc(x.time)}` : ""}
+                  </div>
+                  ${x.note ? `<div class="muted" style="font-size:0.69rem; margin-top:2px;">${esc(x.note)}</div>` : ""}
+                </div>
+                <strong style="color:${amtCol}; font-size:0.93rem; white-space:nowrap;">${sign}${formatRupeesInr(x.amount, hide)}</strong>
+              </div>
+              ${x.borrowerId ? `
+                <div class="row" style="margin-top:6px;">
+                  <button type="button" class="warn xs" data-ts-jump="${esc(x.borrowerId)}">⚡ कार्ड पहा</button>
+                </div>
+              ` : ""}
+            </div>
+          `;
+        }).join("")
+      : `<div class="muted" style="text-align:center; padding:18px;">आज (${esc(fmtDateShort(data.todayIso))}) या विभागात कोणतीही नोंद नाही.</div>`;
+
+    const html = `
+      <div class="modal-head">
+        <div>
+          <h3>📅 आजचा सारांश (${esc(fmtDateShort(data.todayIso))})</h3>
+          <div class="muted" style="font-size:0.7rem;">एकूण नोंदी: <strong>${data.items.length}</strong> • अचूक IST हिशोब</div>
+        </div>
+        <div class="row" style="gap:5px;">
+          <button type="button" class="primary xs" id="tsPdfBtn">🖨️ PDF</button>
+          <button type="button" class="xs" id="tsCloseBtn">✕</button>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:8px;">
+        <div class="meta-box">
+          <div class="muted" style="font-size:0.68rem;">📥 आज आलेले रोख पैसे</div>
+          <div class="ok" style="font-size:1rem; font-weight:900;">${formatRupeesInr(t.inCash, hide)}</div>
+          <div class="muted" style="font-size:0.64rem;">व्याज: ${formatRupeesInr(t.interestIn, hide)} • मुद्दल: ${formatRupeesInr(t.prinRedIn, hide)} • उधारी: ${formatRupeesInr(t.udRetIn, hide)}</div>
+        </div>
+        <div class="meta-box">
+          <div class="muted" style="font-size:0.68rem;">📤 आज दिलेले रोख पैसे</div>
+          <div class="gold-text" style="font-size:1rem; font-weight:900;">${formatRupeesInr(t.outCash, hide)}</div>
+          <div class="muted" style="font-size:0.64rem;">नवीन: ${formatRupeesInr(t.newAccOut, hide)} • अति.: ${formatRupeesInr(t.extraPrinOut, hide)} • उधारी: ${formatRupeesInr(t.udGivenOut, hide)}</div>
+        </div>
+      </div>
+
+      ${t.nonCash > 0 ? `<div class="meta-box" style="margin-bottom:8px; font-size:0.72rem;">🔁 चक्रवाढ / वॉलेट लागू (रोख नाही): <strong class="warn-text">${formatRupeesInr(t.nonCash, hide)}</strong></div>` : ""}
+
+      <div class="tab-row-3">
+        <button type="button" class="seg-btn ${todayModalTab === "all" ? "is-active" : ""}" data-tstab="all">📋 सर्व (${data.items.length})</button>
+        <button type="button" class="seg-btn ${todayModalTab === "in" ? "is-active" : ""}" data-tstab="in">📥 आलेले (${inList.length})</button>
+        <button type="button" class="seg-btn ${todayModalTab === "out" ? "is-active" : ""}" data-tstab="out">📤 दिलेले (${outList.length})</button>
+      </div>
+
+      <input type="text" id="tsSearchInp" class="search-input" value="${esc(todaySearch)}" placeholder="🔍 नाव किंवा प्रकार शोधा..." />
+      <div style="max-height:46vh; overflow-y:auto;">${rowsHtml}</div>
+    `;
+
+    openModal("todaySummaryModal", html, {
+      onAfterRender: (card) => {
+        card.querySelector("#tsCloseBtn")?.addEventListener("click", () => closeModal("todaySummaryModal"));
+        card.querySelectorAll("[data-tstab]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            todayModalTab = btn.getAttribute("data-tstab");
+            renderInner();
+          });
+        });
+        const inp = card.querySelector("#tsSearchInp");
+        inp?.addEventListener("input", () => {
+          todaySearch = inp.value;
+          const pos = inp.selectionStart || todaySearch.length;
+          renderInner();
+          const next = document.getElementById("tsSearchInp");
+          if (next) { next.focus(); next.setSelectionRange(pos, pos); }
+        });
+        card.querySelectorAll("[data-ts-jump]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const id = btn.getAttribute("data-ts-jump");
+            closeModal("todaySummaryModal");
+            actions.onJumpBorrower?.(id);
+          });
+        });
+        card.querySelector("#tsPdfBtn")?.addEventListener("click", () => {
+          const biz = st.profile?.bizName || "व्याज हिशोब वही";
+          const tblRows = data.items.map((x, i) => `
+            <tr>
+              <td>${i + 1}</td>
+              <td>${esc(x.name)}</td>
+              <td>${esc(x.tag)}${x.time ? ` (${esc(x.time)})` : ""}</td>
+              <td>${esc(x.note || "-")}</td>
+              <td class="pw-num">${x.dir === "out" ? "-" : x.dir === "in" ? "+" : ""}${formatRupeesInr(x.amount)}</td>
+            </tr>
+          `).join("") || `<tr><td colspan="5" style="text-align:center;">आज कोणतीही नोंद नाही</td></tr>`;
+
+          printPureWhiteA4(`
+            <div class="pw-head">
+              <div><h2 class="pw-title">${esc(biz)} — आजचा सारांश (${esc(fmtDateShort(data.todayIso))})</h2></div>
+              <div class="pw-sub">रोख आले: ${formatRupeesInr(t.inCash)} | रोख दिले: ${formatRupeesInr(t.outCash)}</div>
+            </div>
+            <table class="pw-tbl">
+              <thead><tr><th>क्र.</th><th>नाव</th><th>प्रकार</th><th>तपशील</th><th class="pw-num">रक्कम</th></tr></thead>
+              <tbody>${tblRows}</tbody>
+            </table>
+          `);
+        });
+      }
+    });
+  };
+
+  renderInner();
+}
 
 // आज, उद्या आणि थकीत वायदे एकाच Unified Report मधून काढा
 function collectPromiseBuckets(report) {
@@ -300,6 +752,9 @@ export function renderDashboard(containerEl, actions = {}, forceRender = false) 
         <button type="button" style="background:#1d4ed8; color:#fff; border-color:rgba(125,211,252,0.45);" id="dashMonthActBtn">📋 नोंदी</button>
         <button type="button" class="teal" id="dashPreviewBtn">🧮 अंदाज</button>
       </div>
+      <div style="margin-top:6px;">
+        <button type="button" class="primary sm" style="width:100%;" id="dashTodaySummaryBtn">📅 आजचा सारांश (आजच्या नोंदी)</button>
+      </div>
       <div class="hero-prog-wrap">
         <div class="hero-prog-head">
           <span>महिन्याची वसुली प्रगती</span>
@@ -457,6 +912,7 @@ export function renderDashboard(containerEl, actions = {}, forceRender = false) 
   containerEl.querySelector("#dashExcelBtn")?.addEventListener("click", () => actions.onExportExcel?.());
   containerEl.querySelector("#dashMonthActBtn")?.addEventListener("click", () => actions.onOpenMonthActivity?.());
   containerEl.querySelector("#dashPreviewBtn")?.addEventListener("click", () => actions.onOpenInterestPreview?.());
+  containerEl.querySelector("#dashTodaySummaryBtn")?.addEventListener("click", () => openTodaySummaryModal(actions));
   containerEl.querySelector("#dashQuickBackupBtn")?.addEventListener("click", () => actions.onTriggerBackup?.());
   containerEl.querySelector("#dashSnapshotsBtn")?.addEventListener("click", () => actions.onOpenBackupSnapshots?.());
 
