@@ -1,4 +1,4 @@
-// व्याज हिशोब वही - VyajOS Central Kernel (Single Source of Truth + Single Render Bus + Pure White A4 Print Engine) (js/core/vyaj-kernel.js - V15.0)
+// व्याज हिशोब वही - VyajOS Central Kernel V16.0 (BigInt Ledger V16 + IST + Historical Locks + Compound + Advance Wallet + Pure White A4 Print) (js/core/vyaj-kernel.js)
 (function () {
   const MONTHS_MR = ["जानेवारी", "फेब्रुवारी", "मार्च", "एप्रिल", "मे", "जून", "जुलै", "ऑगस्ट", "सप्टेंबर", "ऑक्टोबर", "नोव्हेंबर", "डिसेंबर"];
   const MONTHS_SHORT = ["जाने", "फेब्रु", "मार्च", "एप्रि", "मे", "जून", "जुलै", "ऑग", "सप्टें", "ऑक्टो", "नोव्हें", "डिसें"];
@@ -9,8 +9,12 @@
   let cachedReport = null;
   let busTimer = null;
 
+  function L16() {
+    return window.VyajLedgerV16 || null;
+  }
+
   // =========================================================================
-  // १. सुरक्षित युटिलिटी फंक्शन्स (संपूर्ण अ‍ॅपसाठी एकच फॉरमॅट)
+  // १. सुरक्षित युटिलिटी फंक्शन्स (IST आणि BigInt फॉरमॅटिंगसह)
   // =========================================================================
   function esc(str) {
     return String(str ?? "").replace(/[&<>"']/g, (m) => ({
@@ -19,11 +23,18 @@
   }
 
   function fmtNum(val) {
-    return Math.round(Number(val || 0)).toLocaleString("en-IN");
+    const n = Number(val || 0);
+    if (Math.abs(n - Math.round(n)) > 0.001) {
+      return n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    return Math.round(n).toLocaleString("en-IN");
   }
 
   function fmtInr(val) {
     const n = Number(val || 0);
+    if (document.body.classList.contains("hide-amounts")) return "₹••••";
+    const L = L16();
+    if (L) return L.formatPaiseInr(L.toPaise(n), false);
     if (window.HishobBridge && typeof window.HishobBridge.fmtAmt === "function") {
       return window.HishobBridge.fmtAmt(n);
     }
@@ -31,6 +42,8 @@
   }
 
   function fmtInrPlain(val) {
+    const L = L16();
+    if (L) return L.formatPaiseInr(L.toPaise(val || 0), false);
     return "₹" + fmtNum(val);
   }
 
@@ -47,7 +60,10 @@
   }
 
   function getActiveYm() {
-    return document.getElementById("activeYm")?.value || new Date().toISOString().slice(0, 7);
+    const inpVal = document.getElementById("activeYm")?.value;
+    if (inpVal) return inpVal;
+    const L = L16();
+    return L ? L.getIstCurrentYm() : new Date().toISOString().slice(0, 7);
   }
 
   function getPrevYm(ym) {
@@ -65,23 +81,24 @@
     return d.slice(-10);
   }
 
-  // कोणत्याही तारीख फॉरमॅटमधून (ISO, DD/MM/YYYY, Timestamp, Firestore) अचूक YYYY-MM काढा
   function extractYm(val) {
     if (!val) return "";
     if (typeof val === "object") {
       if (typeof val.toDate === "function") {
-        const d = val.toDate();
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        const L = L16();
+        return L ? L.getIstParts(val.toDate()).ym : val.toDate().toISOString().slice(0, 7);
       }
       if (typeof val.seconds === "number") {
         const d = new Date(val.seconds * 1000);
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        const L = L16();
+        return L ? L.getIstParts(d).ym : d.toISOString().slice(0, 7);
       }
     }
     if (typeof val === "number" && val > 100000000000) {
       const d = new Date(val);
       if (!Number.isNaN(d.getTime())) {
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        const L = L16();
+        return L ? L.getIstParts(d).ym : d.toISOString().slice(0, 7);
       }
     }
     const s = String(val).trim();
@@ -95,13 +112,16 @@
   function fmtDateShort(val) {
     if (!val) return "-";
     if (typeof val === "object" && typeof val.toDate === "function") {
-      const d = val.toDate();
-      return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+      const L = L16();
+      const iso = L ? L.getIstParts(val.toDate()).isoDate : val.toDate().toISOString().slice(0, 10);
+      return fmtDateShort(iso);
     }
     if (typeof val === "number" && val > 100000000000) {
       const d = new Date(val);
       if (!Number.isNaN(d.getTime())) {
-        return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+        const L = L16();
+        const iso = L ? L.getIstParts(d).isoDate : d.toISOString().slice(0, 10);
+        return fmtDateShort(iso);
       }
     }
     const s = String(val).trim();
@@ -113,7 +133,7 @@
   }
 
   // =========================================================================
-  // २. अचूक मागील बाकी, बल्क-इम्पोर्ट ओळख आणि अतिरिक्त मुद्दल वाचन
+  // २. ऐतिहासिक लॉक, बल्क-इम्पोर्ट ओळख आणि अतिरिक्त मुद्दल (चक्रवाढ वेगळे ठेवून)
   // =========================================================================
   function hasManualPastDueData(b) {
     if (Number(b.customDue || 0) > 0 || Number(b.manualDue || 0) > 0 || Number(b.initialPastDue || 0) > 0) return true;
@@ -123,18 +143,16 @@
     return false;
   }
 
-  // जुने बल्क-इम्पोर्ट केलेले ४८ ग्राहक चुकून 'नवीन खाती' मध्ये मोजले जाऊ नयेत म्हणून स्मार्ट तपासणी
   function detectBulkImportBuckets(borrowers) {
     const bucketCounts = new Map();
     borrowers.forEach((b) => {
-      const cStr = String(b.createdAt || "").slice(0, 15); // ~१० मिनिटांचा स्लॉट
+      const cStr = String(b.createdAt || "").slice(0, 15);
       if (cStr) bucketCounts.set(cStr, (bucketCounts.get(cStr) || 0) + 1);
     });
     return bucketCounts;
   }
 
   function isTrulyNewInMonth(b, calc, activeYm, bulkBuckets) {
-    // जर खात्याला कोणतीही मागील बाकी किंवा जुने थकीत महिने असतील, तर ते नवीन खाते असूच शकत नाही
     if (Number(calc.pastDue || 0) > 0) return false;
     if (Array.isArray(calc.pastPendingMonths) && calc.pastPendingMonths.length > 0) return false;
     if (hasManualPastDueData(b)) return false;
@@ -143,15 +161,12 @@
     const startYm = extractYm(b.startYm);
     const createdYm = extractYm(b.createdAt);
 
-    // जर मुद्दल दिल्याची तारीख मागील महिन्याची असेल तर ते जुने खाते आहे
     if (loanYm && loanYm !== activeYm) return false;
 
-    // एकाच वेळी ६+ खाती इम्पोर्ट केली असल्यास ती जुनी माइग्रेटेड खाती माना
     const cBucket = String(b.createdAt || "").slice(0, 15);
     const isBulkBatch = Boolean(cBucket && (bulkBuckets.get(cBucket) || 0) >= 6);
     if (isBulkBatch && !loanYm) return false;
     if (isBulkBatch && loanYm === activeYm && !b.isManualNew) {
-      // बल्क इम्पोर्टमध्येही जर loanDate ही createdAt तारखेपेक्षा वेगळी असेल तर ती खरी मुद्दल तारीख समजा
       const loanDay = String(b.loanDate || "").slice(0, 10);
       const createdDay = String(b.createdAt || "").slice(0, 10);
       if (loanDay === createdDay) return false;
@@ -162,7 +177,7 @@
     return false;
   }
 
-  // निवडलेल्या महिन्यातील सर्व अतिरिक्त मुद्दल (+) व परत मुद्दल (-) नोंदी अचूक काढा
+  // अतिरिक्त मुद्दल (+) व परत मुद्दल (-) काढा — चक्रवाढ व्याज (compound_capitalization) रोख मुद्दलातून वेगळे ठेवा
   function getPrincipalEventsInMonth(b, activeYm) {
     const rawLists = []
       .concat(Array.isArray(b.principalHistory) ? b.principalHistory : [])
@@ -174,6 +189,7 @@
     const seen = new Set();
     let added = 0;
     let reduced = 0;
+    let compoundedAdded = 0;
     const items = [];
 
     rawLists.forEach((ev, idx) => {
@@ -202,6 +218,15 @@
       if (seen.has(sig)) return;
       seen.add(sig);
 
+      const absAmt = Math.abs(rawAmt);
+
+      // चक्रवाढ मुद्दलात जोडलेले थकीत व्याज रोख दिलेल्या पैशांत मोजू नका
+      if (typeStr === "compound_capitalization" || ev.isCompound === true) {
+        compoundedAdded += absAmt;
+        items.push({ kind: "compound", amount: absAmt, date: dateVal, note: ev.note || "चक्रवाढ व्याज मुद्दलात जोडले" });
+        return;
+      }
+
       const isReduce =
         rawAmt < 0 ||
         typeStr.includes("reduce") ||
@@ -213,7 +238,6 @@
         noteStr.includes("कमी") ||
         noteStr.includes("परत");
 
-      const absAmt = Math.abs(rawAmt);
       if (isReduce) {
         reduced += absAmt;
         items.push({ kind: "reduce", amount: absAmt, date: dateVal, note: ev.note || ev.reason || "" });
@@ -223,15 +247,13 @@
       }
     });
 
-    return { added, reduced, items };
+    return { added, reduced, compoundedAdded, items };
   }
 
-  // एक्स्ट्रा जमा रक्कम मागील बाकीतून वजा झाली की पुढील महिन्यात अ‍ॅडव्हान्स गेली याचा १००% अचूक हिशोब
-  function computeExtraAllocation(b, calc, activeYm) {
-    const monthlyInt = Math.max(0, Number(calc.monthlyInterest || 0));
+  function computeExtraAllocation(b, calc, monthlyInt, activeYm) {
     const collected = Math.max(0, Number(calc.collectedInMonth || 0));
     const currentInterestPaid = Math.min(collected, monthlyInt);
-    const extraPaid = Math.max(0, collected - monthlyInt);
+    const extraPaid = Math.max(0, Number((collected - monthlyInt).toFixed(2)));
 
     if (extraPaid <= 0) {
       return { currentInterestPaid, extraPaid: 0, extraToPast: 0, extraToAdvance: 0, extraNote: "-" };
@@ -240,7 +262,6 @@
     const currentPastDue = Math.max(0, Number(calc.pastDue || 0));
     const hasManualPast = hasManualPastDueData(b);
 
-    // १. जर आत्ताही मागील बाकी (> 0) शिल्लक असेल (उदा. हर्षद पटेल ₹32,000), तर १००% एक्स्ट्रा रक्कम मागील बाकीतूनच वजा झाली आहे
     if (currentPastDue > 0) {
       const label = hasManualPast
         ? `+${fmtInrPlain(extraPaid)} (मागील मॅन्युअल बाकीतून वजा)`
@@ -248,7 +269,6 @@
       return { currentInterestPaid, extraPaid, extraToPast: extraPaid, extraToAdvance: 0, extraNote: label };
     }
 
-    // २. मागील महिन्याची बाकी तपासा (जर या एक्स्ट्रा रकमेने मागील बाकी पूर्ण संपली असेल तर)
     let prevPending = 0;
     const prevYm = getPrevYm(activeYm);
     const startYm = extractYm(b.startYm);
@@ -259,7 +279,6 @@
       } catch (_) {}
     }
 
-    // ३. जर मॅन्युअल बाकी अस्तित्वात असेल किंवा paymentHistory मध्ये मागील बाकीचा उल्लेख असेल
     const paysInMonth = (Array.isArray(b.paymentHistory) ? b.paymentHistory : []).filter(
       (p) => extractYm(p.ym || p.month || p.date || p.ts) === activeYm
     );
@@ -270,7 +289,7 @@
 
     if (prevPending > 0) {
       const cutPast = Math.min(extraPaid, prevPending);
-      const toAdv = Math.max(0, extraPaid - cutPast);
+      const toAdv = Math.max(0, Number((extraPaid - cutPast).toFixed(2)));
       const note = toAdv > 0
         ? `+${fmtInrPlain(cutPast)} (मागील बाकीत वजा), +${fmtInrPlain(toAdv)} (पुढील अ‍ॅडव्हान्स)`
         : `+${fmtInrPlain(cutPast)} (मागील बाकीतून वजा)`;
@@ -287,7 +306,6 @@
       };
     }
 
-    // ४. खरोखरच कोणतीही मागील बाकी नसल्यास पुढील महिन्यात अ‍ॅडव्हान्स
     return {
       currentInterestPaid,
       extraPaid,
@@ -297,7 +315,6 @@
     };
   }
 
-  // मागील बाकी विभागणी: शेवटचे ३ महिने नावासह + त्याआधीची बाकी वेगळी
   function buildPastDueBreakdown(calc) {
     const pastTotal = Math.max(0, Number(calc.pastDue || 0));
     if (pastTotal <= 0) return { text: "-", last3: [], olderSum: 0 };
@@ -323,25 +340,26 @@
   }
 
   // =========================================================================
-  // ३. मुख्य Single Source of Truth रिपोर्ट बिल्डर (व्याज + स्वतंत्र उधारी)
+  // ३. मुख्य Single Source of Truth रिपोर्ट बिल्डर (V16 BigInt सुसंगत)
   // =========================================================================
   function getMonthReport(forceYm) {
     const activeYm = forceYm || getActiveYm();
+    const L = L16();
     const borrowers = window.HishobBridge && typeof window.HishobBridge.getBorrowers === "function"
       ? (window.HishobBridge.getBorrowers() || [])
       : [];
     const udRaw = typeof window.getProUdhaariList === "function" ? (window.getProUdhaariList() || []) : [];
 
-    // जलद Fingerprint तपासणी (एकाच डेटावर पुन्हा-पुन्हा गणित टाळण्यासाठी)
-    let pSum = 0, payCnt = 0, updMax = "";
+    let pSum = 0, payCnt = 0, updMax = "", wSum = 0;
     for (let i = 0; i < borrowers.length; i++) {
       const b = borrowers[i];
       pSum += Number(b.principal || 0);
       payCnt += Array.isArray(b.paymentHistory) ? b.paymentHistory.length : 0;
+      wSum += Number(b.v16AdvanceWallet?.balance || 0);
       const u = String(b.updatedAt || "");
       if (u > updMax) updMax = u;
     }
-    const key = `${activeYm}|${borrowers.length}|${pSum}|${payCnt}|${updMax}|ud:${udRaw.length}`;
+    const key = `${activeYm}|${borrowers.length}|${pSum}|${payCnt}|${wSum}|${updMax}|ud:${udRaw.length}`;
     const now = Date.now();
     if (cachedReport && cacheKey === key && now - cacheTs < 450) {
       return cachedReport;
@@ -362,6 +380,8 @@
       totalPrincipal: 0,
       extraPrincipalAddedSum: 0,
       extraPrincipalReducedSum: 0,
+      compoundedPrincipalSum: 0,
+      advanceWalletTotalSum: 0,
       expectedInterest: 0,
       collectedInterest: 0,
       paidAccountsCount: 0,
@@ -379,42 +399,67 @@
       const isNew = isTrulyNewInMonth(b, calc, activeYm, bulkBuckets);
       const isClosed = b.accountStatus === "closed";
 
-      // बंद खात्यात या महिन्यात कोणतीच हालचाल नसेल तर वगळा
-      if (isClosed && !isNew && pe.added === 0 && pe.reduced === 0 && Number(calc.collectedInMonth || 0) <= 0) {
+      if (isClosed && !isNew && pe.added === 0 && pe.reduced === 0 && pe.compoundedAdded === 0 && Number(calc.collectedInMonth || 0) <= 0) {
         return;
       }
 
-      const principal = Number(b.principal || 0);
-      const monthlyInterest = Math.max(0, Number(calc.monthlyInterest || 0));
-      const collected = Math.max(0, Number(calc.collectedInMonth || 0));
-      const currentPending = Math.max(0, Number(calc.remainingThisMonth || 0));
-      const pastDue = Math.max(0, Number(calc.pastDue || 0));
-      const totalPending = Math.max(0, Number(calc.totalPayable || 0));
+      // V16 BigInt अचूकता + Historical Lock + Advance Wallet तपासा
+      const v16Det = L ? L.computeMonthInterestDetails(b, activeYm) : null;
+      const hasV16Special = Boolean(
+        v16Det &&
+        (v16Det.isLocked ||
+          (Array.isArray(b.v16Terms) && b.v16Terms.length > 0) ||
+          (b.ratePeriod && b.ratePeriod !== "monthly") ||
+          (Number(b.fixedInterest || 0) <= 0 && Number(b.rate || 0) > 0))
+      );
 
-      const extra = computeExtraAllocation(b, calc, activeYm);
+      const monthlyInterest = hasV16Special
+        ? Math.max(0, v16Det.interestRupees)
+        : Math.max(0, Number(calc.monthlyInterest || 0));
+
+      const principal = Number(b.principal || 0);
+      const collected = Math.max(0, Number(calc.collectedInMonth || 0));
+      const pastDue = Math.max(0, Number(calc.pastDue || 0));
+
+      // चालू महिन्याची बाकी BigInt नुसार अचूक काढा (अ‍ॅडव्हान्स वॉलेट यात मिसळत नाही)
+      const currentPending = L
+        ? Math.max(0, L.paiseToRupeesNum(L.toPaise(monthlyInterest) - L.toPaise(Math.min(collected, monthlyInterest))))
+        : Math.max(0, Number(calc.remainingThisMonth || 0));
+
+      const totalPending = L
+        ? Math.max(0, L.paiseToRupeesNum(L.toPaise(currentPending) + L.toPaise(pastDue)))
+        : Math.max(0, Number(calc.totalPayable || 0));
+
+      const walletBalancePaise = L ? L.getAdvanceWalletBalancePaise(b) : 0n;
+      const walletBalance = L ? L.paiseToRupeesNum(walletBalancePaise) : 0;
+      const lateFeeInfo = L && currentPending > 0 ? L.computeLateFeeIstPaise(b, activeYm) : { daysLate: 0, feePaise: 0n };
+
+      const extra = computeExtraAllocation(b, calc, monthlyInterest, activeYm);
       const pastBrk = buildPastDueBreakdown(calc);
 
       let statusLabel = "बाकी";
       if (isClosed) statusLabel = "बंद";
-      else if (calc.status === "paid" || (monthlyInterest > 0 && collected >= monthlyInterest)) statusLabel = "पूर्ण जमा";
+      else if (monthlyInterest > 0 && collected >= monthlyInterest) statusLabel = "पूर्ण जमा";
       else if (collected > 0) statusLabel = "अर्धवट";
 
       if (!isClosed) {
         summary.activeCount += 1;
         summary.totalPrincipal += principal;
-        summary.expectedInterest += monthlyInterest;
-        summary.collectedInterest += collected;
-        if (collected > 0 || calc.status === "paid") summary.paidAccountsCount += 1;
-        if (currentPending > 0) { summary.currentPendingSum += currentPending; summary.currentPendingCount += 1; }
-        if (pastDue > 0) { summary.pastPendingSum += pastDue; summary.pastPendingCount += 1; }
-        summary.totalPendingSum += totalPending;
+        summary.expectedInterest = Number((summary.expectedInterest + monthlyInterest).toFixed(2));
+        summary.collectedInterest = Number((summary.collectedInterest + collected).toFixed(2));
+        summary.advanceWalletTotalSum = Number((summary.advanceWalletTotalSum + walletBalance).toFixed(2));
+        if (collected > 0 || statusLabel === "पूर्ण जमा") summary.paidAccountsCount += 1;
+        if (currentPending > 0) { summary.currentPendingSum = Number((summary.currentPendingSum + currentPending).toFixed(2)); summary.currentPendingCount += 1; }
+        if (pastDue > 0) { summary.pastPendingSum = Number((summary.pastPendingSum + pastDue).toFixed(2)); summary.pastPendingCount += 1; }
+        summary.totalPendingSum = Number((summary.totalPendingSum + totalPending).toFixed(2));
       }
 
       summary.extraPrincipalAddedSum += pe.added;
       summary.extraPrincipalReducedSum += pe.reduced;
+      summary.compoundedPrincipalSum += pe.compoundedAdded;
 
       if (isNew) {
-        const initAmt = Number(b.originalPrincipal || b.principal || 0);
+        const initAmt = Number(b.v17OpeningPrincipal || b.originalPrincipal || b.principal || 0);
         summary.newCount += 1;
         summary.newPrincipalSum += initAmt;
         newAccounts.push({
@@ -431,7 +476,7 @@
         principalMoves.push({
           id: b.id,
           name: b.name || "ग्राहक",
-          kind: it.kind,
+          kind: it.kind, // add | reduce | compound
           amount: it.amount,
           date: it.date,
           note: it.note
@@ -456,6 +501,19 @@
       rows.push({
         b,
         calc,
+        v16: {
+          isLocked: Boolean(v16Det?.isLocked),
+          ratePeriod: v16Det?.terms?.ratePeriod || b.ratePeriod || "monthly",
+          interestType: v16Det?.terms?.interestType || b.interestType || "reducing",
+          openingPrincipal: v16Det ? L.paiseToRupeesNum(v16Det.openingPrincipalPaise) : Number(b.originalPrincipal || principal),
+          compoundEnabled: Boolean(b.v18Compound?.enabled),
+          lastCompoundedYm: b.v18Compound?.lastCompoundedYm || "",
+          compoundedAddedInMonth: pe.compoundedAdded,
+          walletBalance,
+          walletBalancePaise,
+          daysLateIst: lateFeeInfo.daysLate,
+          lateFeeIst: L ? L.paiseToRupeesNum(lateFeeInfo.feePaise) : 0
+        },
         id: b.id,
         name: b.name || "ग्राहक",
         mobile: cleanMob(b.mobile) || "-",
@@ -464,6 +522,7 @@
         principal,
         extraPrincipalAdded: pe.added,
         extraPrincipalReduced: pe.reduced,
+        compoundedPrincipalAdded: pe.compoundedAdded,
         monthlyInterest,
         collected,
         currentInterestPaid: extra.currentInterestPaid,
@@ -475,6 +534,7 @@
         pastDue,
         pastBreakdownText: pastBrk.text,
         totalPending,
+        walletBalance,
         statusLabel
       });
     });
@@ -547,9 +607,10 @@
 
     udRows.sort((a, b) => Number(a.isFull) - Number(b.isFull));
 
+    // टीप: चक्रवाढ (compoundedPrincipalSum) रोख खर्च (totalOut) किंवा रोख जमा (totalIn) मध्ये चुकून मोजले जात नाही!
     const cashflow = {
-      totalOut: summary.newPrincipalSum + summary.extraPrincipalAddedSum + udGivenInMonthSum,
-      totalIn: summary.collectedInterest + summary.extraPrincipalReducedSum + udRetInMonthSum
+      totalOut: Number((summary.newPrincipalSum + summary.extraPrincipalAddedSum + udGivenInMonthSum).toFixed(2)),
+      totalIn: Number((summary.collectedInterest + summary.extraPrincipalReducedSum + udRetInMonthSum).toFixed(2))
     };
 
     cachedReport = {
@@ -666,7 +727,6 @@
 
     printArea.innerHTML = htmlContent;
 
-    // Android Chrome Dark Mode काळे पट्टे टाळण्यासाठी प्रिंटच्या क्षणी तात्पुरता Light Mode
     const wasLight = document.body.classList.contains("light-mode");
     document.documentElement.style.colorScheme = "light";
     if (!wasLight) document.body.classList.add("light-mode");
@@ -714,7 +774,6 @@
     document.getElementById("activeYm")?.addEventListener("change", invalidateAndNotify);
   }
 
-  // जुन्या VyajLedgerCache शी १००% सुसंगतता (अ‍ॅप तुटू नये म्हणून)
   window.VyajLedgerCache = {
     getSnapshot: (ym) => {
       const r = getMonthReport(ym);
@@ -737,7 +796,7 @@
   };
 
   window.VyajKernel = {
-    version: "15.0",
+    version: "16.0",
     esc,
     fmtNum,
     fmtInr,
